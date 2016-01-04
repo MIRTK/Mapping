@@ -17,4 +17,6 @@
 # limitations under the License.
 # ============================================================================
 
+add_definitions(-DEIGEN_MPL2_ONLY)
+
 basis_project_impl ()
