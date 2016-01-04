@@ -63,7 +63,7 @@ private:
 
 protected:
 
-  /// \returns Constant value of \pi
+  /// \returns Constant value of \f$\pi\f$
   static const double Pi();
 
   // ---------------------------------------------------------------------------
