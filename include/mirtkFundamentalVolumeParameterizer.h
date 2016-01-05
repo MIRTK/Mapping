@@ -22,6 +22,7 @@
 
 #include <mirtkVolumeParameterizer.h>
 
+#include <mirtkArray.h>
 #include <mirtkPointSet.h>
 #include <mirtkFundamentalMap.h>
 
@@ -98,7 +99,7 @@ class FundamentalVolumeParameterizer : public VolumeParameterizer
   mirtkAttributeMacro(vtkSmartPointer<vtkAbstractCellLocator>, OffsetPointLocator);
 
   /// Partition of source points
-  mirtkAttributeMacro(std::vector<std::vector<int> >, SourcePartition);
+  mirtkAttributeMacro(Array<Array<int> >, SourcePartition);
 
   /// Residual boundary map
   mirtkAttributeMacro(vtkSmartPointer<vtkDataArray>, ResidualMap);

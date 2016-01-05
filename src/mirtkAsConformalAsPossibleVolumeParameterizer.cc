@@ -20,6 +20,7 @@
 #include <mirtkAsConformalAsPossibleVolumeParameterizer.h>
 
 #include <mirtkMath.h>
+#include <mirtkArray.h>
 #include <mirtkMatrix3x3.h>
 #include <mirtkParallel.h>
 #include <mirtkHarmonicTetrahedralVolumeParameterizer.h> // used to obtain initial map
@@ -30,8 +31,6 @@
 #include <vtkIdList.h>
 
 #include <Eigen/SVD>
-
-#include <vector>
 
 
 namespace mirtk {
@@ -53,9 +52,9 @@ public:
   typedef Eigen::Matrix<double, 3, 3>                              EigenMatrix;
   typedef Eigen::JacobiSVD<EigenMatrix, Eigen::NoQRPreconditioner> SVDSolver;
 
-  vtkPointSet            *_PointSet;
-  vtkDataArray           *_Coords;
-  std::vector<Matrix3x3> *_Orientation;
+  vtkPointSet      *_PointSet;
+  vtkDataArray     *_Coords;
+  Array<Matrix3x3> *_Orientation;
 
   // ---------------------------------------------------------------------------
   /// Add tensor product of 3D vectors to given 3x3 matrix

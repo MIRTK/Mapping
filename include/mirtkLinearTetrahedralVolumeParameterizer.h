@@ -22,7 +22,7 @@
 
 #include <mirtkTetrahedralVolumeParameterizer.h>
 
-#include <vector>
+#include <mirtkArray.h>
 
 
 namespace mirtk {
@@ -58,10 +58,10 @@ class LinearTetrahedralVolumeParameterizer : public TetrahedralVolumeParameteriz
   mirtkPublicAttributeMacro(double, RelaxationFactor);
 
   /// Original ID of n-th interior point
-  mirtkReadOnlyAttributeMacro(std::vector<int>, InteriorPointId);
+  mirtkReadOnlyAttributeMacro(Array<int>, InteriorPointId);
 
   /// Variable/linear equation offset of n-th interior point
-  mirtkReadOnlyAttributeMacro(std::vector<int>, InteriorPointPos);
+  mirtkReadOnlyAttributeMacro(Array<int>, InteriorPointPos);
 
   /// Copy attributes of this class from another instance
   void CopyAttributes(const LinearTetrahedralVolumeParameterizer &);

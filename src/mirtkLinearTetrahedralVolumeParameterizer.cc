@@ -19,6 +19,7 @@
 
 #include <mirtkLinearTetrahedralVolumeParameterizer.h>
 
+#include <mirtkArray.h>
 #include <mirtkParallel.h>
 #include <mirtkMatrix3x3.h>
 
@@ -30,8 +31,6 @@
 #include <vtkMath.h>
 
 #include <Eigen/IterativeLinearSolvers>
-
-#include <vector>
 
 
 namespace mirtk {
@@ -50,7 +49,7 @@ class LinearSystem
 {
   const LinearTetrahedralVolumeParameterizer *_Filter;
   const LinearTetrahedralVolumeParameterizer *_Operator;
-  std::vector<Eigen::Triplet<Scalar> >        _Coefficients;
+  Array<Eigen::Triplet<Scalar> >              _Coefficients;
   Eigen::Matrix<Scalar, Eigen::Dynamic, 1>    _RightHandSide;
 
 public:

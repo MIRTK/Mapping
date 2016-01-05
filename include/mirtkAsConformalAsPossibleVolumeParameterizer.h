@@ -21,9 +21,9 @@
 #define MIRTK_AsConformalAsPossibleVolumeParameterizer_H
 
 #include <mirtkLinearTetrahedralVolumeParameterizer.h>
-#include <mirtkMatrix3x3.h>
 
-#include <vector>
+#include <mirtkArray.h>
+#include <mirtkMatrix3x3.h>
 
 
 namespace mirtk {
@@ -47,7 +47,7 @@ class AsConformalAsPossibleVolumeParameterizer
   mirtkPublicAttributeMacro(double, UniformWeight);
 
   /// Local orientation of tetrahedron (rotation matrix)
-  mirtkAttributeMacro(std::vector<Matrix3x3>, Orientation);
+  mirtkAttributeMacro(Array<Matrix3x3>, Orientation);
 
   /// Copy attributes of this class from another instance
   void CopyAttributes(const AsConformalAsPossibleVolumeParameterizer &);

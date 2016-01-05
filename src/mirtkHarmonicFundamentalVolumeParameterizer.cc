@@ -20,6 +20,7 @@
 #include <mirtkHarmonicFundamentalVolumeParameterizer.h>
 
 #include <mirtkMath.h>
+#include <mirtkArray.h>
 #include <mirtkPointSet.h>
 #include <mirtkMatrix.h>
 #include <mirtkParallel.h>
@@ -28,8 +29,6 @@
 
 #include <mirtkEigen.h>
 #include <Eigen/SVD>
-
-#include <vector>
 
 
 namespace mirtk {
@@ -45,9 +44,9 @@ namespace HarmonicFundamentalVolumeParameterizerUtils {
 /// Compute A = K^T K
 struct ComputeCoefficients
 {
-  const Matrix           *_Kernel;
-  const std::vector<int> *_ColIdx;
-  Matrix                 *_Coeffs;
+  const Matrix     *_Kernel;
+  const Array<int> *_ColIdx;
+  Matrix           *_Coeffs;
 
   void operator ()(const blocked_range2d<int> &re) const
   {
@@ -70,11 +69,11 @@ struct ComputeCoefficients
 /// Compute b = K^T f
 struct ComputeConstraints
 {
-  const Matrix           *_Kernel;
-  const std::vector<int> *_ColIdx;
-  vtkDataArray           *_BoundaryMap;
-  VolumetricMap          *_OutputMap;
-  Matrix                 *_b;
+  const Matrix     *_Kernel;
+  const Array<int> *_ColIdx;
+  vtkDataArray     *_BoundaryMap;
+  VolumetricMap    *_OutputMap;
+  Matrix           *_b;
 
   void operator ()(const blocked_range2d<int> &re) const
   {
