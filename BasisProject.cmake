@@ -44,6 +44,8 @@ basis_project (
   # meta-data
   NAME        "VolumetricMapping"
   PACKAGE     "MIRTK"
+  VERSION     "1.0.0" # External module version
+  SOVERSION   "0"     # API yet unstable
   AUTHORS     "Andreas Schuh"
   DESCRIPTION "VolumetricMapping library of the Medical Image Registration ToolKit."
   COPYRIGHT   "2013-2015 Imperial College London, Andreas Schuh"
