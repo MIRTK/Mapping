@@ -22,4 +22,4 @@
 # @brief Build configuration of MIRTK VolumetricMapping tools.
 ##############################################################################
 
-mirtk_add_executable(volumemap DEPENDS LibVolumetricMapping ${VTK_LIBRARIES})
+mirtk_add_executable(map DEPENDS LibVolumetricMapping ${VTK_LIBRARIES})

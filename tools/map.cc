@@ -1,12 +1,44 @@
-// =============================================================================
-// Project: Image Registration Toolkit (IRTK)
-// Package: Registration
-//
-// Copyright (c) 2015 Imperial College London
-// Copyright (c) 2015 Andreas Schuh
-// =============================================================================
+/*
+ * Medical Image Registration ToolKit (MIRTK)
+ *
+ * Copyright 2013-2015 Imperial College London
+ * Copyright 2013-2015 Andreas Schuh
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include <mirtkCommon.h>
+#include <mirtkOptions.h>
+#include <mirtkGenericImage.h>
+#include <mirtkGradientImageFilter.h>
+#include <mirtkPointSetUtils.h>
+
+#include <mirtkDiscreteMap.h>
+#include <mirtkHarmonicTetrahedralVolumeParameterizer.h>
+#include <mirtkHarmonicFundamentalVolumeParameterizer.h>
+//#include <mirtkBiharmonicFundamentalVolumeParameterizer.h>
+#include <mirtkAsConformalAsPossibleVolumeParameterizer.h>
+
+#include <vtkSmartPointer.h>
+#include <vtkPolyData.h>
+#include <vtkPointData.h>
+#include <vtkDataArray.h>
+#include <vtkFloatArray.h>
+#include <vtkSphereSource.h>
+#include <vtkImplicitPolyDataDistance.h>
+
+using namespace mirtk;
+
 
 // =============================================================================
 // Help
@@ -15,12 +47,11 @@
 // -----------------------------------------------------------------------------
 void PrintHelp(const char* name)
 {
-  using namespace mirtk;
   cout << endl;
   cout << "usage: " << name << " <target> <output> [options]" << endl;
   cout << "       " << name << " [<target>] -eval <file> [options]" << endl;
   cout << endl;
-  cout << "This tool parameterizes an shape embedded in 3D space. The generated output" << endl;
+  cout << "This tool parameterizes a shape embedded in 3D space. The generated output" << endl;
   cout << "map assigns each point in the input domain a point in the output domain." << endl;
   cout << endl;
   cout << "The input domain is defined either by the convex hull of an input point" << endl;
@@ -74,30 +105,6 @@ void PrintHelp(const char* name)
   PrintCommonOptions(cout);
   cout << endl;
 }
-
-// =============================================================================
-// Includes
-// =============================================================================
-
-#include <vtkSmartPointer.h>
-#include <vtkPolyData.h>
-#include <vtkPointData.h>
-#include <vtkDataArray.h>
-#include <vtkFloatArray.h>
-#include <vtkSphereSource.h>
-#include <vtkImplicitPolyDataDistance.h>
-
-#include <mirtkGenericImage.h>
-#include <mirtkGradientImageFilter.h>
-#include <mirtkPointSetUtils.h>
-
-#include <mirtkDiscreteMap.h>
-#include <mirtkHarmonicTetrahedralVolumeParameterizer.h>
-#include <mirtkHarmonicFundamentalVolumeParameterizer.h>
-//#include <mirtkBiharmonicFundamentalVolumeParameterizer.h>
-#include <mirtkAsConformalAsPossibleVolumeParameterizer.h>
-
-using namespace mirtk;
 
 // =============================================================================
 // Auxiliaries
