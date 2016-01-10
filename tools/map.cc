@@ -70,7 +70,7 @@ void PrintHelp(const char* name)
   cout << "of the volumetric map itself are written to a binary output file. This map can" << endl;
   cout << "later applied to the target or another point set using the -apply option." << endl;
   cout << endl;
-  cout << "Required arguments:" << endl;
+  cout << "Arguments:" << endl;
   cout << "  target                      Point set delineating the boundary of the input domain" << endl;
   cout << "                              or name of primitive shape such as: \"sphere\"." << endl;
   cout << "  output                      File path of output tesselation, volumetric map," << endl;
