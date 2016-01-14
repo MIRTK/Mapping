@@ -3,10 +3,10 @@ MIRTK Volumetric Mapping Package
 
 The Volumetric Mapping module of the Medical Image Registration ToolKit (MIRTK) is a library
 for the volumetric mapping of brain volumes. The MIRTK
-[map](https://mirtk.github.io/documentation/commands/map) command can be used to compute
+[map](https://mirtk.github.io/commands/map) command can be used to compute
 such volumetric map and to apply it to an input tetrahedral mesh.
 
-See [online documentation](https://mirtk.github.io/documentation/modules/packages/volumetricmapping)
+See [online documentation](https://mirtk.github.io/modules/packages/volumetricmapping)
 for more.
 
 
