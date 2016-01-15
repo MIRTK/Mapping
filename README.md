@@ -6,7 +6,7 @@ for the volumetric mapping of brain volumes. The MIRTK
 [map](https://mirtk.github.io/commands/map) command can be used to compute
 such volumetric map and to apply it to an input tetrahedral mesh.
 
-See [online documentation](https://mirtk.github.io/modules/packages/volumetricmapping)
+See [online documentation](https://mirtk.github.io/modules/volumetricmapping)
 for more.
 
 
