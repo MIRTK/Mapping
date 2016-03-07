@@ -20,8 +20,7 @@
 #include <mirtkHarmonicTetrahedralVolumeParameterizer.h>
 
 #include <mirtkMatrix3x3.h>
-
-#include <vtkMath.h>
+#include <mirtkVtkMath.h>
 
 
 namespace mirtk {

@@ -24,9 +24,9 @@
 #include <mirtkMatrix3x3.h>
 #include <mirtkParallel.h>
 #include <mirtkHarmonicTetrahedralVolumeParameterizer.h> // used to obtain initial map
+#include <mirtkVtkMath.h>
 
 #include <vtkSmartPointer.h>
-#include <vtkMath.h>
 #include <vtkTetra.h>
 #include <vtkIdList.h>
 

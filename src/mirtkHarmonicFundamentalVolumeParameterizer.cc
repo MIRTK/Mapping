@@ -24,8 +24,7 @@
 #include <mirtkPointSet.h>
 #include <mirtkMatrix.h>
 #include <mirtkParallel.h>
-
-#include <vtkMath.h>
+#include <mirtkVtkMath.h>
 
 #include <mirtkEigen.h>
 #include <Eigen/SVD>

@@ -22,13 +22,13 @@
 #include <mirtkArray.h>
 #include <mirtkParallel.h>
 #include <mirtkMatrix3x3.h>
+#include <mirtkVtkMath.h>
 
 #include <vtkSmartPointer.h>
 #include <vtkPointSet.h>
 #include <vtkPointData.h>
 #include <vtkIdList.h>
 #include <vtkTetra.h>
-#include <vtkMath.h>
 
 #include <Eigen/IterativeLinearSolvers>
 
