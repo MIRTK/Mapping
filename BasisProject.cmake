@@ -58,7 +58,7 @@ basis_project (
   DEPENDS
     MIRTK{Common,Numerics,Image,PointSet}
     Eigen3
-    "VTK-6{
+    "VTK-7|6{
       vtkCommonCore,
       vtkCommonDataModel,
       vtkFiltersCore,
