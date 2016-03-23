@@ -28,6 +28,8 @@
 #include <mirtkPolyDataSmoothing.h>
 #include <mirtkPointSetUtils.h>
 
+#include <mirtkCommonExport.h>
+
 #include <vtkPointData.h>
 #include <vtkCellData.h>
 #include <vtkImplicitModeller.h>
@@ -47,7 +49,7 @@ namespace mirtk {
 
 
 // Global "debug" flag (cf. mirtkOptions.cc)
-extern int debug;
+MIRTK_Common_EXPORT extern int debug;
 
 
 // =============================================================================
