@@ -797,10 +797,11 @@ int main(int argc, char *argv[])
         if (error < min_boundary_error) min_boundary_error = error;
         if (error > max_boundary_error) max_boundary_error = error;
         sum += error;
+        num += 1;
       }
       min_boundary_error = sqrt(min_boundary_error);
       max_boundary_error = sqrt(max_boundary_error);
-      rms_boundary_error = sqrt(sum / num);
+      rms_boundary_error = (num > 0 ? sqrt(sum / num) : .0);
       delete[] v;
       delete[] b;
       if (verbose) {
