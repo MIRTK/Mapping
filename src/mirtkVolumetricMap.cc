@@ -19,6 +19,7 @@
 
 #include <mirtkVolumetricMap.h>
 
+#include <mirtkConfig.h> // WINDOWWS
 #include <mirtkMath.h>
 #include <mirtkCfstream.h>
 #include <mirtkBaseImage.h>
@@ -292,7 +293,11 @@ bool VolumetricMap::Write(const char *fname) const
   Cofstream os(fname);
   const size_t max_name_len = 32;
   char         map_type_name[max_name_len] = {0};
-  strncpy(map_type_name, this->NameOfClass(), max_name_len);
+  #ifdef WINDOWS
+    strncpy_s(map_type_name, max_name_len, this->NameOfClass(), max_name_len);
+  #else
+    strncpy(map_type_name, this->NameOfClass(), max_name_len);
+  #endif
   os.WriteAsChar(map_type_name, max_name_len);
   this->WriteMap(os);
   return true;
