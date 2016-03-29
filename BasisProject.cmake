@@ -68,7 +68,7 @@ basis_project (
     }"
     #<dependency>
   OPTIONAL_DEPENDS
-    TBB
+    TBB{tbb}
     #<optional-dependency>
   TEST_DEPENDS
     #<test-dependency>
