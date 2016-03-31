@@ -20,12 +20,12 @@
 #ifndef MIRTK_DiscreteMap_H
 #define MIRTK_DiscreteMap_H
 
-#include <mirtkVolumetricMap.h>
+#include "mirtk/VolumetricMap.h"
 
-#include <vtkSmartPointer.h>
-#include <vtkPointSet.h>
-#include <vtkDataArray.h>
-#include <vtkAbstractCellLocator.h>
+#include "vtkSmartPointer.h"
+#include "vtkPointSet.h"
+#include "vtkDataArray.h"
+#include "vtkAbstractCellLocator.h"
 
 
 namespace mirtk {

@@ -17,17 +17,17 @@
  * limitations under the License.
  */
 
-#include <mirtkHarmonicFundamentalVolumeParameterizer.h>
+#include "mirtk/HarmonicFundamentalVolumeParameterizer.h"
 
-#include <mirtkMath.h>
-#include <mirtkArray.h>
-#include <mirtkPointSet.h>
-#include <mirtkMatrix.h>
-#include <mirtkParallel.h>
-#include <mirtkVtkMath.h>
+#include "mirtk/Math.h"
+#include "mirtk/Array.h"
+#include "mirtk/PointSet.h"
+#include "mirtk/Matrix.h"
+#include "mirtk/Parallel.h"
+#include "mirtk/VtkMath.h"
 
-#include <mirtkEigen.h>
-#include <Eigen/SVD>
+#include "mirtk/Eigen.h"
+#include "Eigen/SVD"
 
 
 namespace mirtk {

@@ -17,17 +17,17 @@
  * limitations under the License.
  */
 
-#include <mirtkTetrahedralVolumeParameterizer.h>
+#include "mirtk/TetrahedralVolumeParameterizer.h"
 
-#include <mirtkVtk.h>
-#include <mirtkPointSetUtils.h>
-#include <mirtkDiscreteMap.h>
+#include "mirtk/Vtk.h"
+#include "mirtk/PointSetUtils.h"
+#include "mirtk/DiscreteMap.h"
 
-#include <vtkSmartPointer.h>
-#include <vtkPointSet.h>
-#include <vtkPointData.h>
-#include <vtkCellData.h>
-#include <vtkDataArray.h>
+#include "vtkSmartPointer.h"
+#include "vtkPointSet.h"
+#include "vtkPointData.h"
+#include "vtkCellData.h"
+#include "vtkDataArray.h"
 
 
 namespace mirtk {

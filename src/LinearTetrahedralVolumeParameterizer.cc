@@ -17,20 +17,20 @@
  * limitations under the License.
  */
 
-#include <mirtkLinearTetrahedralVolumeParameterizer.h>
+#include "mirtk/LinearTetrahedralVolumeParameterizer.h"
 
-#include <mirtkArray.h>
-#include <mirtkParallel.h>
-#include <mirtkMatrix3x3.h>
-#include <mirtkVtkMath.h>
+#include "mirtk/Array.h"
+#include "mirtk/Parallel.h"
+#include "mirtk/Matrix3x3.h"
+#include "mirtk/VtkMath.h"
 
-#include <vtkSmartPointer.h>
-#include <vtkPointSet.h>
-#include <vtkPointData.h>
-#include <vtkIdList.h>
-#include <vtkTetra.h>
+#include "vtkSmartPointer.h"
+#include "vtkPointSet.h"
+#include "vtkPointData.h"
+#include "vtkIdList.h"
+#include "vtkTetra.h"
 
-#include <Eigen/IterativeLinearSolvers>
+#include "Eigen/IterativeLinearSolvers"
 
 
 namespace mirtk {

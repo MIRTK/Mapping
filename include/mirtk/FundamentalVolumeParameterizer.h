@@ -20,13 +20,13 @@
 #ifndef MIRTK_FundamentalVolumeParameterizer_H
 #define MIRTK_FundamentalVolumeParameterizer_H
 
-#include <mirtkVolumeParameterizer.h>
+#include "mirtk/VolumeParameterizer.h"
 
-#include <mirtkArray.h>
-#include <mirtkPointSet.h>
-#include <mirtkFundamentalMap.h>
+#include "mirtk/Array.h"
+#include "mirtk/PointSet.h"
+#include "mirtk/FundamentalMap.h"
 
-#include <vtkAbstractCellLocator.h>
+#include "vtkAbstractCellLocator.h"
 
 
 namespace mirtk {

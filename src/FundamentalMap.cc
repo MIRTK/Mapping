@@ -17,9 +17,9 @@
  * limitations under the License.
  */
 
-#include <mirtkFundamentalMap.h>
+#include "mirtk/FundamentalMap.h"
 
-#include <mirtkPoint.h>
+#include "mirtk/Point.h"
 
 
 namespace mirtk {

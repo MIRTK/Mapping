@@ -20,10 +20,10 @@
 #ifndef MIRTK_HarmonicFundamentalVolumeParameterizer_H
 #define MIRTK_HarmonicFundamentalVolumeParameterizer_H
 
-#include <mirtkFundamentalVolumeParameterizer.h>
+#include "mirtk/FundamentalVolumeParameterizer.h"
 
-#include <mirtkMatrix.h>
-#include <mirtkHarmonicMap.h>
+#include "mirtk/Matrix.h"
+#include "mirtk/HarmonicMap.h"
 
 
 namespace mirtk {

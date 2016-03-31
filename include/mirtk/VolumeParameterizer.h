@@ -20,14 +20,14 @@
 #ifndef MIRTK_VolumeParameterizer_H
 #define MIRTK_VolumeParameterizer_H
 
-#include <mirtkObject.h>
+#include "mirtk/Object.h"
 
-#include <mirtkVolumetricMap.h>
+#include "mirtk/VolumetricMap.h"
 
-#include <vtkSmartPointer.h>
-#include <vtkPointSet.h>
-#include <vtkPolyData.h>
-#include <vtkDataArray.h>
+#include "vtkSmartPointer.h"
+#include "vtkPointSet.h"
+#include "vtkPolyData.h"
+#include "vtkDataArray.h"
 
 
 namespace mirtk {

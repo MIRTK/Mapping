@@ -17,60 +17,60 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_BiharmonicMap_H
-#define MIRTK_BiharmonicMap_H
+#ifndef MIRTK_HarmonicMap_H
+#define MIRTK_HarmonicMap_H
 
-#include <mirtkHarmonicMap.h>
+#include "mirtk/FundamentalMap.h"
+
+#include "mirtk/PointSet.h"
+#include "mirtk/Vector.h"
 
 
 namespace mirtk {
 
 
 /**
- * Biharmonic volumetric map
+ * Harmonic volumetric map
  */
-class BiharmonicMap : public HarmonicMap
+class HarmonicMap : public FundamentalMap
 {
-  mirtkObjectMacro(BiharmonicMap);
+  mirtkObjectMacro(HarmonicMap);
 
 public:
 
   // ---------------------------------------------------------------------------
   // Auxiliaries
 
-  /// Biharmonic kernel function
+  /// Harmonic kernel function
   ///
   /// \param[in] d Distance of point to source point.
   ///
-  /// \returns Biarmonic kernel function value.
-  static double B(double d);
+  /// \returns Harmonic kernel function value.
+  static double H(double d);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
 
   /// Default constructor
-  BiharmonicMap();
+  HarmonicMap();
 
   /// Copy constructor
-  BiharmonicMap(const BiharmonicMap &);
+  HarmonicMap(const HarmonicMap &);
 
   /// Assignment operator
-  BiharmonicMap &operator =(const BiharmonicMap &);
-
-  /// Initialize map after inputs and parameters are set
-  virtual void Initialize();
+  HarmonicMap &operator =(const HarmonicMap &);
 
   /// Make deep copy of this volumetric map
   virtual VolumetricMap *NewCopy() const;
 
   /// Destructor
-  virtual ~BiharmonicMap();
+  virtual ~HarmonicMap();
 
   // ---------------------------------------------------------------------------
   // Evaluation
 
   // Import other overloads
-  using HarmonicMap::Evaluate;
+  using FundamentalMap::Evaluate;
 
   /// Evaluate vector-valued volumetric map at the given point
   ///
@@ -99,12 +99,12 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 // -----------------------------------------------------------------------------
-inline double BiharmonicMap::B(double d)
+inline double HarmonicMap::H(double d)
 {
-  return d / (8.0 * Pi());
+  return .25 / (d * Pi());
 }
 
 
 } // namespace mirtk
 
-#endif // MIRTK_BiharmonicMap_H
+#endif // MIRTK_HarmonicMap_H

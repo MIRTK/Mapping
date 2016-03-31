@@ -17,38 +17,38 @@
  * limitations under the License.
  */
 
-#include <mirtkFundamentalVolumeParameterizer.h>
+#include "mirtk/FundamentalVolumeParameterizer.h"
 
-#include <mirtkEigen.h>
-#include <mirtkVtk.h>
+#include "mirtk/Eigen.h"
+#include "mirtk/Vtk.h"
 
-#include <mirtkMath.h>
-#include <mirtkAssert.h>
-#include <mirtkParallel.h>
-#include <mirtkPolyDataSmoothing.h>
-#include <mirtkPointSetUtils.h>
+#include "mirtk/Math.h"
+#include "mirtk/Assert.h"
+#include "mirtk/Parallel.h"
+#include "mirtk/PolyDataSmoothing.h"
+#include "mirtk/PointSetUtils.h"
 
-#include <mirtkCommonExport.h>
+#include "mirtk/CommonExport.h"
 
-#include <vtkPointData.h>
-#include <vtkCellData.h>
-#include <vtkImplicitModeller.h>
-#include <vtkPolyDataConnectivityFilter.h>
-#include <vtkContourFilter.h>
-#include <vtkLinearSubdivisionFilter.h>
-#include <vtkQuadricDecimation.h>
-#include <vtkAbstractCellLocator.h>
-#include <vtkCellLocator.h>
-#include <vtkGenericCell.h>
+#include "vtkPointData.h"
+#include "vtkCellData.h"
+#include "vtkImplicitModeller.h"
+#include "vtkPolyDataConnectivityFilter.h"
+#include "vtkContourFilter.h"
+#include "vtkLinearSubdivisionFilter.h"
+#include "vtkQuadricDecimation.h"
+#include "vtkAbstractCellLocator.h"
+#include "vtkCellLocator.h"
+#include "vtkGenericCell.h"
 
-#include <Eigen/LU>
-#include <Eigen/SVD>
+#include "Eigen/LU"
+#include "Eigen/SVD"
 
 
 namespace mirtk {
 
 
-// Global "debug" flag (cf. mirtkOptions.cc)
+// Global "debug" flag (cf. mirtk/Options.h)
 MIRTK_Common_EXPORT extern int debug;
 
 

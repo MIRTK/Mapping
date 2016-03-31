@@ -23,33 +23,34 @@
 ##############################################################################
 
 set(HEADERS
-  mirtkAsConformalAsPossibleVolumeParameterizer.h
-  mirtkBiharmonicMap.h
-  mirtkDiscreteMap.h
-  mirtkFundamentalMap.h
-  mirtkFundamentalVolumeParameterizer.h
-  mirtkHarmonicFundamentalVolumeParameterizer.h
-  mirtkHarmonicMap.h
-  mirtkHarmonicTetrahedralVolumeParameterizer.h
-  mirtkLinearTetrahedralVolumeParameterizer.h
-  mirtkTetrahedralVolumeParameterizer.h
-  mirtkVolumeParameterizer.h
-  mirtkVolumetricMap.h
+  ${BINARY_INCLUDE_DIR}/mirtk/VolumetricMappingExport.h
+  AsConformalAsPossibleVolumeParameterizer.h
+  BiharmonicMap.h
+  DiscreteMap.h
+  FundamentalMap.h
+  FundamentalVolumeParameterizer.h
+  HarmonicFundamentalVolumeParameterizer.h
+  HarmonicMap.h
+  HarmonicTetrahedralVolumeParameterizer.h
+  LinearTetrahedralVolumeParameterizer.h
+  TetrahedralVolumeParameterizer.h
+  VolumeParameterizer.h
+  VolumetricMap.h
 )
 
 set(SOURCES
-  mirtkAsConformalAsPossibleVolumeParameterizer.cc
-  mirtkBiharmonicMap.cc
-  mirtkDiscreteMap.cc
-  mirtkFundamentalMap.cc
-  mirtkFundamentalVolumeParameterizer.cc
-  mirtkHarmonicFundamentalVolumeParameterizer.cc
-  mirtkHarmonicMap.cc
-  mirtkHarmonicTetrahedralVolumeParameterizer.cc
-  mirtkLinearTetrahedralVolumeParameterizer.cc
-  mirtkTetrahedralVolumeParameterizer.cc
-  mirtkVolumeParameterizer.cc
-  mirtkVolumetricMap.cc
+  AsConformalAsPossibleVolumeParameterizer.cc
+  BiharmonicMap.cc
+  DiscreteMap.cc
+  FundamentalMap.cc
+  FundamentalVolumeParameterizer.cc
+  HarmonicFundamentalVolumeParameterizer.cc
+  HarmonicMap.cc
+  HarmonicTetrahedralVolumeParameterizer.cc
+  LinearTetrahedralVolumeParameterizer.cc
+  TetrahedralVolumeParameterizer.cc
+  VolumeParameterizer.cc
+  VolumetricMap.cc
 )
 
 set(DEPENDS

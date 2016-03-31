@@ -17,20 +17,20 @@
  * limitations under the License.
  */
 
-#include <mirtkAsConformalAsPossibleVolumeParameterizer.h>
+#include "mirtk/AsConformalAsPossibleVolumeParameterizer.h"
 
-#include <mirtkMath.h>
-#include <mirtkArray.h>
-#include <mirtkMatrix3x3.h>
-#include <mirtkParallel.h>
-#include <mirtkHarmonicTetrahedralVolumeParameterizer.h> // used to obtain initial map
-#include <mirtkVtkMath.h>
+#include "mirtk/Math.h"
+#include "mirtk/Array.h"
+#include "mirtk/Matrix3x3.h"
+#include "mirtk/Parallel.h"
+#include "mirtk/HarmonicTetrahedralVolumeParameterizer.h" // used to obtain initial map
+#include "mirtk/VtkMath.h"
 
-#include <vtkSmartPointer.h>
-#include <vtkTetra.h>
-#include <vtkIdList.h>
+#include "vtkSmartPointer.h"
+#include "vtkTetra.h"
+#include "vtkIdList.h"
 
-#include <Eigen/SVD>
+#include "Eigen/SVD"
 
 
 namespace mirtk {

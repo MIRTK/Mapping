@@ -17,9 +17,9 @@
  * limitations under the License.
  */
 
-#include <mirtkHarmonicMap.h>
+#include "mirtk/HarmonicMap.h"
 
-#include <mirtkPoint.h>
+#include "mirtk/Point.h"
 
 
 namespace mirtk {

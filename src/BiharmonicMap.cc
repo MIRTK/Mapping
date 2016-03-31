@@ -17,9 +17,9 @@
  * limitations under the License.
  */
 
-#include <mirtkBiharmonicMap.h>
+#include "mirtk/BiharmonicMap.h"
 
-#include <mirtkPoint.h>
+#include "mirtk/Point.h"
 
 
 namespace mirtk {

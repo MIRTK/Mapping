@@ -17,16 +17,16 @@
  * limitations under the License.
  */
 
-#include <mirtkVolumeParameterizer.h>
+#include "mirtk/VolumeParameterizer.h"
 
-#include <mirtkMemory.h>
-#include <mirtkPointSetUtils.h>
+#include "mirtk/Memory.h"
+#include "mirtk/PointSetUtils.h"
 
-#include <vtkSmartPointer.h>
-#include <vtkPointSet.h>
-#include <vtkPointData.h>
-#include <vtkCellData.h>
-#include <vtkDataArray.h>
+#include "vtkSmartPointer.h"
+#include "vtkPointSet.h"
+#include "vtkPointData.h"
+#include "vtkCellData.h"
+#include "vtkDataArray.h"
 
 
 namespace mirtk {

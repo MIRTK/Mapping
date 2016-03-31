@@ -17,32 +17,40 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_HarmonicTetrahedralVolumeParameterizer_H
-#define MIRTK_HarmonicTetrahedralVolumeParameterizer_H
+#ifndef MIRTK_AsConformalAsPossibleVolumeParameterizer_H
+#define MIRTK_AsConformalAsPossibleVolumeParameterizer_H
 
-#include <mirtkLinearTetrahedralVolumeParameterizer.h>
+#include "mirtk/LinearTetrahedralVolumeParameterizer.h"
+
+#include "mirtk/Array.h"
+#include "mirtk/Matrix3x3.h"
 
 
 namespace mirtk {
 
 
 /**
- * Discrete volumetric harmonic map
+ * As-conformal-as-possible (ACAP) discrete volumetric map
  *
- * This implementation is based on
- *
- *   Paillé & Poulin (2012), As-conformal-as-possible discrete volumetric mapping,
- *   Computers and Graphics (Pergamon), 36(5), 427–433. doi:10.1016/j.cag.2012.03.014
- *
- * The discrete volumetric harmonic map was first presented in
- *
- *   Wang et al. (2004), Volumetric harmonic map,
- *   Communications in Information and Systems, 3(3), 191–202.
+ * Paillé & Poulin (2012), As-conformal-as-possible discrete volumetric mapping,
+ * Computers and Graphics (Pergamon), 36(5), 427–433. doi:10.1016/j.cag.2012.03.014
  */
-class HarmonicTetrahedralVolumeParameterizer
+class AsConformalAsPossibleVolumeParameterizer
 : public LinearTetrahedralVolumeParameterizer
 {
-  mirtkObjectMacro(HarmonicTetrahedralVolumeParameterizer);
+  mirtkObjectMacro(AsConformalAsPossibleVolumeParameterizer);
+
+  // ---------------------------------------------------------------------------
+  // Attributes
+
+  /// Uniform weight of scale and angle conformality
+  mirtkPublicAttributeMacro(double, UniformWeight);
+
+  /// Local orientation of tetrahedron (rotation matrix)
+  mirtkAttributeMacro(Array<Matrix3x3>, Orientation);
+
+  /// Copy attributes of this class from another instance
+  void CopyAttributes(const AsConformalAsPossibleVolumeParameterizer &);
 
 public:
 
@@ -50,21 +58,30 @@ public:
   // Construction/Destruction
 
   /// Default constructor
-  HarmonicTetrahedralVolumeParameterizer();
+  AsConformalAsPossibleVolumeParameterizer();
 
   /// Copy constructor
-  HarmonicTetrahedralVolumeParameterizer(const HarmonicTetrahedralVolumeParameterizer &);
+  AsConformalAsPossibleVolumeParameterizer(const AsConformalAsPossibleVolumeParameterizer &);
 
   /// Assignment operator
-  HarmonicTetrahedralVolumeParameterizer &operator =(const HarmonicTetrahedralVolumeParameterizer &);
+  AsConformalAsPossibleVolumeParameterizer &operator =(const AsConformalAsPossibleVolumeParameterizer &);
 
   /// Destructor
-  virtual ~HarmonicTetrahedralVolumeParameterizer();
+  virtual ~AsConformalAsPossibleVolumeParameterizer();
+
+  // ---------------------------------------------------------------------------
+  // Exection
+
+protected:
+
+  /// Initialize filter after input and parameters are set
+  void Initialize();
+
+  /// Finalize filter execution
+  void Finalize();
 
   // ---------------------------------------------------------------------------
   // Auxiliary functions
-
-protected:
 
   /// Calculate operator weight for given tetrahadron
   ///
@@ -88,4 +105,4 @@ protected:
 
 } // namespace mirtk
 
-#endif // MIRTK_HarmonicTetrahedralVolumeParameterizer_H 
+#endif // MIRTK_AsConformalAsPossibleVolumeParameterizer_H

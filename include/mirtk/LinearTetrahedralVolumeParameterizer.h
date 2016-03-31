@@ -20,9 +20,9 @@
 #ifndef MIRTK_LinearTetrahedralVolumeParameterizer_H
 #define MIRTK_LinearTetrahedralVolumeParameterizer_H
 
-#include <mirtkTetrahedralVolumeParameterizer.h>
+#include "mirtk/TetrahedralVolumeParameterizer.h"
 
-#include <mirtkArray.h>
+#include "mirtk/Array.h"
 
 
 namespace mirtk {

@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#include <mirtkHarmonicTetrahedralVolumeParameterizer.h>
+#include "mirtk/HarmonicTetrahedralVolumeParameterizer.h"
 
-#include <mirtkMatrix3x3.h>
-#include <mirtkVtkMath.h>
+#include "mirtk/Matrix3x3.h"
+#include "mirtk/VtkMath.h"
 
 
 namespace mirtk {

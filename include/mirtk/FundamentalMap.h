@@ -20,11 +20,11 @@
 #ifndef MIRTK_FundamentalMap_H
 #define MIRTK_FundamentalMap_H
 
-#include <mirtkVolumetricMap.h>
+#include "mirtk/VolumetricMap.h"
 
-#include <mirtkMath.h>
-#include <mirtkMatrix.h>
-#include <mirtkPointSet.h>
+#include "mirtk/Math.h"
+#include "mirtk/Matrix.h"
+#include "mirtk/PointSet.h"
 
 
 namespace mirtk {

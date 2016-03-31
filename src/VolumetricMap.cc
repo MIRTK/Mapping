@@ -17,22 +17,22 @@
  * limitations under the License.
  */
 
-#include <mirtkVolumetricMap.h>
+#include "mirtk/VolumetricMap.h"
 
-#include <mirtkConfig.h> // WINDOWWS
-#include <mirtkMath.h>
-#include <mirtkCfstream.h>
-#include <mirtkBaseImage.h>
-#include <mirtkVoxelFunction.h>
-#include <mirtkDiscreteMap.h>
-#include <mirtkHarmonicMap.h>
-#include <mirtkBiharmonicMap.h>
-#include <mirtkPointSetUtils.h>
+#include "mirtk/Config.h" // WINDOWWS
+#include "mirtk/Math.h"
+#include "mirtk/Cfstream.h"
+#include "mirtk/BaseImage.h"
+#include "mirtk/VoxelFunction.h"
+#include "mirtk/DiscreteMap.h"
+#include "mirtk/HarmonicMap.h"
+#include "mirtk/BiharmonicMap.h"
+#include "mirtk/PointSetUtils.h"
 
-#include <vtkSmartPointer.h>
-#include <vtkPointSet.h>
-#include <vtkPolyData.h>
-#include <vtkImageData.h>
+#include "vtkSmartPointer.h"
+#include "vtkPointSet.h"
+#include "vtkPolyData.h"
+#include "vtkImageData.h"
 
 
 namespace mirtk {

@@ -17,15 +17,15 @@
  * limitations under the License.
  */
 
-#include <mirtkDiscreteMap.h>
-#include <mirtkPointSetUtils.h>
+#include "mirtk/DiscreteMap.h"
+#include "mirtk/PointSetUtils.h"
 
-#include <vtkSmartPointer.h>
-#include <vtkPointData.h>
-#include <vtkCellData.h>
-#include <vtkGenericCell.h>
-#include <vtkIdList.h>
-#include <vtkCellLocator.h>
+#include "vtkSmartPointer.h"
+#include "vtkPointData.h"
+#include "vtkCellData.h"
+#include "vtkGenericCell.h"
+#include "vtkIdList.h"
+#include "vtkCellLocator.h"
 
 
 namespace mirtk {

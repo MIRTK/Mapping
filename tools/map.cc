@@ -17,25 +17,25 @@
  * limitations under the License.
  */
 
-#include <mirtkCommon.h>
-#include <mirtkOptions.h>
-#include <mirtkGenericImage.h>
-#include <mirtkGradientImageFilter.h>
-#include <mirtkPointSetUtils.h>
+#include "mirtk/Common.h"
+#include "mirtk/Options.h"
+#include "mirtk/GenericImage.h"
+#include "mirtk/GradientImageFilter.h"
+#include "mirtk/PointSetUtils.h"
 
-#include <mirtkDiscreteMap.h>
-#include <mirtkHarmonicTetrahedralVolumeParameterizer.h>
-#include <mirtkHarmonicFundamentalVolumeParameterizer.h>
-//#include <mirtkBiharmonicFundamentalVolumeParameterizer.h>
-#include <mirtkAsConformalAsPossibleVolumeParameterizer.h>
+#include "mirtk/DiscreteMap.h"
+#include "mirtk/HarmonicTetrahedralVolumeParameterizer.h"
+#include "mirtk/HarmonicFundamentalVolumeParameterizer.h"
+//#include "mirtk/BiharmonicFundamentalVolumeParameterizer.h"
+#include "mirtk/AsConformalAsPossibleVolumeParameterizer.h"
 
-#include <vtkSmartPointer.h>
-#include <vtkPolyData.h>
-#include <vtkPointData.h>
-#include <vtkDataArray.h>
-#include <vtkFloatArray.h>
-#include <vtkSphereSource.h>
-#include <vtkImplicitPolyDataDistance.h>
+#include "vtkSmartPointer.h"
+#include "vtkPolyData.h"
+#include "vtkPointData.h"
+#include "vtkDataArray.h"
+#include "vtkFloatArray.h"
+#include "vtkSphereSource.h"
+#include "vtkImplicitPolyDataDistance.h"
 
 using namespace mirtk;
 

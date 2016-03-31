@@ -20,14 +20,14 @@
 #ifndef MIRTK_VolumetricMap_H
 #define MIRTK_VolumetricMap_H
 
-#include <mirtkObject.h>
+#include "mirtk/Object.h"
 
-#include <mirtkPoint.h>
-#include <mirtkCfstream.h>
-#include <mirtkImageAttributes.h>
+#include "mirtk/Point.h"
+#include "mirtk/Cfstream.h"
+#include "mirtk/ImageAttributes.h"
 
-#include <vtkSmartPointer.h>
-#include <vtkPointSet.h>
+#include "vtkSmartPointer.h"
+#include "vtkPointSet.h"
 
 
 namespace mirtk {

@@ -20,11 +20,11 @@
 #ifndef MIRTK_TetrahedralVolumeParameterizer_H
 #define MIRTK_TetrahedralVolumeParameterizer_H
 
-#include <mirtkVolumeParameterizer.h>
+#include "mirtk/VolumeParameterizer.h"
 
-#include <vtkSmartPointer.h>
-#include <vtkPointSet.h>
-#include <vtkDataArray.h>
+#include "vtkSmartPointer.h"
+#include "vtkPointSet.h"
+#include "vtkDataArray.h"
 
 
 namespace mirtk {
