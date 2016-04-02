@@ -56,7 +56,7 @@ basis_project (
   # ----------------------------------------------------------------------------
   # dependencies
   DEPENDS
-    MIRTK{Common,Numerics,Image,PointSet}
+    MIRTK{Common,Numerics,Image,PointSet,IO}
     Eigen3
     "VTK-7|6{
       vtkCommonCore,

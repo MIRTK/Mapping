@@ -19,9 +19,11 @@
 
 #include "mirtk/Common.h"
 #include "mirtk/Options.h"
+
+#include "mirtk/PointSetIO.h"
+#include "mirtk/PointSetUtils.h"
 #include "mirtk/GenericImage.h"
 #include "mirtk/GradientImageFilter.h"
-#include "mirtk/PointSetUtils.h"
 
 #include "mirtk/DiscreteMap.h"
 #include "mirtk/HarmonicTetrahedralVolumeParameterizer.h"

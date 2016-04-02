@@ -26,7 +26,7 @@
 #include "mirtk/Assert.h"
 #include "mirtk/Parallel.h"
 #include "mirtk/PolyDataSmoothing.h"
-#include "mirtk/PointSetUtils.h"
+#include "mirtk/PointSetIO.h"
 
 #include "mirtk/CommonExport.h"
 

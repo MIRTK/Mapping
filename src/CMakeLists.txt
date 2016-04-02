@@ -58,6 +58,7 @@ set(DEPENDS
   LibNumerics
   LibImage
   LibPointSet
+  LibIO
   ${VTK_LIBRARIES}
 )
 

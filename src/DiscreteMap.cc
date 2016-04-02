@@ -18,7 +18,7 @@
  */
 
 #include "mirtk/DiscreteMap.h"
-#include "mirtk/PointSetUtils.h"
+#include "mirtk/PointSetIO.h"
 
 #include "vtkSmartPointer.h"
 #include "vtkPointData.h"
