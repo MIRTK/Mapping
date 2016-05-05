@@ -19,7 +19,7 @@
 
 ##############################################################################
 # @file  CMakeLists.txt
-# @brief Build configuration of MIRTK VolumetricMapping library.
+# @brief Build configuration of MIRTK Mapping library.
 ##############################################################################
 
 set(HEADERS
