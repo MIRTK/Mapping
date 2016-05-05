@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MMIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ void VolumeParameterizer::CopyAttributes(const VolumeParameterizer &other)
 // -----------------------------------------------------------------------------
 VolumeParameterizer::VolumeParameterizer()
 :
-  _OutputMap(NULL)
+  _OutputMap(nullptr)
 {
 }
 
@@ -96,19 +96,19 @@ void VolumeParameterizer::Initialize()
 
   // Check input
   if (!_InputSet) {
-    cerr << "VolumeParameterizer::Initialize: Missing input point set" << endl;
+    cerr << this->NameOfType() << "::Initialize: Missing input point set" << endl;
     exit(1);
   }
   if (_InputSet->GetNumberOfCells() == 0) {
-    cerr << "VolumeParameterizer::Initialize: Input has no cells" << endl;
+    cerr << this->NameOfType() << "::Initialize: Input has no cells" << endl;
     exit(1);
   }
   if (!_InputMap) {
-    cerr << "VolumeParameterizer::Initialize: Missing input map" << endl;
+    cerr << this->NameOfType() << "::Initialize: Missing input map" << endl;
     exit(1);
   }
   if (_InputMap->GetNumberOfTuples() != _InputSet->GetNumberOfPoints()) {
-    cerr << "VolumeParameterizer::Initialize: Invalid input map" << endl;
+    cerr << this->NameOfType() << "::Initialize: Invalid input map" << endl;
     exit(1);
   }
 }

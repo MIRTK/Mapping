@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@
  */
 
 #include "mirtk/HarmonicFundamentalVolumeParameterizer.h"
+#include "mirtk/HarmonicFundamentalMap.h"
 
 #include "mirtk/Math.h"
+#include "mirtk/Memory.h"
 #include "mirtk/Array.h"
 #include "mirtk/PointSet.h"
 #include "mirtk/Matrix.h"
@@ -31,6 +33,10 @@
 
 
 namespace mirtk {
+
+
+// Global flags (cf. mirtk/Options.h)
+MIRTK_Common_EXPORT extern int verbose;
 
 
 // =============================================================================
@@ -71,7 +77,6 @@ struct ComputeConstraints
   const Matrix     *_Kernel;
   const Array<int> *_ColIdx;
   vtkDataArray     *_BoundaryMap;
-  VolumetricMap    *_OutputMap;
   Matrix           *_b;
 
   void operator ()(const blocked_range2d<int> &re) const
@@ -160,9 +165,10 @@ void HarmonicFundamentalVolumeParameterizer::Initialize()
   // Initialize harmonic map and precompute kernel function values
   double p[3], q[3], dist;
 
-  HarmonicMap *map     = new HarmonicMap();
-  PointSet    &points  = map->SourcePoints();
-  Matrix      &weights = map->Coefficients();
+  unique_ptr<HarmonicFundamentalMap> map(new HarmonicFundamentalMap());
+
+  PointSet &points  = map->SourcePoints();
+  Matrix   &weights = map->Coefficients();
 
   points.Resize(n);
   weights.Initialize(n, d);
@@ -175,12 +181,12 @@ void HarmonicFundamentalVolumeParameterizer::Initialize()
     for (int i = 0; i < m; ++i, ++c) {
       _Boundary->GetPoint(i, p);
       dist = sqrt(vtkMath::Distance2BetweenPoints(p, q));
-      *c = HarmonicMap::H(dist);
+      *c = HarmonicFundamentalMap::H(dist);
     }
   }
 
   // Set output map
-  _OutputMap = map;
+  _OutputMap = map.release();
 }
 
 // -----------------------------------------------------------------------------
@@ -197,7 +203,7 @@ bool HarmonicFundamentalVolumeParameterizer::AddSourcePoint(double q[3])
   for (int i = 0; i < m; ++i, ++c) {
     _Boundary->GetPoint(i, p);
     dist = sqrt(vtkMath::Distance2BetweenPoints(p, q));
-    *c = HarmonicMap::H(dist);
+    *c = HarmonicFundamentalMap::H(dist);
   }
 
   return true;
@@ -225,17 +231,21 @@ void HarmonicFundamentalVolumeParameterizer::Parameterize()
   double         p[3], q[3];
 
   // Compute initial error
-  cout << "Initialize residual boundary map...", cout.flush();
+  if (verbose) {
+    cout << "Initialize residual boundary map...", cout.flush();
+  }
   error = this->UpdateResidualMap(&min_error, &max_error, &std_error);
-  cout << " done\nBoundary fitting error (MSE) = " << error
-            << " (+/-" << std_error << "), range = ["
-            << min_error << ", " << max_error << "]" << endl;
+  if (verbose) {
+    cout << " done\nBoundary fitting error (MSE) = " << error
+         << " (+/-" << std_error << "), range = ["
+         << min_error << ", " << max_error << "]" << endl;
+  }
 
   // Iteratively approximate volumetric map
   double *df = new double[OutputDimension()];
   for (int iter = 0; iter < _NumberOfIterations; ++iter) {
 
-    cout << "\nIteration " << (iter+1) << endl;
+    if (verbose) cout << "\nIteration " << (iter+1) << endl;
 
     // Evenly partition set of source points
     this->PartitionSourcePoints();
@@ -244,8 +254,10 @@ void HarmonicFundamentalVolumeParameterizer::Parameterize()
     for (int k = 0; k < NumberOfSourcePointSets(); ++k) {
       const int n = NumberOfSourcePoints(k);
 
-      cout << "Use source points subset " << (k+1) << " out of "
-                << NumberOfSourcePointSets() << " with " << n << " points" << endl;
+      if (verbose) {
+        cout << "Use source points subset " << (k+1) << " out of "
+             << NumberOfSourcePointSets() << " with " << n << " points" << endl;
+      }
 
       // Get coefficients
       A.Initialize(m, n);
@@ -264,33 +276,37 @@ void HarmonicFundamentalVolumeParameterizer::Parameterize()
       }
 
       // Solve linear system using SVD
-      cout << "Solve linear system using SVD...", cout.flush();
+      if (verbose) cout << "Solve linear system using SVD...", cout.flush();
       SVD svd(MatrixToEigen(A), Eigen::ComputeThinU | Eigen::ComputeThinV);
       x = EigenToMatrix(svd.solve(MatrixToEigen(b)));
       sigma = svd.singularValues();
-      cout << " done\nmax(sigma) = " << sigma(0)
-                << ", min(sigma) = " << sigma(sigma.size() - 1)
-                << ", cond(A) = " << (sigma(0) / sigma(sigma.size() - 1)) << endl;
+      if (verbose) {
+        cout << " done\nmax(sigma) = " << sigma(0)
+             << ", min(sigma) = " << sigma(sigma.size() - 1)
+             << ", cond(A) = " << (sigma(0) / sigma(sigma.size() - 1)) << endl;
+      }
 
       // Add solution to volumetric map
-      cout << "Add solution to harmonic map...", cout.flush();
+      if (verbose) cout << "Add solution to harmonic map...", cout.flush();
       this->AddWeights(k, x);
-      cout << " done" << endl;
+      if (verbose) cout << " done" << endl;
 
       // Update residual boundary map
-      cout << "Update residual boundary map...", cout.flush();
+      if (verbose) cout << "Update residual boundary map...", cout.flush();
       error = this->UpdateResidualMap(&min_error, &max_error, &std_error);
-      cout << " done\n";
-      cout << "Boundary fitting error (MSE) = " << error
-                << " (+/-" << std_error << "), range = ["
-                << min_error << ", " << max_error << "]" << endl;
+      if (verbose) {
+        cout << " done\n";
+        cout << "Boundary fitting error (MSE) = " << error
+             << " (+/-" << std_error << "), range = ["
+             << min_error << ", " << max_error << "]" << endl;
+      }
 
       // TODO: Adapt set of source points (Xu et al., 2013)
     }
 
     // Insert new source points by projecting boundary points with
     // high residual error onto the offset surface (cf. Xu et al., 2013)
-    cout << "Insert new source points...", cout.flush();
+    if (verbose) cout << "Insert new source points...", cout.flush();
     const int n = NumberOfSourcePoints();
     for (vtkIdType ptId = 0; ptId < _Boundary->GetNumberOfPoints(); ++ptId) {
       _ResidualMap->GetTuple(ptId, df);
@@ -300,8 +316,10 @@ void HarmonicFundamentalVolumeParameterizer::Parameterize()
         this->AddSourcePoint(q);
       }
     }
-    cout << " done: #points = " << NumberOfSourcePoints()
-              << " (+" << (NumberOfSourcePoints() - n) << ")" << endl;
+    if (verbose) {
+      cout << " done: #points = " << NumberOfSourcePoints()
+           << " (+" << (NumberOfSourcePoints() - n) << ")" << endl;
+    }
   }
   delete[] df;
 }
@@ -334,7 +352,6 @@ void HarmonicFundamentalVolumeParameterizer
   eval._Kernel      = &_Kernel;
   eval._ColIdx      = &_SourcePartition[k];
   eval._BoundaryMap = _ResidualMap;
-  eval._OutputMap   = _OutputMap;
   eval._b           = &b;
   parallel_for(blocked_range2d<int>(0, n, 0, d), eval);
 }
@@ -343,8 +360,8 @@ void HarmonicFundamentalVolumeParameterizer
 void HarmonicFundamentalVolumeParameterizer
 ::AddWeights(int k, const Matrix &w)
 {
-  HarmonicMap *map     = dynamic_cast<HarmonicMap *>(_OutputMap);
-  Matrix      &weights = map->Coefficients();
+  HarmonicFundamentalMap *map = dynamic_cast<HarmonicFundamentalMap *>(_OutputMap);
+  Matrix &weights = map->Coefficients();
   for (int i = 0; i < NumberOfSourcePoints(k); ++i) {
     const int r = SourcePointIndex(k, i);
     for (int j = 0; j < OutputDimension(); ++j) {

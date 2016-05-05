@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -279,18 +279,18 @@ void AsConformalAsPossibleVolumeParameterizer::Finalize()
 static inline Matrix3x3 GetScaleMatrix(const double n[3], double w)
 {
   const double wn[3] = { w * n[0], w * n[1], w * n[2] };
-	return Matrix3x3(    .0,  wn[1], -wn[2],
-                     -wn[0],     .0,  wn[2],
-                      wn[0], -wn[1],     .0);
+  return Matrix3x3(    .0,  wn[1], -wn[2],
+                   -wn[0],     .0,  wn[2],
+                    wn[0], -wn[1],     .0);
 }
 
 // -----------------------------------------------------------------------------
 static inline Matrix3x3 GetAngleMatrix(const double n[3], double w)
 {
-	const double wn[3] = { w * n[0], w * n[1], w * n[2] };
-	return Matrix3x3(   .0, wn[2], wn[1],
-                     wn[2],    .0, wn[0],
-                     wn[1], wn[0],    .0);
+  const double wn[3] = { w * n[0], w * n[1], w * n[2] };
+  return Matrix3x3(   .0, wn[2], wn[1],
+                   wn[2],    .0, wn[0],
+                   wn[1], wn[0],    .0);
 }
 
 // -----------------------------------------------------------------------------

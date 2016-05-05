@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/BiharmonicMap.h"
+#include "mirtk/BiharmonicFundamentalMap.h"
 
 #include "mirtk/Point.h"
 
@@ -30,53 +30,55 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-BiharmonicMap::BiharmonicMap()
+BiharmonicFundamentalMap::BiharmonicFundamentalMap()
 {
 }
 
 // -----------------------------------------------------------------------------
-BiharmonicMap::BiharmonicMap(const BiharmonicMap &other)
+BiharmonicFundamentalMap::BiharmonicFundamentalMap(const BiharmonicFundamentalMap &other)
 :
-  HarmonicMap(other)
+  HarmonicFundamentalMap(other)
 {
 }
 
 // -----------------------------------------------------------------------------
-BiharmonicMap &BiharmonicMap::operator =(const BiharmonicMap &other)
+BiharmonicFundamentalMap &BiharmonicFundamentalMap::operator =(const BiharmonicFundamentalMap &other)
 {
-  HarmonicMap::operator =(other);
+  if (this != &other) {
+    HarmonicFundamentalMap::operator =(other);
+  }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-void BiharmonicMap::Initialize()
+void BiharmonicFundamentalMap::Initialize()
 {
-  // Initialize base class (skip HarmonicMap::Initialize)
-  VolumetricMap::Initialize();
+  // Initialize base class (skip HarmonicFundamentalMap::Initialize)
+  FundamentalMap::Initialize();
 
   // Check parameters
   if (_SourcePoints.Size() == 0) {
-    cerr << "HarmonicMap::Initialize: Set of source points is empty" << endl;
+    cerr << this->NameOfType() << "::Initialize: Set of source points is empty" << endl;
     exit(1);
   }
   if (_Coefficients.Rows() == 0 || _Coefficients.Cols() == 0) {
-    cerr << "HarmonicMap::Initialize: Coefficients not set" << endl;
+    cerr << this->NameOfType() << "::Initialize: Coefficients not set" << endl;
     exit(1);
   }
   if (_Coefficients.Rows() != 2 * _SourcePoints.Size()) {
-    cerr << "HarmonicMap::Initialize: Number of coefficients must be twice the number of source points" << endl;
+    cerr << this->NameOfType() << "::Initialize: Number of coefficients must be twice the number of source points" << endl;
     exit(1);
   }
 }
 
 // -----------------------------------------------------------------------------
-VolumetricMap *BiharmonicMap::NewCopy() const
+Mapping *BiharmonicFundamentalMap::NewCopy() const
 {
-  return new BiharmonicMap(*this);
+  return new BiharmonicFundamentalMap(*this);
 }
 
 // -----------------------------------------------------------------------------
-BiharmonicMap::~BiharmonicMap()
+BiharmonicFundamentalMap::~BiharmonicFundamentalMap()
 {
 }
 
@@ -85,7 +87,7 @@ BiharmonicMap::~BiharmonicMap()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-bool BiharmonicMap::Evaluate(double *v, double x, double y, double z) const
+bool BiharmonicFundamentalMap::Evaluate(double *v, double x, double y, double z) const
 {
   const int n = _SourcePoints.Size();
 
@@ -116,7 +118,7 @@ bool BiharmonicMap::Evaluate(double *v, double x, double y, double z) const
 }
 
 // -----------------------------------------------------------------------------
-double BiharmonicMap::Evaluate(double x, double y, double z, int l) const
+double BiharmonicFundamentalMap::Evaluate(double x, double y, double z, int l) const
 {
   const int n = _SourcePoints.Size();
 

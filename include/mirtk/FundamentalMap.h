@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 #ifndef MIRTK_FundamentalMap_H
 #define MIRTK_FundamentalMap_H
 
-#include "mirtk/VolumetricMap.h"
+#include "mirtk/Mapping.h"
 
 #include "mirtk/Math.h"
 #include "mirtk/Matrix.h"
@@ -36,9 +36,9 @@ class Cofstream;
 
 
 /**
- * Volumetric map defined as superposition of kernel functions
+ * Mapping defined as superposition of kernel functions
  */
-class FundamentalMap : public VolumetricMap
+class FundamentalMap : public Mapping
 {
   mirtkAbstractMacro(FundamentalMap);
 
@@ -50,21 +50,13 @@ private:
   /// Source points, i.e., centers of kernel functions
   mirtkPublicAttributeMacro(PointSet, SourcePoints);
 
-  /// Coefficients of volumetric map
+  /// Coefficients of the map
   ///
   /// The columns contain the source point weights for each scalar map.
   mirtkPublicAttributeMacro(Matrix, Coefficients);
 
   /// Copy attributes of this class from another instance
   void CopyAttributes(const FundamentalMap &);
-
-  // ---------------------------------------------------------------------------
-  // Auxiliaries
-
-protected:
-
-  /// \returns Constant value of \f$\pi\f$
-  static const double Pi();
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -89,19 +81,19 @@ public:
   virtual ~FundamentalMap();
 
   // ---------------------------------------------------------------------------
-  // Input domain
+  // Map domain
 
   // Import other overloads
-  using VolumetricMap::BoundingBox;
+  using Mapping::BoundingBox;
 
-  /// Get minimum axes-aligned bounding box of input domain
+  /// Get minimum axes-aligned bounding box of map domain
   ///
-  /// \param[out] x1 Lower bound of input domain along x axis.
-  /// \param[out] y1 Lower bound of input domain along y axis.
-  /// \param[out] z1 Lower bound of input domain along z axis.
-  /// \param[out] x2 Upper bound of input domain along x axis.
-  /// \param[out] y2 Upper bound of input domain along y axis.
-  /// \param[out] z2 Upper bound of input domain along z axis.
+  /// \param[out] x1 Lower bound of map domain along x axis.
+  /// \param[out] y1 Lower bound of map domain along y axis.
+  /// \param[out] z1 Lower bound of map domain along z axis.
+  /// \param[out] x2 Upper bound of map domain along x axis.
+  /// \param[out] y2 Upper bound of map domain along y axis.
+  /// \param[out] z2 Upper bound of map domain along z axis.
   virtual void BoundingBox(double &x1, double &y1, double &z1,
                            double &x2, double &y2, double &z2) const;
 
@@ -116,7 +108,7 @@ public:
   /// Get number of source points
   int NumberOfSourcePoints() const;
 
-  /// Dimension of output domain, i.e., number of output values
+  /// Dimension of codomain, i.e., number of output values
   virtual int NumberOfComponents() const;
 
   // ---------------------------------------------------------------------------
@@ -124,10 +116,10 @@ public:
 
 protected:
 
-  /// Read attributes of volumetric map from file stream
+  /// Read map attributes and parameters from file stream
   virtual void ReadMap(Cifstream &);
 
-  /// Write attributes of volumetric map to file stream
+  /// Write map attributes and parameters to file stream
   virtual void WriteMap(Cofstream &) const;
 
 };
@@ -158,12 +150,6 @@ inline bool FundamentalMap::AddSourcePoint(double p[3], double tol)
 inline int FundamentalMap::NumberOfSourcePoints() const
 {
   return _SourcePoints.Size();
-}
-
-// -----------------------------------------------------------------------------
-inline const double FundamentalMap::Pi()
-{
-  return 3.1415926535897932384626433832795028841971693993751;
 }
 
 

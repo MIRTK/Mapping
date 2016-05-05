@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,8 @@
 namespace mirtk {
 
 
-// Global "debug" flag (cf. mirtk/Options.h)
+// Global flags (cf. mirtk/Options.h)
+MIRTK_Common_EXPORT extern int verbose;
 MIRTK_Common_EXPORT extern int debug;
 
 
@@ -65,7 +66,7 @@ struct ComputeResidualMap
 {
   vtkPoints     *_BoundarySet;
   vtkDataArray  *_BoundaryMap;
-  VolumetricMap *_OutputMap;
+  Mapping       *_OutputMap;
   vtkDataArray  *_ResidualMap;
   int            _OutputDimension;
   double         _SquaredError;
@@ -264,7 +265,10 @@ void FundamentalVolumeParameterizer::UpdateBoundary(vtkPolyData *boundary)
 void FundamentalVolumeParameterizer::PlaceBoundaryPoints()
 {
   mirtkAssert(_Boundary != NULL, "input boundary surface is initialized");
-  cout << "Place boundary points...", cout.flush();
+
+  if (verbose) {
+    cout << "Place boundary points...", cout.flush();
+  }
 
   // Discard all data arrays
   vtkSmartPointer<vtkPolyData> boundary;
@@ -304,15 +308,22 @@ void FundamentalVolumeParameterizer::PlaceBoundaryPoints()
   decimate->Update();
 
   this->UpdateBoundary(decimate->GetOutput());
+
   if (debug) WritePolyData("boundary_surface.vtp", _Boundary);
-  cout << " done: N_c = " << _Boundary->GetNumberOfPoints() << endl;
+
+  if (verbose) {
+    cout << " done: N_c = " << _Boundary->GetNumberOfPoints() << endl;
+  }
 }
 
 // -----------------------------------------------------------------------------
 void FundamentalVolumeParameterizer::PlaceSourcePoints()
 {
   mirtkAssert(_Boundary != NULL, "input boundary surface is initialized");
-  cout << "Place source points...", cout.flush();
+
+  if (verbose) {
+    cout << "Place source points...", cout.flush();
+  }
 
   // Compute input surface bounds
   double bounds[6];
@@ -430,7 +441,10 @@ void FundamentalVolumeParameterizer::PlaceSourcePoints()
   _OffsetPointLocator->BuildLocator();
 
   if (debug) WritePolyData("offset_surface.vtp", _OffsetSurface);
-  cout << " done: N_s = " << _OffsetSurface->GetNumberOfPoints() << endl;
+
+  if (verbose) {
+    cout << " done: N_s = " << _OffsetSurface->GetNumberOfPoints() << endl;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -492,7 +506,7 @@ double FundamentalVolumeParameterizer::UpdateResidualMap(double *min, double *ma
 // -----------------------------------------------------------------------------
 void FundamentalVolumeParameterizer::Initialize()
 {
-  cout << endl;
+  if (verbose) cout << endl;
 
   // Initialize base class
   VolumeParameterizer::Initialize();
@@ -531,16 +545,21 @@ void FundamentalVolumeParameterizer::Parameterize()
   alpha = .015;
 
   // Compute initial error
-  cout << "Initialize residual boundary map...", cout.flush();
+  if (verbose) {
+    cout << "Initialize residual boundary map...";
+    cout.flush();
+  }
   error = this->UpdateResidualMap(&min_error, &max_error, &std_error);
-  cout << " done\nBoundary fitting error (MSE) = " << error
-            << " (+/-" << std_error << "), range = ["
-            << min_error << ", " << max_error << "]" << endl;
+  if (verbose) {
+    cout << " done\nBoundary fitting error (MSE) = " << error
+         << " (+/-" << std_error << "), range = ["
+         << min_error << ", " << max_error << "]" << endl;
+  }
 
   // Iteratively approximate volumetric map
   for (int iter = 0; iter < _NumberOfIterations; ++iter) {
 
-    cout << "\nIteration " << (iter+1) << endl;
+    if (verbose) cout << "\nIteration " << (iter+1) << endl;
 
     // Evenly partition set of source points
     this->PartitionSourcePoints();
@@ -548,7 +567,9 @@ void FundamentalVolumeParameterizer::Parameterize()
     // Perform boundary fitting for each subset
     for (int k = 0; k < NumberOfSourcePointSets(); ++k) {
 
-      cout << "Source points subset " << (k+1) << " out of " << NumberOfSourcePointSets() << endl;
+      if (verbose) {
+        cout << "Source points subset " << (k+1) << " out of " << NumberOfSourcePointSets() << endl;
+      }
 
       // Get linear system of unregularized boundary fitting problem
       this->GetCoefficients(k, A);
@@ -576,13 +597,15 @@ void FundamentalVolumeParameterizer::Parameterize()
 
       // Compute singular values of coefficients matrix
       if (alpha == .0) {
-        cout << "Compute singular values...", cout.flush();
+        if (verbose) cout << "Compute singular values...", cout.flush();
         SVD svd(MatrixToEigen(A));
         sigma = svd.singularValues();
         alpha = sigma(0) / (_MaximumConditionNumber - 1.0);
-        cout << " done\nmax(sigma) = " << sigma(0)
-                  << ", alpha = " << alpha
-                  << ", cond(A) = " << ((alpha + sigma(0)) / alpha) << endl;
+        if (verbose) {
+          cout << " done\nmax(sigma) = " << sigma(0)
+               << ", alpha = " << alpha
+               << ", cond(A) = " << ((alpha + sigma(0)) / alpha) << endl;
+        }
       }
 
       // Add regularization weight to diagonal matrix elements
@@ -591,22 +614,24 @@ void FundamentalVolumeParameterizer::Parameterize()
       }
 
       // Solve linear system using LU decomposition
-      cout << "Solve linear system using LU decomposition...", cout.flush();
+      if (verbose) cout << "Solve linear system using LU decomposition...", cout.flush();
       x = EigenToMatrix(MatrixToEigen(A).partialPivLu().solve(MatrixToEigen(b)));
-      cout << " done" << endl;
+      if (verbose) cout << " done" << endl;
 
       // Add solution to volumetric map
-      cout << "Add solution to harmonic map...", cout.flush();
+      if (verbose) cout << "Add solution to harmonic map...", cout.flush();
       this->AddWeights(k, x);
-      cout << " done" << endl;
+      if (verbose) cout << " done" << endl;
 
       // Update residual boundary map
-      cout << "Update residual boundary map...", cout.flush();
+      if (verbose) cout << "Update residual boundary map...", cout.flush();
       error = this->UpdateResidualMap(&min_error, &max_error, &std_error);
-      cout << " done" << endl;
-      cout << "Boundary fitting error (MSE) = " << error
-                << " (+/-" << std_error << "), range = ["
-                << min_error << ", " << max_error << "]" << endl;
+      if (verbose) {
+        cout << " done" << endl;
+        cout << "Boundary fitting error (MSE) = " << error
+             << " (+/-" << std_error << "), range = ["
+             << min_error << ", " << max_error << "]" << endl;
+      }
 
       // TODO: Remove source points with insignificant contribution
       //       if possible as done in (Li et al., 2010) and also mentioned
@@ -617,7 +642,7 @@ void FundamentalVolumeParameterizer::Parameterize()
 
     // Insert new source points by projecting boundary points with
     // high residual error onto the offset surface (cf. Xu et al., 2013)
-    cout << "Insert new source points...", cout.flush();
+    if (verbose) cout << "Insert new source points...", cout.flush();
     const int n = NumberOfSourcePoints();
     for (vtkIdType ptId = 0; ptId < _Boundary->GetNumberOfPoints(); ++ptId) {
       _ResidualMap->GetTuple(ptId, df);
@@ -627,8 +652,10 @@ void FundamentalVolumeParameterizer::Parameterize()
         this->AddSourcePoint(q);
       }
     }
-    cout << " done: #points = " << NumberOfSourcePoints()
-              << " (+" << (NumberOfSourcePoints() - n) << ")" << endl;
+    if (verbose) {
+      cout << " done: #points = " << NumberOfSourcePoints()
+           << " (+" << (NumberOfSourcePoints() - n) << ")" << endl;
+    }
   }
 
   delete[] df;

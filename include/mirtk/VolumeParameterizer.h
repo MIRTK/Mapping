@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 
 #include "mirtk/Object.h"
 
-#include "mirtk/VolumetricMap.h"
+#include "mirtk/Mapping.h"
 
 #include "vtkSmartPointer.h"
 #include "vtkPointSet.h"
@@ -56,9 +56,11 @@ class VolumeParameterizer : public Object
   /// Boundary surface map
   mirtkAttributeMacro(vtkSmartPointer<vtkDataArray>, BoundaryMap);
 
-  /// Volumetric output map
-  /// \note The output map is uninitialized!
-  mirtkReadOnlyComponentMacro(VolumetricMap, OutputMap);
+  /// Volumetric map
+  ///
+  /// \note The output map is uninitialized! Mapping::Initialize must be
+  ///       called before this map can be evaluated at map domain points.
+  mirtkReadOnlyComponentMacro(Mapping, OutputMap);
 
   /// Copy attributes of this class from another instance
   void CopyAttributes(const VolumeParameterizer &);
@@ -82,14 +84,14 @@ public:
   /// Destructor
   virtual ~VolumeParameterizer();
 
-  /// Dimension of output domain of volumetric map
+  /// Dimension of codomain of volumetric map
   int OutputDimension() const;
 
-  /// Get volumetric output map and set _OutputMap to NULL
+  /// Get volumetric map and set _OutputMap to nullptr
   ///
   /// \note The returned object has to be deleted by the caller.
   ///       Use OutputMap() instead to keep ownership with this class.
-  VolumetricMap *GetOutputMap();
+  Mapping *GetOutputMap();
 
   // ---------------------------------------------------------------------------
   // Execution
@@ -124,10 +126,10 @@ inline int VolumeParameterizer::OutputDimension() const
 }
 
 // -----------------------------------------------------------------------------
-inline VolumetricMap *VolumeParameterizer::GetOutputMap()
+inline Mapping *VolumeParameterizer::GetOutputMap()
 {
-  VolumetricMap *map = _OutputMap;
-  _OutputMap = NULL;
+  Mapping *map = _OutputMap;
+  _OutputMap = nullptr;
   return map;
 }
 

@@ -1,8 +1,8 @@
 # ============================================================================
 # Medical Image Registration ToolKit (MIRTK)
 #
-# Copyright 2013-2015 Imperial College London
-# Copyright 2013-2015 Andreas Schuh
+# Copyright 2013-2016 Imperial College London
+# Copyright 2013-2016 Andreas Schuh
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,33 +24,41 @@
 
 set(HEADERS
   ${BINARY_INCLUDE_DIR}/mirtk/${PROJECT_NAME}Export.h
-  AsConformalAsPossibleVolumeParameterizer.h
-  BiharmonicMap.h
-  DiscreteMap.h
+  # Mappings
+  Mapping.h
+  PiecewiseLinearMap.h
   FundamentalMap.h
-  FundamentalVolumeParameterizer.h
-  HarmonicFundamentalVolumeParameterizer.h
-  HarmonicMap.h
-  HarmonicTetrahedralVolumeParameterizer.h
-  LinearTetrahedralVolumeParameterizer.h
-  TetrahedralVolumeParameterizer.h
+  HarmonicFundamentalMap.h
+  BiharmonicFundamentalMap.h
+  # Surface mapping
+  # ...
+  # Volumetric mapping
   VolumeParameterizer.h
-  VolumetricMap.h
+  TetrahedralVolumeParameterizer.h
+  LinearTetrahedralVolumeParameterizer.h
+  FundamentalVolumeParameterizer.h
+  HarmonicTetrahedralVolumeParameterizer.h
+  HarmonicFundamentalVolumeParameterizer.h
+  AsConformalAsPossibleVolumeParameterizer.h
 )
 
 set(SOURCES
-  AsConformalAsPossibleVolumeParameterizer.cc
-  BiharmonicMap.cc
-  DiscreteMap.cc
+  # Mappings
+  Mapping.cc
+  PiecewiseLinearMap.cc
   FundamentalMap.cc
-  FundamentalVolumeParameterizer.cc
-  HarmonicFundamentalVolumeParameterizer.cc
-  HarmonicMap.cc
-  HarmonicTetrahedralVolumeParameterizer.cc
-  LinearTetrahedralVolumeParameterizer.cc
-  TetrahedralVolumeParameterizer.cc
+  HarmonicFundamentalMap.cc
+  BiharmonicFundamentalMap.cc
+  # Surface mapping
+  # ...
+  # Volumetric mapping
   VolumeParameterizer.cc
-  VolumetricMap.cc
+  TetrahedralVolumeParameterizer.cc
+  LinearTetrahedralVolumeParameterizer.cc
+  FundamentalVolumeParameterizer.cc
+  HarmonicTetrahedralVolumeParameterizer.cc
+  HarmonicFundamentalVolumeParameterizer.cc
+  AsConformalAsPossibleVolumeParameterizer.cc
 )
 
 set(DEPENDS

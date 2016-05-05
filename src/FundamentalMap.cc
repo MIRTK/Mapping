@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ FundamentalMap::FundamentalMap()
 // -----------------------------------------------------------------------------
 FundamentalMap::FundamentalMap(const FundamentalMap &other)
 :
-  VolumetricMap(other)
+  Mapping(other)
 {
   CopyAttributes(other);
 }
@@ -52,7 +52,7 @@ FundamentalMap::FundamentalMap(const FundamentalMap &other)
 FundamentalMap &FundamentalMap::operator =(const FundamentalMap &other)
 {
   if (this != &other) {
-    VolumetricMap::operator =(other);
+    Mapping::operator =(other);
     CopyAttributes(other);
   }
   return *this;
@@ -62,19 +62,19 @@ FundamentalMap &FundamentalMap::operator =(const FundamentalMap &other)
 void FundamentalMap::Initialize()
 {
   // Initialize base class
-  VolumetricMap::Initialize();
+  Mapping::Initialize();
 
   // Check parameters
   if (_SourcePoints.Size() == 0) {
-    cerr << "FundamentalMap::Initialize: Set of source points is empty" << endl;
+    cerr << this->NameOfType() << "::Initialize: Set of source points is empty" << endl;
     exit(1);
   }
   if (_Coefficients.Rows() == 0 || _Coefficients.Cols() == 0) {
-    cerr << "FundamentalMap::Initialize: Coefficients not set" << endl;
+    cerr << this->NameOfType() << "::Initialize: Coefficients not set" << endl;
     exit(1);
   }
   if (_Coefficients.Rows() != _SourcePoints.Size()) {
-    cerr << "FundamentalMap::Initialize: Number of coefficients must be equal number of source points" << endl;
+    cerr << this->NameOfType() << "::Initialize: Number of coefficients must be equal number of source points" << endl;
     exit(1);
   }
 }

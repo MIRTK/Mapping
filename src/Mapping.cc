@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MMIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,14 @@
  * limitations under the License.
  */
 
-#include "mirtk/VolumetricMap.h"
+#include "mirtk/Mapping.h"
 
 #include "mirtk/Config.h" // WINDOWWS
 #include "mirtk/Math.h"
+#include "mirtk/Memory.h"
 #include "mirtk/Cfstream.h"
 #include "mirtk/BaseImage.h"
 #include "mirtk/VoxelFunction.h"
-#include "mirtk/DiscreteMap.h"
-#include "mirtk/HarmonicMap.h"
-#include "mirtk/BiharmonicMap.h"
 #include "mirtk/PointSetUtils.h"
 
 #include "vtkSmartPointer.h"
@@ -35,31 +33,64 @@
 #include "vtkImageData.h"
 
 
+#include "mirtk/PiecewiseLinearMap.h"
+#include "mirtk/HarmonicFundamentalMap.h"
+#include "mirtk/BiharmonicFundamentalMap.h"
+
+
 namespace mirtk {
 
+// =============================================================================
+// Factory method
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+Mapping *Mapping::New(const char *fname)
+{
+  unique_ptr<Mapping> map;
+
+  const size_t max_name_len = 32;
+  char         map_type_name[max_name_len];
+
+  Cifstream is(fname);
+  is.ReadAsChar(map_type_name, max_name_len);
+
+  if (strncmp(map_type_name, HarmonicFundamentalMap::NameOfType(), max_name_len) == 0) {
+    map.reset(new HarmonicFundamentalMap());
+  } else if (strncmp(map_type_name, BiharmonicFundamentalMap::NameOfType(), max_name_len) == 0) {
+    map.reset(new BiharmonicFundamentalMap());
+  } else {
+    // Note that a picewise linear map is stored using a VTK file format and
+    // therefore the map file contains no "mirtk::PiecewiseLinearMap" header.
+    map.reset(new PiecewiseLinearMap());
+  }
+
+  map->Read(fname);
+  return map.release();
+}
 
 // =============================================================================
 // Auxiliary functors
 // =============================================================================
 
-namespace VolumetricMapUtils {
+namespace MappingUtils {
 
 
 // -----------------------------------------------------------------------------
-/// Evaluate volumetric map at lattice points
+/// Evaluate map at lattice points
 class EvaluateMap : public VoxelFunction
 {
-  const VolumetricMap *_Map;
-  vtkImageData        *_Domain;
-  const BaseImage     *_Output;
-  const int            _NumberOfVoxels;
-  const int            _l1, _l2;
+  const Mapping   *_Map;
+  vtkImageData    *_Domain;
+  const BaseImage *_Output;
+  const int        _NumberOfVoxels;
+  const int        _l1, _l2;
 
 public:
 
-  EvaluateMap(const VolumetricMap *map,
-              vtkImageData        *domain,
-              const BaseImage     *output,
+  EvaluateMap(const Mapping   *map,
+              vtkImageData    *domain,
+              const BaseImage *output,
               int l1, int l2)
   :
     _Map(map),
@@ -90,51 +121,28 @@ public:
 };
 
 
-} // namespace VolumetricMapUtils
-using namespace VolumetricMapUtils;
+} // namespace MappingUtils
+using namespace MappingUtils;
 
 // =============================================================================
 // Construction/Destruction
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-VolumetricMap *VolumetricMap::New(const char *fname)
-{
-  VolumetricMap *map = NULL;
-
-  const size_t max_name_len = 32;
-  char         map_type_name[max_name_len];
-
-  Cifstream is(fname);
-  is.ReadAsChar(map_type_name, max_name_len);
-
-  if (strncmp(map_type_name, HarmonicMap::NameOfType(), max_name_len) == 0) {
-    map = new HarmonicMap();
-  } else if (strncmp(map_type_name, BiharmonicMap::NameOfType(), max_name_len) == 0) {
-    map = new BiharmonicMap();
-  } else {
-    map = new DiscreteMap();
-  }
-
-  map->Read(fname);
-  return map;
-}
-
-// -----------------------------------------------------------------------------
-void VolumetricMap::CopyAttributes(const VolumetricMap &other)
+void Mapping::CopyAttributes(const Mapping &other)
 {
   _OutsideValue = other._OutsideValue;
 }
 
 // -----------------------------------------------------------------------------
-VolumetricMap::VolumetricMap()
+Mapping::Mapping()
 :
   _OutsideValue(numeric_limits<double>::quiet_NaN())
 {
 }
 
 // -----------------------------------------------------------------------------
-VolumetricMap::VolumetricMap(const VolumetricMap &other)
+Mapping::Mapping(const Mapping &other)
 :
   Object(other)
 {
@@ -142,7 +150,7 @@ VolumetricMap::VolumetricMap(const VolumetricMap &other)
 }
 
 // -----------------------------------------------------------------------------
-VolumetricMap &VolumetricMap::operator =(const VolumetricMap &other)
+Mapping &Mapping::operator =(const Mapping &other)
 {
   if (this != &other) {
     Object::operator =(other);
@@ -152,24 +160,33 @@ VolumetricMap &VolumetricMap::operator =(const VolumetricMap &other)
 }
 
 // -----------------------------------------------------------------------------
-void VolumetricMap::Initialize()
+void Mapping::Initialize()
 {
 }
 
 // -----------------------------------------------------------------------------
-VolumetricMap::~VolumetricMap()
+Mapping::~Mapping()
 {
 }
 
 // =============================================================================
-// Input domain
+// Map domain
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-ImageAttributes VolumetricMap::Attributes(int nx, int ny, int nz) const
+ImageAttributes Mapping::Attributes(int nx, int ny, int nz) const
 {
-  if (ny <= 0) ny = nx;
-  if (nz <= 0) nz = nx;
+  if (this->NumberOfArguments() >= 2) {
+    if (ny <= 0) ny = nx;
+  } else {
+    ny = 0;
+  }
+
+  if (this->NumberOfArguments() >= 3) {
+    if (nz <= 0) nz = nx;
+  } else {
+    nz = 0;
+  }
 
   double x1, y1, z1, x2, y2, z2;
   this->BoundingBox(x1, y1, z1, x2, y2, z2);
@@ -195,7 +212,7 @@ ImageAttributes VolumetricMap::Attributes(int nx, int ny, int nz) const
 }
 
 // -----------------------------------------------------------------------------
-ImageAttributes VolumetricMap::Attributes(double dx, double dy, double dz) const
+ImageAttributes Mapping::Attributes(double dx, double dy, double dz) const
 {
   double x1, y1, z1, x2, y2, z2;
   this->BoundingBox(x1, y1, z1, x2, y2, z2);
@@ -203,9 +220,21 @@ ImageAttributes VolumetricMap::Attributes(double dx, double dy, double dz) const
   const double ly = y2 - y1;
   const double lz = z2 - z1;
 
-  if (dx <= .0) dx = sqrt(lx*lx + ly*ly + lz*lz) / 256;
-  if (dy <= .0) dy = dx;
-  if (dz <= .0) dz = dx;
+  if (dx <= .0) {
+    dx = sqrt(lx*lx + ly*ly + lz*lz) / 256;
+  }
+
+  if (this->NumberOfArguments() >= 2) {
+    if (dy <= .0) dy = dx;
+  } else {
+    dy = 0;
+  }
+
+  if (this->NumberOfArguments() >= 3) {
+    if (dz <= .0) dz = dx;
+  } else {
+    dz = 0;
+  }
 
   ImageAttributes lattice;
   lattice._xorigin = x1 + .5 * lx;
@@ -229,40 +258,40 @@ ImageAttributes VolumetricMap::Attributes(double dx, double dy, double dz) const
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void VolumetricMap::Evaluate(GenericImage<float> &f, int l, vtkSmartPointer<vtkPointSet> domain) const
+void Mapping::Evaluate(GenericImage<float> &f, int l, vtkSmartPointer<vtkPointSet> m) const
 {
   ImageAttributes lattice = f.Attributes();
   lattice._dt = .0;
 
   if (l >= NumberOfComponents() || l + lattice._t > NumberOfComponents()) {
-    cerr << "VolumetricMap::Evaluate: Component index out of range" << endl;
+    cerr << this->NameOfType() << "::Evaluate: Component index out of range" << endl;
     exit(1);
   }
 
   vtkSmartPointer<vtkImageData> mask;
-  if (domain) {
+  if (m) {
     mask = NewVtkMask(lattice._x, lattice._y, lattice._z);
-    ImageStencilToMask(ImageStencil(mask, WorldToImage(domain, &f)), mask);
+    ImageStencilToMask(ImageStencil(mask, WorldToImage(m, &f)), mask);
   }
 
   ParallelForEachVoxel(EvaluateMap(this, mask, &f, l, l + lattice._t), lattice, f);
 }
 
 // -----------------------------------------------------------------------------
-void VolumetricMap::Evaluate(GenericImage<double> &f, int l, vtkSmartPointer<vtkPointSet> domain) const
+void Mapping::Evaluate(GenericImage<double> &f, int l, vtkSmartPointer<vtkPointSet> m) const
 {
   ImageAttributes lattice = f.Attributes();
   lattice._dt = .0;
 
   if (l >= NumberOfComponents() || l + lattice._t > NumberOfComponents()) {
-    cerr << "VolumetricMap::Evaluate: Component index out of range" << endl;
+    cerr << this->NameOfType() << "::Evaluate: Component index out of range" << endl;
     exit(1);
   }
 
   vtkSmartPointer<vtkImageData> mask;
-  if (domain) {
+  if (m) {
     mask = NewVtkMask(lattice._x, lattice._y, lattice._z);
-    ImageStencilToMask(ImageStencil(mask, WorldToImage(domain, &f)), mask);
+    ImageStencilToMask(ImageStencil(mask, WorldToImage(m, &f)), mask);
   }
 
   ParallelForEachVoxel(EvaluateMap(this, mask, &f, l, l + lattice._t), lattice, f);
@@ -273,7 +302,7 @@ void VolumetricMap::Evaluate(GenericImage<double> &f, int l, vtkSmartPointer<vtk
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-bool VolumetricMap::Read(const char *fname)
+bool Mapping::Read(const char *fname)
 {
   Cifstream is(fname);
   const size_t max_name_len = 32;
@@ -288,7 +317,7 @@ bool VolumetricMap::Read(const char *fname)
 }
 
 // -----------------------------------------------------------------------------
-bool VolumetricMap::Write(const char *fname) const
+bool Mapping::Write(const char *fname) const
 {
   Cofstream os(fname);
   const size_t max_name_len = 32;
@@ -304,14 +333,14 @@ bool VolumetricMap::Write(const char *fname) const
 }
 
 // -----------------------------------------------------------------------------
-void VolumetricMap::ReadMap(Cifstream &)
+void Mapping::ReadMap(Cifstream &)
 {
   cerr << this->NameOfClass() << "::ReadMap not implemented" << endl;
   exit(1);
 }
 
 // -----------------------------------------------------------------------------
-void VolumetricMap::WriteMap(Cofstream &) const
+void Mapping::WriteMap(Cofstream &) const
 {
   cerr << this->NameOfClass() << "::WriteMap not implemented" << endl;
   exit(1);

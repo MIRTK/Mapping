@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,10 @@
 
 
 namespace mirtk {
+
+
+// Global flags (cf. mirtk/Options.h)
+MIRTK_Common_EXPORT extern int verbose;
 
 
 // =============================================================================
@@ -319,20 +323,22 @@ void LinearTetrahedralVolumeParameterizer
   }
 
   // Build linear system
-  cout << "\nBuilding linear system...", cout.flush();
+  if (verbose) cout << "\nBuilding linear system...", cout.flush();
   LinearSystem<Scalar>::Build(this, mapop, A, b, n);
-  cout << " done" << endl;
+  if (verbose) cout << " done" << endl;
 
   // Solve linear system
-  cout << "Solve system using conjugate gradient descent...", cout.flush();
+  if (verbose) cout << "Solve system using conjugate gradient descent...", cout.flush();
   Eigen::ConjugateGradient<Matrix, Eigen::Upper|Eigen::Lower, Preconditioner> solver;
   solver.setMaxIterations(_NumberOfIterations);
   solver.setTolerance(_Tolerance);
   x = solver.compute(A).solveWithGuess(b, x);
-  cout << " done" << endl;
-
-  cout << "\nNo. of iterations = " << solver.iterations() << endl;
-  cout << "Estimated error   = "   << solver.error()      << endl;
+  if (verbose) {
+    cout << " done" << endl;
+    cout << "\nNo. of iterations = " << solver.iterations();
+    cout << "\nEstimated error   = " << solver.error();
+    cout << endl;
+  }
 
   // Update parameterization of interior points
   for (int i = 0, r = 0; i < _NumberOfInteriorPoints; ++i, r += dim) {

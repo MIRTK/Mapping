@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/HarmonicMap.h"
+#include "mirtk/HarmonicFundamentalMap.h"
 
 #include "mirtk/Point.h"
 
@@ -30,32 +30,34 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-HarmonicMap::HarmonicMap()
+HarmonicFundamentalMap::HarmonicFundamentalMap()
 {
 }
 
 // -----------------------------------------------------------------------------
-HarmonicMap::HarmonicMap(const HarmonicMap &other)
+HarmonicFundamentalMap::HarmonicFundamentalMap(const HarmonicFundamentalMap &other)
 :
   FundamentalMap(other)
 {
 }
 
 // -----------------------------------------------------------------------------
-HarmonicMap &HarmonicMap::operator =(const HarmonicMap &other)
+HarmonicFundamentalMap &HarmonicFundamentalMap::operator =(const HarmonicFundamentalMap &other)
 {
-  FundamentalMap::operator =(other);
+  if (this != &other) {
+    FundamentalMap::operator =(other);
+  }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-VolumetricMap *HarmonicMap::NewCopy() const
+Mapping *HarmonicFundamentalMap::NewCopy() const
 {
-  return new HarmonicMap(*this);
+  return new HarmonicFundamentalMap(*this);
 }
 
 // -----------------------------------------------------------------------------
-HarmonicMap::~HarmonicMap()
+HarmonicFundamentalMap::~HarmonicFundamentalMap()
 {
 }
 
@@ -64,7 +66,7 @@ HarmonicMap::~HarmonicMap()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-bool HarmonicMap::Evaluate(double *v, double x, double y, double z) const
+bool HarmonicFundamentalMap::Evaluate(double *v, double x, double y, double z) const
 {
   Point  p(x, y, z);
   double d, h;
@@ -91,7 +93,7 @@ bool HarmonicMap::Evaluate(double *v, double x, double y, double z) const
 }
 
 // -----------------------------------------------------------------------------
-double HarmonicMap::Evaluate(double x, double y, double z, int l) const
+double HarmonicFundamentalMap::Evaluate(double x, double y, double z, int l) const
 {
   Point p(x, y, z);
   double    d, v = .0;

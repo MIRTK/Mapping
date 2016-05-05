@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,21 @@
  * limitations under the License.
  */
 
-#include "mirtk/DiscreteMap.h"
+#include "mirtk/PiecewiseLinearMap.h"
+
+#include "mirtk/Vtk.h"
+#include "mirtk/Path.h"
 #include "mirtk/PointSetIO.h"
 
-#include "vtkSmartPointer.h"
+#include "vtkImageData.h"
 #include "vtkPointData.h"
 #include "vtkCellData.h"
 #include "vtkGenericCell.h"
 #include "vtkIdList.h"
 #include "vtkCellLocator.h"
+
+#include "vtkXMLImageDataWriter.h"
+#include "vtkXMLImageDataReader.h"
 
 
 namespace mirtk {
@@ -35,77 +41,75 @@ namespace mirtk {
 // Construction/Destruction
 // =============================================================================
 
-const double DiscreteMap::_Tolerance2 = 1e-9;
+const double PiecewiseLinearMap::_Tolerance2 = 1e-9;
 
 // -----------------------------------------------------------------------------
-void DiscreteMap::CopyAttributes(const DiscreteMap &other)
+void PiecewiseLinearMap::CopyAttributes(const PiecewiseLinearMap &other)
 {
-  _Input  = other._Input;
+  _Domain = other._Domain;
   _Values = other._Values;
 }
 
 // -----------------------------------------------------------------------------
-DiscreteMap::DiscreteMap()
+PiecewiseLinearMap::PiecewiseLinearMap()
 {
 }
 
 // -----------------------------------------------------------------------------
-DiscreteMap::DiscreteMap(const DiscreteMap &other)
+PiecewiseLinearMap::PiecewiseLinearMap(const PiecewiseLinearMap &other)
 :
-  VolumetricMap(other)
+  Mapping(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-DiscreteMap &DiscreteMap::operator =(const DiscreteMap &other)
+PiecewiseLinearMap &PiecewiseLinearMap::operator =(const PiecewiseLinearMap &other)
 {
   if (this != &other) {
-    VolumetricMap::operator =(other);
+    Mapping::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-void DiscreteMap::Initialize()
+void PiecewiseLinearMap::Initialize()
 {
   // Check input mesh
-  if (!_Input) {
-    cerr << "DiscreteMap::Initialize: No input mesh set" << endl;
+  if (!_Domain) {
+    cerr << this->NameOfType() << "::Initialize: No domain mesh set" << endl;
     exit(1);
   }
-  if (_Input->GetNumberOfCells() == 0) {
-    cerr << "DiscreteMap::Initialize: Input mesh has no cells" << endl;
+  if (_Domain->GetNumberOfCells() == 0) {
+    cerr << this->NameOfType() << "::Initialize: Domain mesh has no cells" << endl;
     exit(1);
   }
+  // Determine maximum number of cell points
+  _MaxCellSize = _Domain->GetMaxCellSize();
   // Get point data array if not set
+  vtkPointData *pd = _Domain->GetPointData();
+  if (!_Values) _Values = pd->GetTCoords();
+  if (!_Values) _Values = pd->GetVectors();
+  if (!_Values) _Values = pd->GetScalars();
   if (!_Values) {
-    if (_Input->GetPointData()->GetScalars()) {
-      _Values = _Input->GetPointData()->GetScalars();
-    } else if (_Input->GetPointData()->GetTCoords()) {
-      _Values = _Input->GetPointData()->GetTCoords();
-    } else if (_Input->GetPointData()->GetVectors()) {
-      _Values = _Input->GetPointData()->GetVectors();
-    } else {
-      cerr << "DiscreteMap::Initialize: Input mesh has neither SCALARS, VECTORS, nor TCOORDS as point data!" << endl;
-      exit(1);
-    }
+    cerr << this->NameOfType() << "::Initialize: Discrete map has neither TCOORDS, VECTORS, nor SCALARS as point data!" << endl;
+    exit(1);
   }
   // Build cell locator
   _Locator = vtkSmartPointer<vtkCellLocator>::New();
-  _Locator->SetDataSet(_Input);
+  _Locator->SetDataSet(_Domain);
   _Locator->BuildLocator();
 }
 
 // -----------------------------------------------------------------------------
-VolumetricMap *DiscreteMap::NewCopy() const
+Mapping *PiecewiseLinearMap::NewCopy() const
 {
-  return new DiscreteMap(*this);
+  return new PiecewiseLinearMap(*this);
 }
 
 // -----------------------------------------------------------------------------
-DiscreteMap::~DiscreteMap()
+PiecewiseLinearMap::~PiecewiseLinearMap()
 {
 }
 
@@ -114,12 +118,12 @@ DiscreteMap::~DiscreteMap()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void DiscreteMap::BoundingBox(double &x1, double &y1, double &z1,
-                                  double &x2, double &y2, double &z2) const
+void PiecewiseLinearMap::BoundingBox(double &x1, double &y1, double &z1,
+                                     double &x2, double &y2, double &z2) const
 {
-  if (_Input) {
+  if (_Domain) {
     double bounds[6];
-    _Input->GetBounds(bounds);
+    _Domain->GetBounds(bounds);
     x1 = bounds[0], x2 = bounds[1];
     y1 = bounds[2], y2 = bounds[3];
     z1 = bounds[4], z2 = bounds[5];
@@ -133,17 +137,17 @@ void DiscreteMap::BoundingBox(double &x1, double &y1, double &z1,
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-int DiscreteMap::NumberOfComponents() const
+int PiecewiseLinearMap::NumberOfComponents() const
 {
-  return _Values->GetNumberOfComponents();
+  return static_cast<int>(_Values->GetNumberOfComponents());
 }
 
 // -----------------------------------------------------------------------------
-bool DiscreteMap::Evaluate(double *v, double x, double y, double z) const
+bool PiecewiseLinearMap::Evaluate(double *v, double x, double y, double z) const
 {
   vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
   double p[3] = {x, y, z}, pcoords[3];
-  double *weight = new double[_Input->GetMaxCellSize()];
+  double *weight = new double[_MaxCellSize];
   if (_Locator->FindCell(p, _Tolerance2, cell, pcoords, weight) == -1) {
       for (int j = 0; j < _Values->GetNumberOfComponents(); ++j) {
         v[j] = _OutsideValue;
@@ -165,11 +169,11 @@ bool DiscreteMap::Evaluate(double *v, double x, double y, double z) const
 }
 
 // -----------------------------------------------------------------------------
-double DiscreteMap::Evaluate(double x, double y, double z, int l) const
+double PiecewiseLinearMap::Evaluate(double x, double y, double z, int l) const
 {
   vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
   double p[3] = {x, y, z}, pcoords[3];
-  double *weight = new double[_Input->GetMaxCellSize()];
+  double *weight = new double[_MaxCellSize];
   if (_Locator->FindCell(p, _Tolerance2, cell, pcoords, weight) == -1) {
       delete[] weight;
       return _OutsideValue;
@@ -188,12 +192,22 @@ double DiscreteMap::Evaluate(double x, double y, double z, int l) const
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-bool DiscreteMap::Read(const char *fname)
+bool PiecewiseLinearMap::Read(const char *fname)
 {
-  _Input = ReadPointSet(fname);
-  if (_Input->GetNumberOfPoints() == 0) return false;
-  if (_Input->GetPointData()->GetNumberOfArrays() == 1) {
-    _Values = _Input->GetPointData()->GetArray(0);
+  const string ext = Extension(fname);
+  _Domain = nullptr;
+  if (ext != ".vti") {
+    _Domain = ReadPointSet(fname, nullptr, false);
+  }
+  if (_Domain == nullptr || _Domain->GetNumberOfPoints() == 0) {
+    vtkNew<vtkXMLImageDataReader> reader;
+    reader->SetFileName(fname);
+    reader->Update();
+    _Domain = reader->GetOutput();
+  }
+  if (_Domain->GetNumberOfPoints() == 0) return false;
+  if (_Domain->GetPointData()->GetNumberOfArrays() == 1) {
+    _Values = _Domain->GetPointData()->GetArray(0);
   } else {
     _Values = NULL;
   }
@@ -202,11 +216,11 @@ bool DiscreteMap::Read(const char *fname)
 }
 
 // -----------------------------------------------------------------------------
-bool DiscreteMap::Write(const char *fname) const
+bool PiecewiseLinearMap::Write(const char *fname) const
 {
-  vtkSmartPointer<vtkPointSet> output;
-  output = vtkSmartPointer<vtkPointSet>::NewInstance(_Input);
-  output->ShallowCopy(_Input);
+  vtkSmartPointer<vtkDataSet> output;
+  output = vtkSmartPointer<vtkDataSet>::NewInstance(_Domain);
+  output->ShallowCopy(_Domain);
   output->GetCellData ()->Initialize();
   output->GetPointData()->Initialize();
   if (_Values->GetNumberOfComponents() == 1) {
@@ -216,7 +230,14 @@ bool DiscreteMap::Write(const char *fname) const
   } else {
     output->GetPointData()->AddArray(_Values);
   }
-  return WritePointSet(fname, output);
+  vtkPointSet *pointset = vtkPointSet::SafeDownCast(output);
+  if (pointset) {
+    return WritePointSet(fname, pointset);
+  }
+  vtkNew<vtkXMLImageDataWriter> writer;
+  writer->SetFileName(fname);
+  SetVTKInput(writer, output);
+  return writer->Write() == 0 ? true : false;
 }
 
 

@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
 #include "mirtk/GenericImage.h"
 #include "mirtk/GradientImageFilter.h"
 
-#include "mirtk/DiscreteMap.h"
+#include "mirtk/PiecewiseLinearMap.h"
 #include "mirtk/HarmonicTetrahedralVolumeParameterizer.h"
 #include "mirtk/HarmonicFundamentalVolumeParameterizer.h"
 //#include "mirtk/BiharmonicFundamentalVolumeParameterizer.h"
@@ -266,13 +266,13 @@ vtkSmartPointer<vtkDataArray> BoundaryMap(vtkSmartPointer<vtkPointSet> target,
 
 // -----------------------------------------------------------------------------
 /// Parameterize interior of target point set
-VolumetricMap *ComputeVolumetricMap(vtkSmartPointer<vtkPointSet>  target,
-                                    vtkSmartPointer<vtkDataArray> boundary_map,
-                                    vtkSmartPointer<vtkDataArray> boundary_mask,
-                                    MapType                       type,
-                                    int                           no_of_iterations)
+Mapping *ComputeVolumetricMap(vtkSmartPointer<vtkPointSet>  target,
+                              vtkSmartPointer<vtkDataArray> boundary_map,
+                              vtkSmartPointer<vtkDataArray> boundary_mask,
+                              MapType                       type,
+                              int                           no_of_iterations)
 {
-  VolumetricMap *map = NULL;
+  Mapping *map = nullptr;
   if (type == MAP_Harmonic) {
     if (IsTetrahedralMesh(target)) type = MAP_HarmonicFEM;
     else                           type = MAP_HarmonicMFS;
@@ -514,8 +514,8 @@ int NumberOfPointsOutside(const GenericImage<Real>     &map,
 
 // -----------------------------------------------------------------------------
 /// Compute distance of each mapped point to the output domain boundary
-vtkSmartPointer<vtkPointSet> DistanceField(const DiscreteMap           *map,
-                                           vtkSmartPointer<vtkPointSet> source)
+vtkSmartPointer<vtkDataSet> DistanceField(const PiecewiseLinearMap    *map,
+                                          vtkSmartPointer<vtkPointSet> source)
 {
   vtkSmartPointer<vtkPolyData> surface = DataSetSurface(source);
 
@@ -526,11 +526,11 @@ vtkSmartPointer<vtkPointSet> DistanceField(const DiscreteMap           *map,
   vtkSmartPointer<vtkDataArray> darray = vtkSmartPointer<vtkFloatArray>::New();
   darray->SetName("Distance");
   darray->SetNumberOfComponents(1);
-  darray->SetNumberOfTuples(map->Input()->GetNumberOfPoints());
+  darray->SetNumberOfTuples(map->Domain()->GetNumberOfPoints());
 
-  vtkSmartPointer<vtkPointSet> dfield;
-  dfield = vtkSmartPointer<vtkPointSet>::NewInstance(map->Input());
-  dfield->ShallowCopy(map->Input());
+  vtkSmartPointer<vtkDataSet> dfield;
+  dfield = vtkSmartPointer<vtkDataSet>::NewInstance(map->Domain());
+  dfield->ShallowCopy(map->Domain());
   dfield->GetPointData()->Initialize();
   dfield->GetPointData()->SetScalars(darray);
 
@@ -659,8 +659,8 @@ int main(int argc, char *argv[])
 
     // Read input volumetric map
     if (verbose) cout << "Read volumetric map from " << volumetric_map_name << "...", cout.flush();
-    unique_ptr<VolumetricMap> map(VolumetricMap::New(volumetric_map_name));
-    DiscreteMap *dmap = dynamic_cast<DiscreteMap *>(map.get());
+    unique_ptr<Mapping> map(Mapping::New(volumetric_map_name));
+    PiecewiseLinearMap *dmap = dynamic_cast<PiecewiseLinearMap *>(map.get());
     if (verbose) cout << " done" << endl;
 
     if (target && output_name) {
@@ -744,8 +744,12 @@ int main(int argc, char *argv[])
 
     // Evaluate distance of mapped points to output domain boundary
     if (distance_name) {
+      vtkSmartPointer<vtkPointSet> dfield;
       if (dmap) {
-        vtkSmartPointer<vtkPointSet> dfield = DistanceField(dmap, source);
+        vtkSmartPointer<vtkDataSet> dists = DistanceField(dmap, source);
+        dfield = vtkPointSet::SafeDownCast(dists);
+      }
+      if (dfield) {
         if (!WritePointSet(distance_name, dfield)) {
           cerr << "Error: Failed to write mapped distance field to " << distance_name << endl;
           exit(1);
@@ -904,8 +908,7 @@ int main(int argc, char *argv[])
     }
     // Compute volumetric map given boundary map
     if (boundary_map) {
-      unique_ptr<VolumetricMap> map;
-      map.reset(ComputeVolumetricMap(target, boundary_map, boundary_mask, output_map_type, no_of_iterations));
+      unique_ptr<Mapping> map(ComputeVolumetricMap(target, boundary_map, boundary_mask, output_map_type, no_of_iterations));
       if (write_volumetric_map) {
         if (!map->Write(output_name)) {
           cerr << "Error: Failed to write volumetric map to " << output_name << endl;

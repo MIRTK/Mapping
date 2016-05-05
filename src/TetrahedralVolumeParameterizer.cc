@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MMIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 
 #include "mirtk/Vtk.h"
 #include "mirtk/PointSetUtils.h"
-#include "mirtk/DiscreteMap.h"
+#include "mirtk/PiecewiseLinearMap.h"
 
 #include "vtkSmartPointer.h"
 #include "vtkPointSet.h"
@@ -147,9 +147,9 @@ void TetrahedralVolumeParameterizer::Initialize()
 // -----------------------------------------------------------------------------
 void TetrahedralVolumeParameterizer::Finalize()
 {
-  // Create volumetric output map
-  DiscreteMap *map = new DiscreteMap();
-  map->Input (_Volume);
+  // Create output map
+  PiecewiseLinearMap *map = new PiecewiseLinearMap();
+  map->Domain(_Volume);
   map->Values(_Coords);
   _OutputMap = map;
 

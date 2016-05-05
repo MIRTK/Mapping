@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ namespace mirtk {
 
 
 /**
- * As-conformal-as-possible (ACAP) discrete volumetric map
+ * Compute as-conformal-as-possible (ACAP) piecewise linear volumetric map
  *
  * Paillé & Poulin (2012), As-conformal-as-possible discrete volumetric mapping,
  * Computers and Graphics (Pergamon), 36(5), 427–433. doi:10.1016/j.cag.2012.03.014

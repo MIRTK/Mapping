@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2015 Imperial College London
- * Copyright 2013-2015 Andreas Schuh
+ * Copyright 2013-2016 Imperial College London
+ * Copyright 2013-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,12 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_HarmonicMap_H
-#define MIRTK_HarmonicMap_H
+#ifndef MIRTK_HarmonicFundamentalMap_H
+#define MIRTK_HarmonicFundamentalMap_H
 
 #include "mirtk/FundamentalMap.h"
 
+#include "mirtk/Math.h"
 #include "mirtk/PointSet.h"
 #include "mirtk/Vector.h"
 
@@ -30,11 +31,14 @@ namespace mirtk {
 
 
 /**
- * Harmonic volumetric map
+ * Harmonic map computed with the method of fundamental solutions (MFS)
+ *
+ * Li et al. (2009). Meshless harmonic volumetric mapping using fundamental solution methods.
+ * IEEE Transactions on Automation Science and Engineering, 6(3), 409–422.
  */
-class HarmonicMap : public FundamentalMap
+class HarmonicFundamentalMap : public FundamentalMap
 {
-  mirtkObjectMacro(HarmonicMap);
+  mirtkObjectMacro(HarmonicFundamentalMap);
 
 public:
 
@@ -52,19 +56,19 @@ public:
   // Construction/Destruction
 
   /// Default constructor
-  HarmonicMap();
+  HarmonicFundamentalMap();
 
   /// Copy constructor
-  HarmonicMap(const HarmonicMap &);
+  HarmonicFundamentalMap(const HarmonicFundamentalMap &);
 
   /// Assignment operator
-  HarmonicMap &operator =(const HarmonicMap &);
+  HarmonicFundamentalMap &operator =(const HarmonicFundamentalMap &);
 
   /// Make deep copy of this volumetric map
-  virtual VolumetricMap *NewCopy() const;
+  virtual Mapping *NewCopy() const;
 
   /// Destructor
-  virtual ~HarmonicMap();
+  virtual ~HarmonicFundamentalMap();
 
   // ---------------------------------------------------------------------------
   // Evaluation
@@ -72,24 +76,25 @@ public:
   // Import other overloads
   using FundamentalMap::Evaluate;
 
-  /// Evaluate vector-valued volumetric map at the given point
+  /// Evaluate map at a given point
   ///
-  /// \param[out] v Value of volumetric map.
-  /// \param[in]  x Coordinate of point at which to evaluate volumetric map.
-  /// \param[in]  y Coordinate of point at which to evaluate volumetric map.
-  /// \param[in]  z Coordinate of point at which to evaluate volumetric map.
+  /// \param[out] v Map value.
+  /// \param[in]  x Coordinate of point along x axis at which to evaluate map.
+  /// \param[in]  y Coordinate of point along y axis at which to evaluate map.
+  /// \param[in]  z Coordinate of point along z axis at which to evaluate map.
   ///
-  /// \returns Whether input point is within input domain.
+  /// \returns Whether input point is inside map domain.
   virtual bool Evaluate(double *v, double x, double y, double z = 0) const;
 
-  /// Evaluate scalar volumetric map at the given point
+  /// Evaluate map at a given point
   ///
-  /// \param[in] x Coordinate of point at which to evaluate volumetric map.
-  /// \param[in] y Coordinate of point at which to evaluate volumetric map.
-  /// \param[in] z Coordinate of point at which to evaluate volumetric map.
-  /// \param[in] l Index of scalar volumetric map component.
+  /// \param[in] x Coordinate of point along x axis at which to evaluate map.
+  /// \param[in] y Coordinate of point along y axis at which to evaluate map.
+  /// \param[in] z Coordinate of point along z axis at which to evaluate map.
+  /// \param[in] l Index of map value component.
   ///
-  /// \returns Scalar value of volumetric map.
+  /// \returns The l-th component of the map value evaluated at the given point
+  ///          or the \c OutsideValue when input point is outside the map domain.
   virtual double Evaluate(double x, double y, double z = 0, int l = 0) const;
 
 };
@@ -99,12 +104,12 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 // -----------------------------------------------------------------------------
-inline double HarmonicMap::H(double d)
+inline double HarmonicFundamentalMap::H(double d)
 {
-  return .25 / (d * Pi());
+  return .25 / (d * pi);
 }
 
 
 } // namespace mirtk
 
-#endif // MIRTK_HarmonicMap_H
+#endif // MIRTK_HarmonicFundamentalMap_H
