@@ -23,7 +23,7 @@
 ##############################################################################
 
 set(HEADERS
-  ${BINARY_INCLUDE_DIR}/mirtk/VolumetricMappingExport.h
+  ${BINARY_INCLUDE_DIR}/mirtk/${PROJECT_NAME}Export.h
   AsConformalAsPossibleVolumeParameterizer.h
   BiharmonicMap.h
   DiscreteMap.h
