@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/FundamentalVolumeParameterizer.h"
+#include "mirtk/MeshlessVolumeMapper.h"
 
 #include "mirtk/Eigen.h"
 #include "mirtk/Vtk.h"
@@ -57,7 +57,7 @@ MIRTK_Common_EXPORT extern int debug;
 // Auxiliary functors
 // =============================================================================
 
-namespace FundamentalVolumeParameterizerUtils {
+namespace MeshlessVolumeMapperUtils {
 
 
 // -----------------------------------------------------------------------------
@@ -136,16 +136,16 @@ struct ComputeResidualMap
 };
 
 
-} // namespace FundamentalVolumeParameterizerUtils
-using namespace FundamentalVolumeParameterizerUtils;
+} // namespace MeshlessVolumeMapperUtils
+using namespace MeshlessVolumeMapperUtils;
 
 // =============================================================================
 // Construction/destruction
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void FundamentalVolumeParameterizer
-::CopyAttributes(const FundamentalVolumeParameterizer &other)
+void MeshlessVolumeMapper
+::CopyAttributes(const MeshlessVolumeMapper &other)
 {
   _BoundaryPointsRatio         = other._BoundaryPointsRatio;
   _SourcePointsRatio           = other._SourcePointsRatio;
@@ -160,7 +160,7 @@ void FundamentalVolumeParameterizer
 }
 
 // -----------------------------------------------------------------------------
-FundamentalVolumeParameterizer::FundamentalVolumeParameterizer()
+MeshlessVolumeMapper::MeshlessVolumeMapper()
 :
   _BoundaryPointsRatio(.1),
   _SourcePointsRatio(.1),
@@ -174,27 +174,27 @@ FundamentalVolumeParameterizer::FundamentalVolumeParameterizer()
 }
 
 // -----------------------------------------------------------------------------
-FundamentalVolumeParameterizer
-::FundamentalVolumeParameterizer(const FundamentalVolumeParameterizer &other)
+MeshlessVolumeMapper
+::MeshlessVolumeMapper(const MeshlessVolumeMapper &other)
 :
-  VolumeParameterizer(other)
+  VolumeMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-FundamentalVolumeParameterizer &FundamentalVolumeParameterizer
-::operator =(const FundamentalVolumeParameterizer &other)
+MeshlessVolumeMapper &MeshlessVolumeMapper
+::operator =(const MeshlessVolumeMapper &other)
 {
   if (this != &other) {
-    VolumeParameterizer::operator =(other);
+    VolumeMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-FundamentalVolumeParameterizer::~FundamentalVolumeParameterizer()
+MeshlessVolumeMapper::~MeshlessVolumeMapper()
 {
 }
 
@@ -203,7 +203,7 @@ FundamentalVolumeParameterizer::~FundamentalVolumeParameterizer()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void FundamentalVolumeParameterizer
+void MeshlessVolumeMapper
 ::GetClosestPointOnOffsetSurface(double x[3], double p[3])
 {
   vtkIdType cellId;
@@ -213,7 +213,7 @@ void FundamentalVolumeParameterizer
 }
 
 // -----------------------------------------------------------------------------
-void FundamentalVolumeParameterizer::UpdateBoundary(vtkPolyData *boundary)
+void MeshlessVolumeMapper::UpdateBoundary(vtkPolyData *boundary)
 {
   // Initialize new boundary map
   vtkSmartPointer<vtkDataArray> boundary_map;
@@ -262,7 +262,7 @@ void FundamentalVolumeParameterizer::UpdateBoundary(vtkPolyData *boundary)
 }
 
 // -----------------------------------------------------------------------------
-void FundamentalVolumeParameterizer::PlaceBoundaryPoints()
+void MeshlessVolumeMapper::PlaceBoundaryPoints()
 {
   mirtkAssert(_Boundary != NULL, "input boundary surface is initialized");
 
@@ -317,7 +317,7 @@ void FundamentalVolumeParameterizer::PlaceBoundaryPoints()
 }
 
 // -----------------------------------------------------------------------------
-void FundamentalVolumeParameterizer::PlaceSourcePoints()
+void MeshlessVolumeMapper::PlaceSourcePoints()
 {
   mirtkAssert(_Boundary != NULL, "input boundary surface is initialized");
 
@@ -448,14 +448,14 @@ void FundamentalVolumeParameterizer::PlaceSourcePoints()
 }
 
 // -----------------------------------------------------------------------------
-bool FundamentalVolumeParameterizer::AddSourcePoint(double q[3])
+bool MeshlessVolumeMapper::AddSourcePoint(double q[3])
 {
-  FundamentalMap *map = dynamic_cast<FundamentalMap *>(_OutputMap);
+  MeshlessMap *map = dynamic_cast<MeshlessMap *>(_Output.get());
   return map->AddSourcePoint(q, 1e-9);
 }
 
 // -----------------------------------------------------------------------------
-void FundamentalVolumeParameterizer::PartitionSourcePoints()
+void MeshlessVolumeMapper::PartitionSourcePoints()
 {
   int nsubsets = 1;
   if (_MaximumNumberOfSourcePoints > 0) {
@@ -478,7 +478,7 @@ void FundamentalVolumeParameterizer::PartitionSourcePoints()
 }
 
 // -----------------------------------------------------------------------------
-void FundamentalVolumeParameterizer::InitializeResidualMap()
+void MeshlessVolumeMapper::InitializeResidualMap()
 {
   _ResidualMap = vtkSmartPointer<vtkDataArray>::NewInstance(_BoundaryMap);
   _ResidualMap->DeepCopy(_BoundaryMap);
@@ -487,14 +487,14 @@ void FundamentalVolumeParameterizer::InitializeResidualMap()
 }
 
 // -----------------------------------------------------------------------------
-double FundamentalVolumeParameterizer::UpdateResidualMap(double *min, double *max, double *std)
+double MeshlessVolumeMapper::UpdateResidualMap(double *min, double *max, double *std)
 {
   ComputeResidualMap eval;
   eval._BoundarySet     = _Boundary->GetPoints();
   eval._BoundaryMap     = _BoundaryMap;
-  eval._OutputMap       = _OutputMap;
+  eval._OutputMap       = _Output.get();
   eval._ResidualMap     = _ResidualMap;
-  eval._OutputDimension = _OutputMap->NumberOfComponents();
+  eval._OutputDimension = _Output->NumberOfComponents();
   parallel_reduce(blocked_range<vtkIdType>(0, _Boundary->GetNumberOfPoints()), eval);
   double avg = eval._SquaredError / NumberOfBoundaryPoints();
   if (min) *min = eval._MinSquaredError;
@@ -504,12 +504,12 @@ double FundamentalVolumeParameterizer::UpdateResidualMap(double *min, double *ma
 }
 
 // -----------------------------------------------------------------------------
-void FundamentalVolumeParameterizer::Initialize()
+void MeshlessVolumeMapper::Initialize()
 {
   if (verbose) cout << endl;
 
   // Initialize base class
-  VolumeParameterizer::Initialize();
+  VolumeMapper::Initialize();
 
   // Initialize boundary surface
   this->InitializeBoundary(_InputSet, _InputMap);
@@ -529,7 +529,7 @@ void FundamentalVolumeParameterizer::Initialize()
 }
 
 // -----------------------------------------------------------------------------
-void FundamentalVolumeParameterizer::Parameterize()
+void MeshlessVolumeMapper::Solve()
 {
   typedef Eigen::JacobiSVD<Eigen::MatrixXd> SVD;
   typedef SVD::SingularValuesType           SingularValues;
@@ -541,7 +541,9 @@ void FundamentalVolumeParameterizer::Parameterize()
   double         min_error, max_error, std_error;
   double         p[3], q[3], *df;
 
-  df    = new double[OutputDimension()];
+  const int d = NumberOfComponents();
+
+  df    = new double[d];
   alpha = .015;
 
   // Compute initial error
@@ -591,7 +593,7 @@ void FundamentalVolumeParameterizer::Parameterize()
       // In case of the harmonic map, a different linear system with A = K
       // can be solved instead, using the (truncated or randomized) SVD as in
       // (Li et al., 2010). This alternative (slower!) method is implemented by
-      // HarmonicFundamentalVolumeParameterizer::Parameterize for comparison.
+      // MeshlessHarmonicVolumeMapper::Parameterize for comparison.
       mirtkAssert(A.Rows() == A.Cols(), "coefficients matrix is square");
       mirtkAssert(b.Rows() == A.Rows(), "right-hand side has required number of rows");
 

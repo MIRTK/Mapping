@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 
-#include "mirtk/HarmonicFundamentalVolumeParameterizer.h"
-#include "mirtk/HarmonicFundamentalMap.h"
+#include "mirtk/MeshlessHarmonicVolumeMapper.h"
+#include "mirtk/MeshlessHarmonicMap.h"
 
 #include "mirtk/Math.h"
 #include "mirtk/Memory.h"
@@ -43,7 +43,7 @@ MIRTK_Common_EXPORT extern int verbose;
 // Auxiliary functors
 // =============================================================================
 
-namespace HarmonicFundamentalVolumeParameterizerUtils {
+namespace MeshlessHarmonicVolumeMapperUtils {
 
 // -----------------------------------------------------------------------------
 /// Compute A = K^T K
@@ -96,55 +96,50 @@ struct ComputeConstraints
 };
 
 
-} // namespace HarmonicFundamentalVolumeParameterizerUtils
-using namespace HarmonicFundamentalVolumeParameterizerUtils;
+} // namespace MeshlessHarmonicVolumeMapperUtils
+using namespace MeshlessHarmonicVolumeMapperUtils;
 
 // =============================================================================
 // Construction/destruction
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void HarmonicFundamentalVolumeParameterizer
-::CopyAttributes(const HarmonicFundamentalVolumeParameterizer &other)
+void MeshlessHarmonicVolumeMapper
+::CopyAttributes(const MeshlessHarmonicVolumeMapper &other)
 {
   _Kernel = other._Kernel;
   _UseSVD = other._UseSVD;
 }
 
 // -----------------------------------------------------------------------------
-HarmonicFundamentalVolumeParameterizer
-::HarmonicFundamentalVolumeParameterizer()
+MeshlessHarmonicVolumeMapper::MeshlessHarmonicVolumeMapper()
 :
   _UseSVD(false)
 {
 }
 
 // -----------------------------------------------------------------------------
-HarmonicFundamentalVolumeParameterizer
-::HarmonicFundamentalVolumeParameterizer(
-  const HarmonicFundamentalVolumeParameterizer &other
-)
+MeshlessHarmonicVolumeMapper
+::MeshlessHarmonicVolumeMapper(const MeshlessHarmonicVolumeMapper &other)
 :
-  FundamentalVolumeParameterizer(other)
+  MeshlessVolumeMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-HarmonicFundamentalVolumeParameterizer &
-HarmonicFundamentalVolumeParameterizer
-::operator =(const HarmonicFundamentalVolumeParameterizer &other)
+MeshlessHarmonicVolumeMapper &MeshlessHarmonicVolumeMapper
+::operator =(const MeshlessHarmonicVolumeMapper &other)
 {
   if (this != &other) {
-    FundamentalVolumeParameterizer::operator =(other);
+    MeshlessVolumeMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-HarmonicFundamentalVolumeParameterizer
-::~HarmonicFundamentalVolumeParameterizer()
+MeshlessHarmonicVolumeMapper::~MeshlessHarmonicVolumeMapper()
 {
 }
 
@@ -153,19 +148,19 @@ HarmonicFundamentalVolumeParameterizer
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void HarmonicFundamentalVolumeParameterizer::Initialize()
+void MeshlessHarmonicVolumeMapper::Initialize()
 {
   // Initialize base class
-  FundamentalVolumeParameterizer::Initialize();
+  MeshlessVolumeMapper::Initialize();
 
   const int m = NumberOfBoundaryPoints();
   const int n = NumberOfSourcePoints();
-  const int d = OutputDimension();
+  const int d = NumberOfComponents();
 
   // Initialize harmonic map and precompute kernel function values
   double p[3], q[3], dist;
 
-  unique_ptr<HarmonicFundamentalMap> map(new HarmonicFundamentalMap());
+  SharedPtr<MeshlessHarmonicMap> map = NewShared<MeshlessHarmonicMap>();
 
   PointSet &points  = map->SourcePoints();
   Matrix   &weights = map->Coefficients();
@@ -181,18 +176,18 @@ void HarmonicFundamentalVolumeParameterizer::Initialize()
     for (int i = 0; i < m; ++i, ++c) {
       _Boundary->GetPoint(i, p);
       dist = sqrt(vtkMath::Distance2BetweenPoints(p, q));
-      *c = HarmonicFundamentalMap::H(dist);
+      *c = MeshlessHarmonicMap::H(dist);
     }
   }
 
   // Set output map
-  _OutputMap = map.release();
+  _Output = map;
 }
 
 // -----------------------------------------------------------------------------
-bool HarmonicFundamentalVolumeParameterizer::AddSourcePoint(double q[3])
+bool MeshlessHarmonicVolumeMapper::AddSourcePoint(double q[3])
 {
-  if (!FundamentalVolumeParameterizer::AddSourcePoint(q)) return false;
+  if (!MeshlessVolumeMapper::AddSourcePoint(q)) return false;
 
   const int m = NumberOfBoundaryPoints();
   const int n = NumberOfSourcePoints();
@@ -203,18 +198,18 @@ bool HarmonicFundamentalVolumeParameterizer::AddSourcePoint(double q[3])
   for (int i = 0; i < m; ++i, ++c) {
     _Boundary->GetPoint(i, p);
     dist = sqrt(vtkMath::Distance2BetweenPoints(p, q));
-    *c = HarmonicFundamentalMap::H(dist);
+    *c = MeshlessHarmonicMap::H(dist);
   }
 
   return true;
 }
 
 // -----------------------------------------------------------------------------
-void HarmonicFundamentalVolumeParameterizer::Parameterize()
+void MeshlessHarmonicVolumeMapper::Solve()
 {
   // Use base class implementation if possible
   if (!_UseSVD) {
-    FundamentalVolumeParameterizer::Parameterize();
+    MeshlessVolumeMapper::Solve();
     return;
   }
 
@@ -222,7 +217,7 @@ void HarmonicFundamentalVolumeParameterizer::Parameterize()
   typedef SVD::SingularValuesType           SingularValues;
 
   const int m = NumberOfBoundaryPoints();
-  const int d = OutputDimension();
+  const int d = NumberOfComponents();
 
   Matrix         A, b(m, d), x; // coefficients matrix, right-hand side, solution of Ax = b
   SingularValues sigma;         // singular values of coefficients matrix
@@ -242,7 +237,7 @@ void HarmonicFundamentalVolumeParameterizer::Parameterize()
   }
 
   // Iteratively approximate volumetric map
-  double *df = new double[OutputDimension()];
+  double *df = new double[d];
   for (int iter = 0; iter < _NumberOfIterations; ++iter) {
 
     if (verbose) cout << "\nIteration " << (iter+1) << endl;
@@ -329,7 +324,7 @@ void HarmonicFundamentalVolumeParameterizer::Parameterize()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void HarmonicFundamentalVolumeParameterizer
+void MeshlessHarmonicVolumeMapper
 ::GetCoefficients(int k, Matrix &coeffs) const
 {
   const int n = NumberOfSourcePoints(k);
@@ -342,11 +337,11 @@ void HarmonicFundamentalVolumeParameterizer
 }
 
 // -----------------------------------------------------------------------------
-void HarmonicFundamentalVolumeParameterizer
+void MeshlessHarmonicVolumeMapper
 ::GetConstraints(int k, Matrix &b) const
 {
   const int n = NumberOfSourcePoints(k);
-  const int d = OutputDimension();
+  const int d = NumberOfComponents();
   b.Initialize(n, d);
   ComputeConstraints eval;
   eval._Kernel      = &_Kernel;
@@ -357,14 +352,15 @@ void HarmonicFundamentalVolumeParameterizer
 }
 
 // -----------------------------------------------------------------------------
-void HarmonicFundamentalVolumeParameterizer
+void MeshlessHarmonicVolumeMapper
 ::AddWeights(int k, const Matrix &w)
 {
-  HarmonicFundamentalMap *map = dynamic_cast<HarmonicFundamentalMap *>(_OutputMap);
+  const int d = NumberOfComponents();
+  MeshlessHarmonicMap *map = dynamic_cast<MeshlessHarmonicMap *>(_Output.get());
   Matrix &weights = map->Coefficients();
   for (int i = 0; i < NumberOfSourcePoints(k); ++i) {
     const int r = SourcePointIndex(k, i);
-    for (int j = 0; j < OutputDimension(); ++j) {
+    for (int j = 0; j < d; ++j) {
       weights(r, j) += w(i, j);
     }
   }

@@ -17,10 +17,9 @@
  * limitations under the License.
  */
 
-#include "mirtk/HarmonicTetrahedralVolumeParameterizer.h"
+#include "mirtk/MeshlessHarmonicMap.h"
 
-#include "mirtk/Matrix3x3.h"
-#include "mirtk/VtkMath.h"
+#include "mirtk/Point.h"
 
 
 namespace mirtk {
@@ -31,55 +30,81 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-HarmonicTetrahedralVolumeParameterizer::HarmonicTetrahedralVolumeParameterizer()
+MeshlessHarmonicMap::MeshlessHarmonicMap()
 {
 }
 
 // -----------------------------------------------------------------------------
-HarmonicTetrahedralVolumeParameterizer
-::HarmonicTetrahedralVolumeParameterizer(const HarmonicTetrahedralVolumeParameterizer &other)
+MeshlessHarmonicMap::MeshlessHarmonicMap(const MeshlessHarmonicMap &other)
 :
-  LinearTetrahedralVolumeParameterizer(other)
+  MeshlessMap(other)
 {
 }
 
 // -----------------------------------------------------------------------------
-HarmonicTetrahedralVolumeParameterizer &HarmonicTetrahedralVolumeParameterizer
-::operator =(const HarmonicTetrahedralVolumeParameterizer &other)
+MeshlessHarmonicMap &MeshlessHarmonicMap::operator =(const MeshlessHarmonicMap &other)
 {
   if (this != &other) {
-    LinearTetrahedralVolumeParameterizer::operator =(other);
+    MeshlessMap::operator =(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-HarmonicTetrahedralVolumeParameterizer
-::~HarmonicTetrahedralVolumeParameterizer()
+Mapping *MeshlessHarmonicMap::NewCopy() const
+{
+  return new MeshlessHarmonicMap(*this);
+}
+
+// -----------------------------------------------------------------------------
+MeshlessHarmonicMap::~MeshlessHarmonicMap()
 {
 }
 
 // =============================================================================
-// Auxiliary functions
+// Evaluation
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-Matrix3x3 HarmonicTetrahedralVolumeParameterizer
-::GetWeight(vtkIdType, const double v0[3], const double v1[3],
-                       const double v2[3], const double v3[3], double volume) const
+bool MeshlessHarmonicMap::Evaluate(double *v, double x, double y, double z) const
 {
-  double a[3], b[3], n0[3], n1[3];
+  Point  p(x, y, z);
+  double d, h;
 
-  vtkMath::Subtract(v2, v1, a);
-  vtkMath::Subtract(v3, v1, b);
-  vtkMath::Cross(a, b, n0);
+  for (int j = 0; j < _Coefficients.Cols(); ++j) {
+    v[j] = .0;
+  }
 
-  vtkMath::Subtract(v3, v0, a);
-  vtkMath::Subtract(v2, v0, b);
-  vtkMath::Cross(a, b, n1);
+  for (int i = 0; i < _SourcePoints.Size(); ++i) {
+    d = p.Distance(_SourcePoints(i));
+    if (d < 1e-12) {
+      for (int j = 0; j < _Coefficients.Cols(); ++j) {
+        v[j] = _OutsideValue;
+      }
+      return false;
+    }
+    h = H(d);
+    for (int j = 0; j < _Coefficients.Cols(); ++j) {
+      v[j] += h * _Coefficients(i, j);
+    }
+  }
 
-  const double c = vtkMath::Dot(n0, n1) / (36.0 * volume);
-  return Matrix3x3(c, .0, .0,  .0, c, .0,  .0, .0, c);
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+double MeshlessHarmonicMap::Evaluate(double x, double y, double z, int l) const
+{
+  Point p(x, y, z);
+  double    d, v = .0;
+
+  for (int i = 0; i < _SourcePoints.Size(); ++i) {
+    d = p.Distance(_SourcePoints(i));
+    if (d < 1e-12) return _OutsideValue;
+    v += H(d) * _Coefficients(i, l);
+  }
+
+  return v;
 }
 
 

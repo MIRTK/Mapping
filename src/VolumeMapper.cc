@@ -1,5 +1,5 @@
 /*
- * Medical Image Registration ToolKit (MMIRTK)
+ * Medical Image Registration ToolKit (MIRTK)
  *
  * Copyright 2013-2016 Imperial College London
  * Copyright 2013-2016 Andreas Schuh
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/VolumeParameterizer.h"
+#include "mirtk/VolumeMapper.h"
 
 #include "mirtk/Memory.h"
 #include "mirtk/PointSetUtils.h"
@@ -37,31 +37,33 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void VolumeParameterizer::CopyAttributes(const VolumeParameterizer &other)
+void VolumeMapper::CopyAttributes(const VolumeMapper &other)
 {
-  Delete(_OutputMap);
   _InputSet    = other._InputSet;
   _InputMap    = other._InputMap;
   _Boundary    = other._Boundary;
   _BoundaryMap = other._BoundaryMap;
-  if (other._OutputMap) _OutputMap = other._OutputMap->NewCopy();
+
+  if (other._Output) {
+    _Output = SharedPtr<Mapping>(other._Output->NewCopy());
+  } else {
+    _Output = nullptr;
+  }
 }
 
 // -----------------------------------------------------------------------------
-VolumeParameterizer::VolumeParameterizer()
-:
-  _OutputMap(nullptr)
+VolumeMapper::VolumeMapper()
 {
 }
 
 // -----------------------------------------------------------------------------
-VolumeParameterizer::VolumeParameterizer(const VolumeParameterizer &other)
+VolumeMapper::VolumeMapper(const VolumeMapper &other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-VolumeParameterizer &VolumeParameterizer::operator =(const VolumeParameterizer &other)
+VolumeMapper &VolumeMapper::operator =(const VolumeMapper &other)
 {
   if (this != &other) {
     Object::operator =(other);
@@ -71,9 +73,8 @@ VolumeParameterizer &VolumeParameterizer::operator =(const VolumeParameterizer &
 }
 
 // -----------------------------------------------------------------------------
-VolumeParameterizer::~VolumeParameterizer()
+VolumeMapper::~VolumeMapper()
 {
-  Delete(_OutputMap);
 }
 
 // =============================================================================
@@ -81,18 +82,18 @@ VolumeParameterizer::~VolumeParameterizer()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void VolumeParameterizer::Run()
+void VolumeMapper::Run()
 {
   this->Initialize();
-  this->Parameterize();
+  this->Solve();
   this->Finalize();
 }
 
 // -----------------------------------------------------------------------------
-void VolumeParameterizer::Initialize()
+void VolumeMapper::Initialize()
 {
   // Free previous output map
-  Delete(_OutputMap);
+  _Output = nullptr;
 
   // Check input
   if (!_InputSet) {
@@ -114,7 +115,7 @@ void VolumeParameterizer::Initialize()
 }
 
 // -----------------------------------------------------------------------------
-void VolumeParameterizer::InitializeBoundary(vtkPointSet *input, vtkDataArray *map)
+void VolumeMapper::InitializeBoundary(vtkPointSet *input, vtkDataArray *map)
 {
   vtkSmartPointer<vtkPointSet> volume;
   volume = vtkSmartPointer<vtkPointSet>::NewInstance(input);
@@ -128,7 +129,7 @@ void VolumeParameterizer::InitializeBoundary(vtkPointSet *input, vtkDataArray *m
 }
 
 // -----------------------------------------------------------------------------
-void VolumeParameterizer::Finalize()
+void VolumeMapper::Finalize()
 {
 }
 

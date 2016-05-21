@@ -1,5 +1,5 @@
 /*
- * Medical Image Registration ToolKit (MMIRTK)
+ * Medical Image Registration ToolKit (MIRTK)
  *
  * Copyright 2013-2016 Imperial College London
  * Copyright 2013-2016 Andreas Schuh
@@ -19,7 +19,7 @@
 
 #include "mirtk/Mapping.h"
 
-#include "mirtk/Config.h" // WINDOWWS
+#include "mirtk/Config.h" // WINDOWS
 #include "mirtk/Math.h"
 #include "mirtk/Memory.h"
 #include "mirtk/Cfstream.h"
@@ -34,8 +34,8 @@
 
 
 #include "mirtk/PiecewiseLinearMap.h"
-#include "mirtk/HarmonicFundamentalMap.h"
-#include "mirtk/BiharmonicFundamentalMap.h"
+#include "mirtk/MeshlessHarmonicMap.h"
+#include "mirtk/MeshlessBiharmonicMap.h"
 
 
 namespace mirtk {
@@ -47,7 +47,7 @@ namespace mirtk {
 // -----------------------------------------------------------------------------
 Mapping *Mapping::New(const char *fname)
 {
-  unique_ptr<Mapping> map;
+  UniquePtr<Mapping> map;
 
   const size_t max_name_len = 32;
   char         map_type_name[max_name_len];
@@ -55,10 +55,10 @@ Mapping *Mapping::New(const char *fname)
   Cifstream is(fname);
   is.ReadAsChar(map_type_name, max_name_len);
 
-  if (strncmp(map_type_name, HarmonicFundamentalMap::NameOfType(), max_name_len) == 0) {
-    map.reset(new HarmonicFundamentalMap());
-  } else if (strncmp(map_type_name, BiharmonicFundamentalMap::NameOfType(), max_name_len) == 0) {
-    map.reset(new BiharmonicFundamentalMap());
+  if (strncmp(map_type_name, MeshlessHarmonicMap::NameOfType(), max_name_len) == 0) {
+    map.reset(new MeshlessHarmonicMap());
+  } else if (strncmp(map_type_name, MeshlessBiharmonicMap::NameOfType(), max_name_len) == 0) {
+    map.reset(new MeshlessBiharmonicMap());
   } else {
     // Note that a picewise linear map is stored using a VTK file format and
     // therefore the map file contains no "mirtk::PiecewiseLinearMap" header.

@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2016 Imperial College London
- * Copyright 2013-2016 Andreas Schuh
+ * Copyright 2015-2016 Imperial College London
+ * Copyright 2015-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_AsConformalAsPossibleVolumeParameterizer_H
-#define MIRTK_AsConformalAsPossibleVolumeParameterizer_H
+#ifndef MIRTK_AsConformalAsPossibleMapper_H
+#define MIRTK_AsConformalAsPossibleMapper_H
 
-#include "mirtk/LinearTetrahedralVolumeParameterizer.h"
+#include "mirtk/LinearTetrahedralMeshMapper.h"
 
 #include "mirtk/Array.h"
 #include "mirtk/Matrix3x3.h"
@@ -33,12 +33,11 @@ namespace mirtk {
  * Compute as-conformal-as-possible (ACAP) piecewise linear volumetric map
  *
  * Paillé & Poulin (2012), As-conformal-as-possible discrete volumetric mapping,
- * Computers and Graphics (Pergamon), 36(5), 427–433. doi:10.1016/j.cag.2012.03.014
+ * Computers and Graphics, 36(5), 427–433.
  */
-class AsConformalAsPossibleVolumeParameterizer
-: public LinearTetrahedralVolumeParameterizer
+class AsConformalAsPossibleMapper : public LinearTetrahedralMeshMapper
 {
-  mirtkObjectMacro(AsConformalAsPossibleVolumeParameterizer);
+  mirtkObjectMacro(AsConformalAsPossibleMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
@@ -50,7 +49,7 @@ class AsConformalAsPossibleVolumeParameterizer
   mirtkAttributeMacro(Array<Matrix3x3>, Orientation);
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const AsConformalAsPossibleVolumeParameterizer &);
+  void CopyAttributes(const AsConformalAsPossibleMapper &);
 
 public:
 
@@ -58,16 +57,16 @@ public:
   // Construction/Destruction
 
   /// Default constructor
-  AsConformalAsPossibleVolumeParameterizer();
+  AsConformalAsPossibleMapper();
 
   /// Copy constructor
-  AsConformalAsPossibleVolumeParameterizer(const AsConformalAsPossibleVolumeParameterizer &);
+  AsConformalAsPossibleMapper(const AsConformalAsPossibleMapper &);
 
   /// Assignment operator
-  AsConformalAsPossibleVolumeParameterizer &operator =(const AsConformalAsPossibleVolumeParameterizer &);
+  AsConformalAsPossibleMapper &operator =(const AsConformalAsPossibleMapper &);
 
   /// Destructor
-  virtual ~AsConformalAsPossibleVolumeParameterizer();
+  virtual ~AsConformalAsPossibleMapper();
 
   // ---------------------------------------------------------------------------
   // Exection
@@ -105,4 +104,4 @@ protected:
 
 } // namespace mirtk
 
-#endif // MIRTK_AsConformalAsPossibleVolumeParameterizer_H
+#endif // MIRTK_AsConformalAsPossibleMapper_H

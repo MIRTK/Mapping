@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/LinearTetrahedralVolumeParameterizer.h"
+#include "mirtk/LinearTetrahedralMeshMapper.h"
 
 #include "mirtk/Array.h"
 #include "mirtk/Parallel.h"
@@ -44,23 +44,23 @@ MIRTK_Common_EXPORT extern int verbose;
 // Auxiliary functors
 // =============================================================================
 
-namespace LinearTetrahedralVolumeParameterizerUtils {
+namespace LinearTetrahedralMeshMapperUtils {
 
 
 // -----------------------------------------------------------------------------
 template <class Scalar>
 class LinearSystem
 {
-  const LinearTetrahedralVolumeParameterizer *_Filter;
-  const LinearTetrahedralVolumeParameterizer *_Operator;
-  Array<Eigen::Triplet<Scalar> >              _Coefficients;
-  Eigen::Matrix<Scalar, Eigen::Dynamic, 1>    _RightHandSide;
+  const LinearTetrahedralMeshMapper        *_Filter;
+  const LinearTetrahedralMeshMapper        *_Operator;
+  Array<Eigen::Triplet<Scalar> >            _Coefficients;
+  Eigen::Matrix<Scalar, Eigen::Dynamic, 1>  _RightHandSide;
 
 public:
 
   // ---------------------------------------------------------------------------
-  LinearSystem(const LinearTetrahedralVolumeParameterizer *filter,
-               const LinearTetrahedralVolumeParameterizer *map, int n)
+  LinearSystem(const LinearTetrahedralMeshMapper *filter,
+               const LinearTetrahedralMeshMapper *map, int n)
   :
     _Filter(filter), _Operator(map ? map : filter), _RightHandSide(n)
   {
@@ -177,11 +177,11 @@ public:
   }
 
   // ---------------------------------------------------------------------------
-  static void Build(const LinearTetrahedralVolumeParameterizer *filter,
-                    const LinearTetrahedralVolumeParameterizer *mapop,
-                    Eigen::SparseMatrix<Scalar>                    &A,
-                    Eigen::Matrix<Scalar, Eigen::Dynamic, 1>       &b,
-                    int                                             n)
+  static void Build(const LinearTetrahedralMeshMapper        *filter,
+                    const LinearTetrahedralMeshMapper        *mapop,
+                    Eigen::SparseMatrix<Scalar>              &A,
+                    Eigen::Matrix<Scalar, Eigen::Dynamic, 1> &b,
+                    int                                       n)
   {
     LinearSystem problem(filter, mapop, n);
     blocked_range<vtkIdType> cellIds(0, filter->Volume()->GetNumberOfCells());
@@ -193,16 +193,16 @@ public:
 };
 
 
-} // namespace LinearTetrahedralVolumeParameterizerUtils
-using namespace LinearTetrahedralVolumeParameterizerUtils;
+} // namespace LinearTetrahedralMeshMapperUtils
+using namespace LinearTetrahedralMeshMapperUtils;
 
 // =============================================================================
 // Construction/destruction
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void LinearTetrahedralVolumeParameterizer
-::CopyAttributes(const LinearTetrahedralVolumeParameterizer &other)
+void LinearTetrahedralMeshMapper
+::CopyAttributes(const LinearTetrahedralMeshMapper &other)
 {
   _NumberOfIterations = other._NumberOfIterations;
   _Tolerance          = other._Tolerance;
@@ -212,37 +212,35 @@ void LinearTetrahedralVolumeParameterizer
 }
 
 // -----------------------------------------------------------------------------
-LinearTetrahedralVolumeParameterizer
-::LinearTetrahedralVolumeParameterizer()
+LinearTetrahedralMeshMapper::LinearTetrahedralMeshMapper()
 :
-  _NumberOfIterations(500),
-  _Tolerance(1e-8),
+  _NumberOfIterations(0),
+  _Tolerance(.0),
   _RelaxationFactor(1.0)
 {
 }
 
 // -----------------------------------------------------------------------------
-LinearTetrahedralVolumeParameterizer
-::LinearTetrahedralVolumeParameterizer(const LinearTetrahedralVolumeParameterizer &other)
+LinearTetrahedralMeshMapper::LinearTetrahedralMeshMapper(const LinearTetrahedralMeshMapper &other)
 :
-  TetrahedralVolumeParameterizer(other)
+  TetrahedralMeshMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-LinearTetrahedralVolumeParameterizer &LinearTetrahedralVolumeParameterizer
-::operator =(const LinearTetrahedralVolumeParameterizer &other)
+LinearTetrahedralMeshMapper &LinearTetrahedralMeshMapper
+::operator =(const LinearTetrahedralMeshMapper &other)
 {
   if (this != &other) {
-    TetrahedralVolumeParameterizer::operator =(other);
+    TetrahedralMeshMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-LinearTetrahedralVolumeParameterizer::~LinearTetrahedralVolumeParameterizer()
+LinearTetrahedralMeshMapper::~LinearTetrahedralMeshMapper()
 {
 }
 
@@ -251,12 +249,12 @@ LinearTetrahedralVolumeParameterizer::~LinearTetrahedralVolumeParameterizer()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void LinearTetrahedralVolumeParameterizer::Initialize()
+void LinearTetrahedralMeshMapper::Initialize()
 {
   const int dim = 3; // Dimension of output domain
 
   // Initialize base class
-  TetrahedralVolumeParameterizer::Initialize();
+  TetrahedralMeshMapper::Initialize();
 
   // Force number of output map components to be equal to dim
   if (_Coords->GetNumberOfComponents() != dim) {
@@ -294,14 +292,14 @@ void LinearTetrahedralVolumeParameterizer::Initialize()
 }
 
 // -----------------------------------------------------------------------------
-void LinearTetrahedralVolumeParameterizer::Parameterize()
+void LinearTetrahedralMeshMapper::Solve()
 {
   Solve(this);
 }
 
 // -----------------------------------------------------------------------------
-void LinearTetrahedralVolumeParameterizer
-::Solve(const LinearTetrahedralVolumeParameterizer *mapop)
+void LinearTetrahedralMeshMapper
+::Solve(const LinearTetrahedralMeshMapper *mapop)
 {
   typedef double                                   Scalar;
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> Vector;
@@ -328,11 +326,11 @@ void LinearTetrahedralVolumeParameterizer
   if (verbose) cout << " done" << endl;
 
   // Solve linear system
-  if (verbose) cout << "Solve system using conjugate gradient descent...", cout.flush();
-  Eigen::ConjugateGradient<Matrix, Eigen::Upper|Eigen::Lower, Preconditioner> solver;
-  solver.setMaxIterations(_NumberOfIterations);
-  solver.setTolerance(_Tolerance);
-  x = solver.compute(A).solveWithGuess(b, x);
+  if (verbose) cout << "Solve system using conjugate gradient...", cout.flush();
+  Eigen::ConjugateGradient<Matrix, Eigen::Upper|Eigen::Lower, Preconditioner> solver(A);
+  if (_NumberOfIterations >  0) solver.setMaxIterations(_NumberOfIterations);
+  if (_Tolerance          > .0) solver.setTolerance(_Tolerance);
+  x = solver.solveWithGuess(b, x);
   if (verbose) {
     cout << " done" << endl;
     cout << "\nNo. of iterations = " << solver.iterations();

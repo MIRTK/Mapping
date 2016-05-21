@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2016 Imperial College London
- * Copyright 2013-2016 Andreas Schuh
+ * Copyright 2015-2016 Imperial College London
+ * Copyright 2015-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_FundamentalVolumeParameterizer_H
-#define MIRTK_FundamentalVolumeParameterizer_H
+#ifndef MIRTK_MeshlessVolumeMapper_H
+#define MIRTK_MeshlessVolumeMapper_H
 
-#include "mirtk/VolumeParameterizer.h"
+#include "mirtk/VolumeMapper.h"
 
 #include "mirtk/Array.h"
 #include "mirtk/PointSet.h"
-#include "mirtk/FundamentalMap.h"
+#include "mirtk/MeshlessMap.h"
 
 #include "vtkAbstractCellLocator.h"
 
@@ -33,15 +33,15 @@ namespace mirtk {
 
 
 /**
- * Base class of filters which re-parameterize the interior of a piecewise 
- * linear complex (PLC) using the method of fundamental solutions (MFS)
+ * Base class of filters which compute a volumetric map of the interior of a
+ * piecewise linear complex (PLC) using the method of fundamental solutions (MFS)
  *
- * Iteratively compute a volumetric map of the interior of the input point
+ * Iteratively computes a volumetric map of the interior of the input point
  * set using the method of fundamental solutions (MFS). This implementation
  * is based on the (bi-)harmonic volumetric mapping methods presented in
  * (Li et al., 2010) and (Xu et al., 2013).
  *
- * Boundary (constraints) points and source (singularity) points are sampled
+ * Boundary (constraint) points and source (singularity) points are sampled
  * using the geometry adaptive sampling algorithm as outlined in Section 4.1
  * of (Li et al., 2010).
  *
@@ -57,9 +57,9 @@ namespace mirtk {
  *   solutions. IEEE Transactions on Visualization and Computer Graphics,
  *   19(5), 787–798. doi:10.1109/TVCG.2012.173
  */
-class FundamentalVolumeParameterizer : public VolumeParameterizer
+class MeshlessVolumeMapper : public VolumeMapper
 {
-  mirtkAbstractMacro(FundamentalVolumeParameterizer);
+  mirtkAbstractMacro(MeshlessVolumeMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
@@ -122,24 +122,24 @@ protected:
   int SourcePointIndex(int k, int i) const;
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const FundamentalVolumeParameterizer &);
+  void CopyAttributes(const MeshlessVolumeMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
 
   /// Default constructor
-  FundamentalVolumeParameterizer();
+  MeshlessVolumeMapper();
 
   /// Copy constructor
-  FundamentalVolumeParameterizer(const FundamentalVolumeParameterizer &);
+  MeshlessVolumeMapper(const MeshlessVolumeMapper &);
 
   /// Assignment operator
-  FundamentalVolumeParameterizer &operator =(const FundamentalVolumeParameterizer &);
+  MeshlessVolumeMapper &operator =(const MeshlessVolumeMapper &);
 
 public:
 
   /// Destructor
-  virtual ~FundamentalVolumeParameterizer();
+  virtual ~MeshlessVolumeMapper();
 
   // ---------------------------------------------------------------------------
   // Execution
@@ -175,14 +175,17 @@ protected:
   virtual void InitializeResidualMap();
 
   /// Update residual boundary map
+  ///
   /// \returns Mean squared error of boundary map approximation.
-  virtual double UpdateResidualMap(double * = NULL, double * = NULL, double * = NULL);
+  virtual double UpdateResidualMap(double * = nullptr,
+                                   double * = nullptr,
+                                   double * = nullptr);
 
   /// Initialize filter after input and parameters are set
   virtual void Initialize();
 
-  /// Parameterize interior of input data set
-  virtual void Parameterize();
+  /// Compute meshless map coefficients
+  virtual void Solve();
 
   // ---------------------------------------------------------------------------
   // Linear system
@@ -215,35 +218,35 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 
 // -----------------------------------------------------------------------------
-inline int FundamentalVolumeParameterizer::NumberOfBoundaryPoints() const
+inline int MeshlessVolumeMapper::NumberOfBoundaryPoints() const
 {
   return static_cast<int>(_Boundary->GetNumberOfPoints());
 }
 
 // -----------------------------------------------------------------------------
-inline int FundamentalVolumeParameterizer::NumberOfSourcePoints() const
+inline int MeshlessVolumeMapper::NumberOfSourcePoints() const
 {
-  if (_OutputMap) {
-    FundamentalMap *map = dynamic_cast<FundamentalMap *>(_OutputMap);
+  if (_Output) {
+    MeshlessMap *map = dynamic_cast<MeshlessMap *>(_Output.get());
     return map->NumberOfSourcePoints();
   }
   return static_cast<int>(_OffsetSurface->GetNumberOfPoints());
 }
 
 // -----------------------------------------------------------------------------
-inline int FundamentalVolumeParameterizer::NumberOfSourcePointSets() const
+inline int MeshlessVolumeMapper::NumberOfSourcePointSets() const
 {
   return static_cast<int>(_SourcePartition.size());
 }
 
 // -----------------------------------------------------------------------------
-inline int FundamentalVolumeParameterizer::NumberOfSourcePoints(int k) const
+inline int MeshlessVolumeMapper::NumberOfSourcePoints(int k) const
 {
   return static_cast<int>(_SourcePartition[k].size());
 }
 
 // -----------------------------------------------------------------------------
-inline int FundamentalVolumeParameterizer::SourcePointIndex(int k, int i) const
+inline int MeshlessVolumeMapper::SourcePointIndex(int k, int i) const
 {
   return _SourcePartition[k][i];
 }
@@ -251,4 +254,4 @@ inline int FundamentalVolumeParameterizer::SourcePointIndex(int k, int i) const
 
 } // namespace mirtk
 
-#endif // MIRTK_FundamentalVolumeParameterizer_H
+#endif // MIRTK_MeshlessVolumeMapper_H

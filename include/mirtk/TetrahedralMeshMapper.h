@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2016 Imperial College London
- * Copyright 2013-2016 Andreas Schuh
+ * Copyright 2015-2016 Imperial College London
+ * Copyright 2015-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_TetrahedralVolumeParameterizer_H
-#define MIRTK_TetrahedralVolumeParameterizer_H
+#ifndef MIRTK_TetrahedralMeshMapper_H
+#define MIRTK_TetrahedralMeshMapper_H
 
-#include "mirtk/VolumeParameterizer.h"
+#include "mirtk/VolumeMapper.h"
 
 #include "vtkSmartPointer.h"
 #include "vtkPointSet.h"
@@ -31,15 +31,14 @@ namespace mirtk {
 
 
 /**
- * Base class of filters which re-parameterize the interior of a piecewise
- * linear complex (PLC) using the finite element method (FEM)
+ * Base class of volumetric map FEM solvers using tetrahedral elements
  *
- * Subclasses of this base class compute a volumetric map based on a tetrahedral
- * discretization of the interior of the input PLC.
+ * Solvers of this type use a discretization of the volume for which a volumetric
+ * map is computed based on tetrahedral elements.
  */
-class TetrahedralVolumeParameterizer : public VolumeParameterizer
+class TetrahedralMeshMapper : public VolumeMapper
 {
-  mirtkAbstractMacro(TetrahedralVolumeParameterizer);
+  mirtkAbstractMacro(TetrahedralMeshMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
@@ -68,7 +67,7 @@ protected:
   mirtkReadOnlyAttributeMacro(int, NumberOfInteriorPoints);
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const TetrahedralVolumeParameterizer &);
+  void CopyAttributes(const TetrahedralMeshMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -76,24 +75,27 @@ protected:
 protected:
 
   /// Default constructor
-  TetrahedralVolumeParameterizer();
+  TetrahedralMeshMapper();
 
   /// Copy constructor
-  TetrahedralVolumeParameterizer(const TetrahedralVolumeParameterizer &);
+  TetrahedralMeshMapper(const TetrahedralMeshMapper &);
 
   /// Assignment operator
-  TetrahedralVolumeParameterizer &operator =(const TetrahedralVolumeParameterizer &);
+  TetrahedralMeshMapper &operator =(const TetrahedralMeshMapper &);
 
 public:
 
   /// Destructor
-  virtual ~TetrahedralVolumeParameterizer();
+  virtual ~TetrahedralMeshMapper();
 
   // ---------------------------------------------------------------------------
-  // Execution
+  // Auxiliaries
 
   /// Whether a given point is on the boundary
   bool IsBoundaryPoint(vtkIdType) const;
+
+  // ---------------------------------------------------------------------------
+  // Execution
 
 protected:
 
@@ -110,7 +112,7 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 
 // -----------------------------------------------------------------------------
-inline bool TetrahedralVolumeParameterizer::IsBoundaryPoint(vtkIdType ptId) const
+inline bool TetrahedralMeshMapper::IsBoundaryPoint(vtkIdType ptId) const
 {
   return (_BoundaryMask->GetComponent(ptId, 0) != .0);
 }
@@ -118,4 +120,4 @@ inline bool TetrahedralVolumeParameterizer::IsBoundaryPoint(vtkIdType ptId) cons
 
 } // namespace mirtk
 
-#endif // MIRTK_TetrahedralVolumeParameterizer_H
+#endif // MIRTK_TetrahedralMeshMapper_H

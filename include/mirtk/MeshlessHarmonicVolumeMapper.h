@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2016 Imperial College London
- * Copyright 2013-2016 Andreas Schuh
+ * Copyright 2015-2016 Imperial College London
+ * Copyright 2015-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_HarmonicFundamentalVolumeParameterizer_H
-#define MIRTK_HarmonicFundamentalVolumeParameterizer_H
+#ifndef MIRTK_MeshlessHarmonicVolumeMapper_H
+#define MIRTK_MeshlessHarmonicVolumeMapper_H
 
-#include "mirtk/FundamentalVolumeParameterizer.h"
+#include "mirtk/MeshlessVolumeMapper.h"
 
 #include "mirtk/Matrix.h"
 
@@ -40,9 +40,9 @@ namespace mirtk {
  * - Li et al. (2010). Feature-aligned harmonic volumetric mapping using MFS.
  *   Computers and Graphics (Pergamon), 34(3), 242–251.
  */
-class HarmonicFundamentalVolumeParameterizer : public FundamentalVolumeParameterizer
+class MeshlessHarmonicVolumeMapper : public MeshlessVolumeMapper
 {
-  mirtkObjectMacro(HarmonicFundamentalVolumeParameterizer);
+  mirtkObjectMacro(MeshlessHarmonicVolumeMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
@@ -54,7 +54,7 @@ class HarmonicFundamentalVolumeParameterizer : public FundamentalVolumeParameter
   mirtkPublicAttributeMacro(bool, UseSVD);
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const HarmonicFundamentalVolumeParameterizer &);
+  void CopyAttributes(const MeshlessHarmonicVolumeMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -62,16 +62,16 @@ class HarmonicFundamentalVolumeParameterizer : public FundamentalVolumeParameter
 public:
 
   /// Default constructor
-  HarmonicFundamentalVolumeParameterizer();
+  MeshlessHarmonicVolumeMapper();
 
   /// Copy constructor
-  HarmonicFundamentalVolumeParameterizer(const HarmonicFundamentalVolumeParameterizer &);
+  MeshlessHarmonicVolumeMapper(const MeshlessHarmonicVolumeMapper &);
 
   /// Assignment operator
-  HarmonicFundamentalVolumeParameterizer &operator =(const HarmonicFundamentalVolumeParameterizer &);
+  MeshlessHarmonicVolumeMapper &operator =(const MeshlessHarmonicVolumeMapper &);
 
   /// Destructor
-  virtual ~HarmonicFundamentalVolumeParameterizer();
+  virtual ~MeshlessHarmonicVolumeMapper();
 
   // ---------------------------------------------------------------------------
   // Execution
@@ -88,8 +88,8 @@ protected:
   /// \returns Whether source point was added or too close to existing point.
   virtual bool AddSourcePoint(double q[3]);
 
-  /// Parameterize interior of input data set
-  virtual void Parameterize();
+  /// Compute meshless map coefficients
+  virtual void Solve();
 
   // ---------------------------------------------------------------------------
   // Linear system
@@ -118,4 +118,4 @@ protected:
 
 } // namespace mirtk
 
-#endif // MIRTK_HarmonicFundamentalVolumeParameterizer_H
+#endif // MIRTK_MeshlessHarmonicVolumeMapper_H

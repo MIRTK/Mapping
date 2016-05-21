@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2016 Imperial College London
- * Copyright 2013-2016 Andreas Schuh
+ * Copyright 2015-2016 Imperial College London
+ * Copyright 2015-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_FundamentalMap_H
-#define MIRTK_FundamentalMap_H
+#ifndef MIRTK_MeshlessMap_H
+#define MIRTK_MeshlessMap_H
 
 #include "mirtk/Mapping.h"
 
@@ -36,11 +36,11 @@ class Cofstream;
 
 
 /**
- * Mapping defined as superposition of kernel functions
+ * Meshless map defined as superposition of kernel functions
  */
-class FundamentalMap : public Mapping
+class MeshlessMap : public Mapping
 {
-  mirtkAbstractMacro(FundamentalMap);
+  mirtkAbstractMacro(MeshlessMap);
 
   // ---------------------------------------------------------------------------
   // Attributes
@@ -56,7 +56,7 @@ private:
   mirtkPublicAttributeMacro(Matrix, Coefficients);
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const FundamentalMap &);
+  void CopyAttributes(const MeshlessMap &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -64,13 +64,13 @@ private:
 protected:
 
   /// Default constructor
-  FundamentalMap();
+  MeshlessMap();
 
   /// Copy constructor
-  FundamentalMap(const FundamentalMap &);
+  MeshlessMap(const MeshlessMap &);
 
   /// Assignment operator
-  FundamentalMap &operator =(const FundamentalMap &);
+  MeshlessMap &operator =(const MeshlessMap &);
 
   /// Initialize map after inputs and parameters are set
   virtual void Initialize();
@@ -78,7 +78,7 @@ protected:
 public:
 
   /// Destructor
-  virtual ~FundamentalMap();
+  virtual ~MeshlessMap();
 
   // ---------------------------------------------------------------------------
   // Map domain
@@ -108,6 +108,9 @@ public:
   /// Get number of source points
   int NumberOfSourcePoints() const;
 
+  // ---------------------------------------------------------------------------
+  // Evaluation
+
   /// Dimension of codomain, i.e., number of output values
   virtual int NumberOfComponents() const;
 
@@ -129,7 +132,7 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 
 // -----------------------------------------------------------------------------
-inline bool FundamentalMap::AddSourcePoint(double p[3], double tol)
+inline bool MeshlessMap::AddSourcePoint(double p[3], double tol)
 {
   if (tol > .0) {
     for (int i = 0; i < _SourcePoints.Size(); ++i) {
@@ -147,12 +150,18 @@ inline bool FundamentalMap::AddSourcePoint(double p[3], double tol)
 }
 
 // -----------------------------------------------------------------------------
-inline int FundamentalMap::NumberOfSourcePoints() const
+inline int MeshlessMap::NumberOfSourcePoints() const
 {
   return _SourcePoints.Size();
+}
+
+// -----------------------------------------------------------------------------
+inline int MeshlessMap::NumberOfComponents() const
+{
+  return _Coefficients.Cols();
 }
 
 
 } // namespace mirtk
 
-#endif // MIRTK_FundamentalMap_H
+#endif // MIRTK_MeshlessMap_H

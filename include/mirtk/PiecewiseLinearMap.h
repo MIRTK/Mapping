@@ -21,6 +21,7 @@
 #define MIRTK_PiecewiseLinearMap_H
 
 #include "mirtk/Mapping.h"
+#include "mirtk/Point.h"
 
 #include "vtkSmartPointer.h"
 #include "vtkPointSet.h"
@@ -101,6 +102,37 @@ public:
   // Import other overloads
   using Mapping::BoundingBox;
 
+  /// Number of discrete points at which map values are given
+  int NumberOfPoints() const;
+
+  /// Get i-th domain mesh point
+  ///
+  /// \param[in] i Point index.
+  ///
+  /// \returns Point coordinates.
+  Point GetPoint(int i) const;
+
+  /// Get i-th domain mesh point
+  ///
+  /// \param[in]  i Point index.
+  /// \param[out] x Point coordinate along x axis.
+  /// \param[out] y Point coordinate along y axis.
+  void GetPoint(int i, double &x, double &y) const;
+
+  /// Get i-th domain mesh point
+  ///
+  /// \param[in]  i Point index.
+  /// \param[out] x Point coordinate along x axis.
+  /// \param[out] y Point coordinate along y axis.
+  /// \param[out] z Point coordinate along z axis.
+  void GetPoint(int i, double &x, double &y, double &z) const;
+
+  /// Get i-th domain mesh point
+  ///
+  /// \param[in]  i Point index.
+  /// \param[out] p Point coordinates.
+  void GetPoint(int i, double p[3]) const;
+
   /// Get minimum axes-aligned bounding box of map domain
   ///
   /// \param[out] x1 Lower bound of map domain along x axis.
@@ -113,13 +145,27 @@ public:
                            double &x2, double &y2, double &z2) const;
 
   // ---------------------------------------------------------------------------
+  // Map codomain
+
+  /// Dimension of codomain, i.e., number of output values
+  virtual int NumberOfComponents() const;
+
+  /// Mesh discretizing the map domain with mapped mesh points
+  ///
+  /// \note Use this function only when the dimension of the codomain is 2 or 3.
+  ///
+  /// \sa NumberOfComponents.
+  ///
+  /// \returns Mesh discretizing the codomain of the map, where the mesh points
+  ///          correspond to the unmapped points of the map domain mesh or nullptr
+  ///          when the dimension of the codomain is not 2 or 3.
+  vtkSmartPointer<vtkDataSet> Codomain() const;
+
+  // ---------------------------------------------------------------------------
   // Evaluation
 
   // Import other overloads
   using Mapping::Evaluate;
-
-  /// Dimension of codomain, i.e., number of output values
-  virtual int NumberOfComponents() const;
 
   /// Evaluate map at a given mesh point
   ///
@@ -170,6 +216,42 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 // Inline definitions
 ////////////////////////////////////////////////////////////////////////////////
+
+// -----------------------------------------------------------------------------
+inline int PiecewiseLinearMap::NumberOfPoints() const
+{
+  return static_cast<int>(_Domain->GetNumberOfPoints());
+}
+
+// -----------------------------------------------------------------------------
+inline void PiecewiseLinearMap::GetPoint(int i, double p[3]) const
+{
+  _Domain->GetPoint(static_cast<vtkIdType>(i), p);
+}
+
+// -----------------------------------------------------------------------------
+inline void PiecewiseLinearMap::GetPoint(int i, double &x, double &y) const
+{
+  double p[3];
+  _Domain->GetPoint(static_cast<vtkIdType>(i), p);
+  x = p[0], y = p[1];
+}
+
+// -----------------------------------------------------------------------------
+inline void PiecewiseLinearMap::GetPoint(int i, double &x, double &y, double &z) const
+{
+  double p[3];
+  _Domain->GetPoint(static_cast<vtkIdType>(i), p);
+  x = p[0], y = p[1], z = p[2];
+}
+
+// -----------------------------------------------------------------------------
+inline Point PiecewiseLinearMap::GetPoint(int i) const
+{
+  double p[3];
+  this->GetPoint(i, p);
+  return Point(p);
+}
 
 // -----------------------------------------------------------------------------
 inline void PiecewiseLinearMap::Evaluate(double *v, int i) const

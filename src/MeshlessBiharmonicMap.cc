@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/BiharmonicFundamentalMap.h"
+#include "mirtk/MeshlessBiharmonicMap.h"
 
 #include "mirtk/Point.h"
 
@@ -30,31 +30,31 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-BiharmonicFundamentalMap::BiharmonicFundamentalMap()
+MeshlessBiharmonicMap::MeshlessBiharmonicMap()
 {
 }
 
 // -----------------------------------------------------------------------------
-BiharmonicFundamentalMap::BiharmonicFundamentalMap(const BiharmonicFundamentalMap &other)
+MeshlessBiharmonicMap::MeshlessBiharmonicMap(const MeshlessBiharmonicMap &other)
 :
-  HarmonicFundamentalMap(other)
+  MeshlessHarmonicMap(other)
 {
 }
 
 // -----------------------------------------------------------------------------
-BiharmonicFundamentalMap &BiharmonicFundamentalMap::operator =(const BiharmonicFundamentalMap &other)
+MeshlessBiharmonicMap &MeshlessBiharmonicMap::operator =(const MeshlessBiharmonicMap &other)
 {
   if (this != &other) {
-    HarmonicFundamentalMap::operator =(other);
+    MeshlessHarmonicMap::operator =(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-void BiharmonicFundamentalMap::Initialize()
+void MeshlessBiharmonicMap::Initialize()
 {
-  // Initialize base class (skip HarmonicFundamentalMap::Initialize)
-  FundamentalMap::Initialize();
+  // Initialize base class (skip MeshlessHarmonicMap::Initialize)
+  MeshlessMap::Initialize();
 
   // Check parameters
   if (_SourcePoints.Size() == 0) {
@@ -72,13 +72,13 @@ void BiharmonicFundamentalMap::Initialize()
 }
 
 // -----------------------------------------------------------------------------
-Mapping *BiharmonicFundamentalMap::NewCopy() const
+Mapping *MeshlessBiharmonicMap::NewCopy() const
 {
-  return new BiharmonicFundamentalMap(*this);
+  return new MeshlessBiharmonicMap(*this);
 }
 
 // -----------------------------------------------------------------------------
-BiharmonicFundamentalMap::~BiharmonicFundamentalMap()
+MeshlessBiharmonicMap::~MeshlessBiharmonicMap()
 {
 }
 
@@ -87,7 +87,7 @@ BiharmonicFundamentalMap::~BiharmonicFundamentalMap()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-bool BiharmonicFundamentalMap::Evaluate(double *v, double x, double y, double z) const
+bool MeshlessBiharmonicMap::Evaluate(double *v, double x, double y, double z) const
 {
   const int n = _SourcePoints.Size();
 
@@ -118,7 +118,7 @@ bool BiharmonicFundamentalMap::Evaluate(double *v, double x, double y, double z)
 }
 
 // -----------------------------------------------------------------------------
-double BiharmonicFundamentalMap::Evaluate(double x, double y, double z, int l) const
+double MeshlessBiharmonicMap::Evaluate(double x, double y, double z, int l) const
 {
   const int n = _SourcePoints.Size();
 

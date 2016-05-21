@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2016 Imperial College London
- * Copyright 2013-2016 Andreas Schuh
+ * Copyright 2015-2016 Imperial College London
+ * Copyright 2015-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_VolumeParameterizer_H
-#define MIRTK_VolumeParameterizer_H
+#ifndef MIRTK_VolumeMapper_H
+#define MIRTK_VolumeMapper_H
 
 #include "mirtk/Object.h"
 
@@ -34,12 +34,16 @@ namespace mirtk {
 
 
 /**
- * Base class of filters which parameterize the interior of a
- * piecewise linear complex (PLC)
+ * Base class of volumetric map solvers
+ *
+ * Subclasses implement solvers for the computation of a volumetric map given
+ * map values on the boundary surface of the volume as boundary conditions.
+ * Whether additional interior constraints are allowed depends on the respective
+ * solver implementation.
  */
-class VolumeParameterizer : public Object
+class VolumeMapper : public Object
 {
-  mirtkAbstractMacro(VolumeParameterizer);
+  mirtkAbstractMacro(VolumeMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
@@ -60,10 +64,10 @@ class VolumeParameterizer : public Object
   ///
   /// \note The output map is uninitialized! Mapping::Initialize must be
   ///       called before this map can be evaluated at map domain points.
-  mirtkReadOnlyComponentMacro(Mapping, OutputMap);
+  mirtkReadOnlyAttributeMacro(SharedPtr<Mapping>, Output);
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const VolumeParameterizer &);
+  void CopyAttributes(const VolumeMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -71,27 +75,24 @@ class VolumeParameterizer : public Object
 protected:
 
   /// Default constructor
-  VolumeParameterizer();
+  VolumeMapper();
 
   /// Copy constructor
-  VolumeParameterizer(const VolumeParameterizer &);
+  VolumeMapper(const VolumeMapper &);
 
   /// Assignment operator
-  VolumeParameterizer &operator =(const VolumeParameterizer &);
+  VolumeMapper &operator =(const VolumeMapper &);
 
 public:
 
   /// Destructor
-  virtual ~VolumeParameterizer();
+  virtual ~VolumeMapper();
+
+  // ---------------------------------------------------------------------------
+  // Auxiliaries
 
   /// Dimension of codomain of volumetric map
-  int OutputDimension() const;
-
-  /// Get volumetric map and set _OutputMap to nullptr
-  ///
-  /// \note The returned object has to be deleted by the caller.
-  ///       Use OutputMap() instead to keep ownership with this class.
-  Mapping *GetOutputMap();
+  int NumberOfComponents() const;
 
   // ---------------------------------------------------------------------------
   // Execution
@@ -107,8 +108,8 @@ protected:
   /// Initialize boundary surface with corresponding boundary map as point data
   virtual void InitializeBoundary(vtkPointSet *, vtkDataArray *);
 
-  /// Parameterize interior of input data set
-  virtual void Parameterize() = 0;
+  /// Compute map value at free points
+  virtual void Solve() = 0;
 
   /// Finalize filter execution
   virtual void Finalize();
@@ -120,20 +121,12 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 
 // -----------------------------------------------------------------------------
-inline int VolumeParameterizer::OutputDimension() const
+inline int VolumeMapper::NumberOfComponents() const
 {
   return _InputMap ? static_cast<int>(_InputMap->GetNumberOfComponents()) : 0;
-}
-
-// -----------------------------------------------------------------------------
-inline Mapping *VolumeParameterizer::GetOutputMap()
-{
-  Mapping *map = _OutputMap;
-  _OutputMap = nullptr;
-  return map;
 }
 
 
 } // namespace mirtk
 
-#endif // MIRTK_VolumeParameterizer_H
+#endif // MIRTK_VolumeMapper_H

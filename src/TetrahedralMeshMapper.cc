@@ -1,5 +1,5 @@
 /*
- * Medical Image Registration ToolKit (MMIRTK)
+ * Medical Image Registration ToolKit (MIRTK)
  *
  * Copyright 2013-2016 Imperial College London
  * Copyright 2013-2016 Andreas Schuh
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/TetrahedralVolumeParameterizer.h"
+#include "mirtk/TetrahedralMeshMapper.h"
 
 #include "mirtk/Vtk.h"
 #include "mirtk/PointSetUtils.h"
@@ -38,8 +38,7 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void TetrahedralVolumeParameterizer
-::CopyAttributes(const TetrahedralVolumeParameterizer &other)
+void TetrahedralMeshMapper::CopyAttributes(const TetrahedralMeshMapper &other)
 {
   _InputMask = other._InputMask;
   if (other._Volume && other._Coords && other._BoundaryMask) {
@@ -63,15 +62,14 @@ void TetrahedralVolumeParameterizer
 }
 
 // -----------------------------------------------------------------------------
-TetrahedralVolumeParameterizer::TetrahedralVolumeParameterizer()
+TetrahedralMeshMapper::TetrahedralMeshMapper()
 {
 }
 
 // -----------------------------------------------------------------------------
-TetrahedralVolumeParameterizer
-::TetrahedralVolumeParameterizer(const TetrahedralVolumeParameterizer &other)
+TetrahedralMeshMapper::TetrahedralMeshMapper(const TetrahedralMeshMapper &other)
 :
-  VolumeParameterizer(other),
+  VolumeMapper(other),
   _NumberOfPoints(0),
   _NumberOfBoundaryPoints(0),
   _NumberOfInteriorPoints(0)
@@ -80,18 +78,17 @@ TetrahedralVolumeParameterizer
 }
 
 // -----------------------------------------------------------------------------
-TetrahedralVolumeParameterizer &TetrahedralVolumeParameterizer
-::operator =(const TetrahedralVolumeParameterizer &other)
+TetrahedralMeshMapper &TetrahedralMeshMapper::operator =(const TetrahedralMeshMapper &other)
 {
   if (this != &other) {
-    VolumeParameterizer::operator =(other);
+    VolumeMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-TetrahedralVolumeParameterizer::~TetrahedralVolumeParameterizer()
+TetrahedralMeshMapper::~TetrahedralMeshMapper()
 {
 }
 
@@ -100,10 +97,10 @@ TetrahedralVolumeParameterizer::~TetrahedralVolumeParameterizer()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void TetrahedralVolumeParameterizer::Initialize()
+void TetrahedralMeshMapper::Initialize()
 {
   // Initialize base class
-  VolumeParameterizer::Initialize();
+  VolumeMapper::Initialize();
 
   // Tetrahedralize interior of input point set
   int map_index, mask_index = -1;
@@ -145,16 +142,16 @@ void TetrahedralVolumeParameterizer::Initialize()
 }
 
 // -----------------------------------------------------------------------------
-void TetrahedralVolumeParameterizer::Finalize()
+void TetrahedralMeshMapper::Finalize()
 {
   // Create output map
-  PiecewiseLinearMap *map = new PiecewiseLinearMap();
+  SharedPtr<PiecewiseLinearMap> map = NewShared<PiecewiseLinearMap>();
   map->Domain(_Volume);
   map->Values(_Coords);
-  _OutputMap = map;
+  _Output = map;
 
   // Finalize base class
-  VolumeParameterizer::Finalize();
+  VolumeMapper::Finalize();
 }
 
 

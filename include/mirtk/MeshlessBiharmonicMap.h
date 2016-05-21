@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2016 Imperial College London
- * Copyright 2013-2016 Andreas Schuh
+ * Copyright 2015-2016 Imperial College London
+ * Copyright 2015-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,64 +17,63 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_HarmonicFundamentalMap_H
-#define MIRTK_HarmonicFundamentalMap_H
+#ifndef MIRTK_MeshlessBiharmonicMap_H
+#define MIRTK_MeshlessBiharmonicMap_H
 
-#include "mirtk/FundamentalMap.h"
-
-#include "mirtk/Math.h"
-#include "mirtk/PointSet.h"
-#include "mirtk/Vector.h"
+#include "mirtk/MeshlessHarmonicMap.h"
 
 
 namespace mirtk {
 
 
 /**
- * Harmonic map computed with the method of fundamental solutions (MFS)
+ * Biharmonic map computed using the method of fundamental solutions (MFS)
  *
- * Li et al. (2009). Meshless harmonic volumetric mapping using fundamental solution methods.
- * IEEE Transactions on Automation Science and Engineering, 6(3), 409–422.
+ * Xu et al. (2013). Biharmonic volumetric mapping using fundamental solutions. 
+ * IEEE Transactions on Visualization and Computer Graphics, 19(5), 787–798.
  */
-class HarmonicFundamentalMap : public FundamentalMap
+class MeshlessBiharmonicMap : public MeshlessHarmonicMap
 {
-  mirtkObjectMacro(HarmonicFundamentalMap);
+  mirtkObjectMacro(MeshlessBiharmonicMap);
 
 public:
 
   // ---------------------------------------------------------------------------
   // Auxiliaries
 
-  /// Harmonic kernel function
+  /// Biharmonic kernel function
   ///
   /// \param[in] d Distance of point to source point.
   ///
-  /// \returns Harmonic kernel function value.
-  static double H(double d);
+  /// \returns Biharmonic kernel function value.
+  static double B(double d);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
 
   /// Default constructor
-  HarmonicFundamentalMap();
+  MeshlessBiharmonicMap();
 
   /// Copy constructor
-  HarmonicFundamentalMap(const HarmonicFundamentalMap &);
+  MeshlessBiharmonicMap(const MeshlessBiharmonicMap &);
 
   /// Assignment operator
-  HarmonicFundamentalMap &operator =(const HarmonicFundamentalMap &);
+  MeshlessBiharmonicMap &operator =(const MeshlessBiharmonicMap &);
+
+  /// Initialize map after inputs and parameters are set
+  virtual void Initialize();
 
   /// Make deep copy of this volumetric map
   virtual Mapping *NewCopy() const;
 
   /// Destructor
-  virtual ~HarmonicFundamentalMap();
+  virtual ~MeshlessBiharmonicMap();
 
   // ---------------------------------------------------------------------------
   // Evaluation
 
   // Import other overloads
-  using FundamentalMap::Evaluate;
+  using MeshlessMap::Evaluate;
 
   /// Evaluate map at a given point
   ///
@@ -104,12 +103,12 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 // -----------------------------------------------------------------------------
-inline double HarmonicFundamentalMap::H(double d)
+inline double MeshlessBiharmonicMap::B(double d)
 {
-  return .25 / (d * pi);
+  return d / (8.0 * pi);
 }
 
 
 } // namespace mirtk
 
-#endif // MIRTK_HarmonicFundamentalMap_H
+#endif // MIRTK_MeshlessBiharmonicMap_H

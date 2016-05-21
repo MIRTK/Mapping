@@ -22,4 +22,12 @@
 # @brief Build configuration of MIRTK Mapping tools.
 ##############################################################################
 
-mirtk_add_executable(map DEPENDS Lib${PROJECT_NAME} ${VTK_LIBRARIES})
+macro(add_mapping_tool cmd)
+  mirtk_add_executable(${cmd} DEPENDS Lib${PROJECT_NAME} ${VTK_LIBRARIES})
+endmacro ()
+
+add_mapping_tool(map-boundary)
+add_mapping_tool(map-surface)
+add_mapping_tool(map-volume)
+add_mapping_tool(compose-maps)
+add_mapping_tool(evaluate-map)

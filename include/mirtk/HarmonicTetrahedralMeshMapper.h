@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2016 Imperial College London
- * Copyright 2013-2016 Andreas Schuh
+ * Copyright 2015-2016 Imperial College London
+ * Copyright 2015-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_HarmonicTetrahedralVolumeParameterizer_H
-#define MIRTK_HarmonicTetrahedralVolumeParameterizer_H
+#ifndef MIRTK_HarmonicTetrahedralMeshMapper_H
+#define MIRTK_HarmonicTetrahedralMeshMapper_H
 
-#include "mirtk/LinearTetrahedralVolumeParameterizer.h"
+#include "mirtk/LinearTetrahedralMeshMapper.h"
 
 
 namespace mirtk {
@@ -32,17 +32,16 @@ namespace mirtk {
  * This implementation is based on
  *
  *   Paillé & Poulin (2012), As-conformal-as-possible discrete volumetric mapping,
- *   Computers and Graphics (Pergamon), 36(5), 427–433. doi:10.1016/j.cag.2012.03.014
+ *   Computers and Graphics (Pergamon), 36(5), 427–433.
  *
  * The discrete volumetric harmonic map was first presented in
  *
  *   Wang et al. (2004), Volumetric harmonic map,
  *   Communications in Information and Systems, 3(3), 191–202.
  */
-class HarmonicTetrahedralVolumeParameterizer
-: public LinearTetrahedralVolumeParameterizer
+class HarmonicTetrahedralMeshMapper : public LinearTetrahedralMeshMapper
 {
-  mirtkObjectMacro(HarmonicTetrahedralVolumeParameterizer);
+  mirtkObjectMacro(HarmonicTetrahedralMeshMapper);
 
 public:
 
@@ -50,16 +49,16 @@ public:
   // Construction/Destruction
 
   /// Default constructor
-  HarmonicTetrahedralVolumeParameterizer();
+  HarmonicTetrahedralMeshMapper();
 
   /// Copy constructor
-  HarmonicTetrahedralVolumeParameterizer(const HarmonicTetrahedralVolumeParameterizer &);
+  HarmonicTetrahedralMeshMapper(const HarmonicTetrahedralMeshMapper &);
 
   /// Assignment operator
-  HarmonicTetrahedralVolumeParameterizer &operator =(const HarmonicTetrahedralVolumeParameterizer &);
+  HarmonicTetrahedralMeshMapper &operator =(const HarmonicTetrahedralMeshMapper &);
 
   /// Destructor
-  virtual ~HarmonicTetrahedralVolumeParameterizer();
+  virtual ~HarmonicTetrahedralMeshMapper();
 
   // ---------------------------------------------------------------------------
   // Auxiliary functions
@@ -88,4 +87,4 @@ protected:
 
 } // namespace mirtk
 
-#endif // MIRTK_HarmonicTetrahedralVolumeParameterizer_H 
+#endif // MIRTK_HarmonicTetrahedralMeshMapper_H 

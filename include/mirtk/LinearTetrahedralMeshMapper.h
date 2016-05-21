@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2016 Imperial College London
- * Copyright 2013-2016 Andreas Schuh
+ * Copyright 2015-2016 Imperial College London
+ * Copyright 2015-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_LinearTetrahedralVolumeParameterizer_H
-#define MIRTK_LinearTetrahedralVolumeParameterizer_H
+#ifndef MIRTK_LinearTetrahedralMeshMapper_H
+#define MIRTK_LinearTetrahedralMeshMapper_H
 
-#include "mirtk/TetrahedralVolumeParameterizer.h"
+#include "mirtk/TetrahedralMeshMapper.h"
 
 #include "mirtk/Array.h"
 
@@ -33,17 +33,17 @@ class Matrix3x3;
 
 
 /**
- * Base class of volume re-parameterization filters based on discrete linear operators
+ * Base class of volumetric map solvers based on discrete linear operators
  *
- * The reparameterization is the solution of a system of linear equations.
- * The output domain of the volumetric map is currently restricted to 3D.
+ * The volumetric map is the solution of a system of linear equations.
+ * The codomain of the volumetric map is currently restricted to 3D.
  * This should not be a practical limitation because these filters are mainly
- * used to re-parameterize a 3D volume, i.e., a map from a 3D domain to another
- * 3D domain.
+ * used to parameterize a 3D volume, i.e., to map a point from one 3D domain
+ * to another 3D domain.
  */
-class LinearTetrahedralVolumeParameterizer : public TetrahedralVolumeParameterizer
+class LinearTetrahedralMeshMapper : public TetrahedralMeshMapper
 {
-  mirtkAbstractMacro(LinearTetrahedralVolumeParameterizer);
+  mirtkAbstractMacro(LinearTetrahedralMeshMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
@@ -64,7 +64,7 @@ class LinearTetrahedralVolumeParameterizer : public TetrahedralVolumeParameteriz
   mirtkReadOnlyAttributeMacro(Array<int>, InteriorPointPos);
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const LinearTetrahedralVolumeParameterizer &);
+  void CopyAttributes(const LinearTetrahedralMeshMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -72,18 +72,18 @@ class LinearTetrahedralVolumeParameterizer : public TetrahedralVolumeParameteriz
 protected:
 
   /// Default constructor
-  LinearTetrahedralVolumeParameterizer();
+  LinearTetrahedralMeshMapper();
 
   /// Copy constructor
-  LinearTetrahedralVolumeParameterizer(const LinearTetrahedralVolumeParameterizer &);
+  LinearTetrahedralMeshMapper(const LinearTetrahedralMeshMapper &);
 
   /// Assignment operator
-  LinearTetrahedralVolumeParameterizer &operator =(const LinearTetrahedralVolumeParameterizer &);
+  LinearTetrahedralMeshMapper &operator =(const LinearTetrahedralMeshMapper &);
 
 public:
 
   /// Destructor
-  virtual ~LinearTetrahedralVolumeParameterizer();
+  virtual ~LinearTetrahedralMeshMapper();
 
   // ---------------------------------------------------------------------------
   // Execution
@@ -94,10 +94,10 @@ protected:
   virtual void Initialize();
 
   /// Parameterize interior points
-  virtual void Parameterize();
+  virtual void Solve();
 
   /// Solve linear system with operator weights computed using the passed object
-  void Solve(const LinearTetrahedralVolumeParameterizer *);
+  void Solve(const LinearTetrahedralMeshMapper *);
 
   // ---------------------------------------------------------------------------
   // Auxiliary functions
@@ -126,4 +126,4 @@ public:
 
 } // namespace mirtk
 
-#endif // MIRTK_LinearTetrahedralVolumeParameterizer_H
+#endif // MIRTK_LinearTetrahedralMeshMapper_H

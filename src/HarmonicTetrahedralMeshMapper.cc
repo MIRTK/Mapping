@@ -17,9 +17,10 @@
  * limitations under the License.
  */
 
-#include "mirtk/HarmonicFundamentalMap.h"
+#include "mirtk/HarmonicTetrahedralMeshMapper.h"
 
-#include "mirtk/Point.h"
+#include "mirtk/Matrix3x3.h"
+#include "mirtk/VtkMath.h"
 
 
 namespace mirtk {
@@ -30,81 +31,55 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-HarmonicFundamentalMap::HarmonicFundamentalMap()
+HarmonicTetrahedralMeshMapper::HarmonicTetrahedralMeshMapper()
 {
 }
 
 // -----------------------------------------------------------------------------
-HarmonicFundamentalMap::HarmonicFundamentalMap(const HarmonicFundamentalMap &other)
+HarmonicTetrahedralMeshMapper
+::HarmonicTetrahedralMeshMapper(const HarmonicTetrahedralMeshMapper &other)
 :
-  FundamentalMap(other)
+  LinearTetrahedralMeshMapper(other)
 {
 }
 
 // -----------------------------------------------------------------------------
-HarmonicFundamentalMap &HarmonicFundamentalMap::operator =(const HarmonicFundamentalMap &other)
+HarmonicTetrahedralMeshMapper &HarmonicTetrahedralMeshMapper
+::operator =(const HarmonicTetrahedralMeshMapper &other)
 {
   if (this != &other) {
-    FundamentalMap::operator =(other);
+    LinearTetrahedralMeshMapper::operator =(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-Mapping *HarmonicFundamentalMap::NewCopy() const
-{
-  return new HarmonicFundamentalMap(*this);
-}
-
-// -----------------------------------------------------------------------------
-HarmonicFundamentalMap::~HarmonicFundamentalMap()
+HarmonicTetrahedralMeshMapper
+::~HarmonicTetrahedralMeshMapper()
 {
 }
 
 // =============================================================================
-// Evaluation
+// Auxiliary functions
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-bool HarmonicFundamentalMap::Evaluate(double *v, double x, double y, double z) const
+Matrix3x3 HarmonicTetrahedralMeshMapper
+::GetWeight(vtkIdType, const double v0[3], const double v1[3],
+                       const double v2[3], const double v3[3], double volume) const
 {
-  Point  p(x, y, z);
-  double d, h;
+  double a[3], b[3], n0[3], n1[3];
 
-  for (int j = 0; j < _Coefficients.Cols(); ++j) {
-    v[j] = .0;
-  }
+  vtkMath::Subtract(v2, v1, a);
+  vtkMath::Subtract(v3, v1, b);
+  vtkMath::Cross(a, b, n0);
 
-  for (int i = 0; i < _SourcePoints.Size(); ++i) {
-    d = p.Distance(_SourcePoints(i));
-    if (d < 1e-12) {
-      for (int j = 0; j < _Coefficients.Cols(); ++j) {
-        v[j] = _OutsideValue;
-      }
-      return false;
-    }
-    h = H(d);
-    for (int j = 0; j < _Coefficients.Cols(); ++j) {
-      v[j] += h * _Coefficients(i, j);
-    }
-  }
+  vtkMath::Subtract(v3, v0, a);
+  vtkMath::Subtract(v2, v0, b);
+  vtkMath::Cross(a, b, n1);
 
-  return true;
-}
-
-// -----------------------------------------------------------------------------
-double HarmonicFundamentalMap::Evaluate(double x, double y, double z, int l) const
-{
-  Point p(x, y, z);
-  double    d, v = .0;
-
-  for (int i = 0; i < _SourcePoints.Size(); ++i) {
-    d = p.Distance(_SourcePoints(i));
-    if (d < 1e-12) return _OutsideValue;
-    v += H(d) * _Coefficients(i, l);
-  }
-
-  return v;
+  const double c = vtkMath::Dot(n0, n1) / (36.0 * volume);
+  return Matrix3x3(c, .0, .0,  .0, c, .0,  .0, .0, c);
 }
 
 

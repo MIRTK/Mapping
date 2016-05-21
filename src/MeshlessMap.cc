@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/FundamentalMap.h"
+#include "mirtk/MeshlessMap.h"
 
 #include "mirtk/Point.h"
 
@@ -29,19 +29,19 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void FundamentalMap::CopyAttributes(const FundamentalMap &other)
+void MeshlessMap::CopyAttributes(const MeshlessMap &other)
 {
   _SourcePoints = other._SourcePoints;
   _Coefficients = other._Coefficients;
 }
 
 // -----------------------------------------------------------------------------
-FundamentalMap::FundamentalMap()
+MeshlessMap::MeshlessMap()
 {
 }
 
 // -----------------------------------------------------------------------------
-FundamentalMap::FundamentalMap(const FundamentalMap &other)
+MeshlessMap::MeshlessMap(const MeshlessMap &other)
 :
   Mapping(other)
 {
@@ -49,7 +49,7 @@ FundamentalMap::FundamentalMap(const FundamentalMap &other)
 }
 
 // -----------------------------------------------------------------------------
-FundamentalMap &FundamentalMap::operator =(const FundamentalMap &other)
+MeshlessMap &MeshlessMap::operator =(const MeshlessMap &other)
 {
   if (this != &other) {
     Mapping::operator =(other);
@@ -59,7 +59,7 @@ FundamentalMap &FundamentalMap::operator =(const FundamentalMap &other)
 }
 
 // -----------------------------------------------------------------------------
-void FundamentalMap::Initialize()
+void MeshlessMap::Initialize()
 {
   // Initialize base class
   Mapping::Initialize();
@@ -80,7 +80,7 @@ void FundamentalMap::Initialize()
 }
 
 // -----------------------------------------------------------------------------
-FundamentalMap::~FundamentalMap()
+MeshlessMap::~MeshlessMap()
 {
 }
 
@@ -89,8 +89,8 @@ FundamentalMap::~FundamentalMap()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void FundamentalMap::BoundingBox(double &x1, double &y1, double &z1,
-                                 double &x2, double &y2, double &z2) const
+void MeshlessMap::BoundingBox(double &x1, double &y1, double &z1,
+                              double &x2, double &y2, double &z2) const
 {
   if (_SourcePoints.Size() > 0) {
     const Point &p0 = _SourcePoints(0);
@@ -112,28 +112,18 @@ void FundamentalMap::BoundingBox(double &x1, double &y1, double &z1,
 }
 
 // =============================================================================
-// Evaluation
-// =============================================================================
-
-// -----------------------------------------------------------------------------
-int FundamentalMap::NumberOfComponents() const
-{
-  return _Coefficients.Cols();
-}
-
-// =============================================================================
 // I/O
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void FundamentalMap::ReadMap(Cifstream &is)
+void MeshlessMap::ReadMap(Cifstream &is)
 {
   _SourcePoints.Clear();
   is >> _SourcePoints >> _Coefficients;
 }
 
 // -----------------------------------------------------------------------------
-void FundamentalMap::WriteMap(Cofstream &os) const
+void MeshlessMap::WriteMap(Cofstream &os) const
 {
   os << _SourcePoints << _Coefficients;
 }

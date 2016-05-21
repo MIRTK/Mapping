@@ -22,7 +22,9 @@
 #include "mirtk/Vtk.h"
 #include "mirtk/Path.h"
 #include "mirtk/PointSetIO.h"
+#include "mirtk/PointSetUtils.h"
 
+#include "vtkPoints.h"
 #include "vtkImageData.h"
 #include "vtkPointData.h"
 #include "vtkCellData.h"
@@ -133,7 +135,7 @@ void PiecewiseLinearMap::BoundingBox(double &x1, double &y1, double &z1,
 }
 
 // =============================================================================
-// Evaluation
+// Map codomain
 // =============================================================================
 
 // -----------------------------------------------------------------------------
@@ -141,6 +143,31 @@ int PiecewiseLinearMap::NumberOfComponents() const
 {
   return static_cast<int>(_Values->GetNumberOfComponents());
 }
+
+// -----------------------------------------------------------------------------
+vtkSmartPointer<vtkDataSet> PiecewiseLinearMap::Codomain() const
+{
+  const int dim = this->NumberOfComponents();
+  vtkPolyData *domain = vtkPolyData::SafeDownCast(_Domain);
+  if (domain == nullptr || dim < 2 || dim > 3) return nullptr;
+  double p[3] = {.0};
+  vtkSmartPointer<vtkPoints> points = domain->GetPoints()->NewInstance();
+  points->SetNumberOfPoints(domain->GetNumberOfPoints());
+  for (vtkIdType ptId = 0; ptId < domain->GetNumberOfPoints(); ++ptId) {
+    _Values->GetTuple(ptId, p);
+    points->SetPoint(ptId, p);
+  }
+  vtkSmartPointer<vtkPolyData> codomain = domain->NewInstance();
+  codomain->ShallowCopy(domain);
+  codomain->SetPoints(points);
+  codomain->GetPointData()->Initialize();
+  codomain->GetCellData()->Initialize();
+  return codomain;
+}
+
+// =============================================================================
+// Evaluation
+// =============================================================================
 
 // -----------------------------------------------------------------------------
 bool PiecewiseLinearMap::Evaluate(double *v, double x, double y, double z) const
@@ -205,11 +232,12 @@ bool PiecewiseLinearMap::Read(const char *fname)
     reader->Update();
     _Domain = reader->GetOutput();
   }
-  if (_Domain->GetNumberOfPoints() == 0) return false;
+  if (_Domain->GetNumberOfPoints() == 0 ||
+      _Domain->GetNumberOfCells()  == 0) return false;
   if (_Domain->GetPointData()->GetNumberOfArrays() == 1) {
     _Values = _Domain->GetPointData()->GetArray(0);
   } else {
-    _Values = NULL;
+    _Values = nullptr;
   }
   this->Initialize();
   return true;
@@ -225,7 +253,8 @@ bool PiecewiseLinearMap::Write(const char *fname) const
   output->GetPointData()->Initialize();
   if (_Values->GetNumberOfComponents() == 1) {
     output->GetPointData()->SetScalars(_Values);
-  } else if (_Values->GetNumberOfComponents() == 3) {
+  } else if (_Values->GetNumberOfComponents() == 2 ||
+             _Values->GetNumberOfComponents() == 3) {
     output->GetPointData()->SetTCoords(_Values);
   } else {
     output->GetPointData()->AddArray(_Values);

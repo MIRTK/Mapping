@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2016 Imperial College London
- * Copyright 2013-2016 Andreas Schuh
+ * Copyright 2015-2016 Imperial College London
+ * Copyright 2015-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,63 +17,64 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_BiharmonicFundamentalMap_H
-#define MIRTK_BiharmonicFundamentalMap_H
+#ifndef MIRTK_MeshlessHarmonicMap_H
+#define MIRTK_MeshlessHarmonicMap_H
 
-#include "mirtk/HarmonicFundamentalMap.h"
+#include "mirtk/MeshlessMap.h"
+
+#include "mirtk/Math.h"
+#include "mirtk/PointSet.h"
+#include "mirtk/Vector.h"
 
 
 namespace mirtk {
 
 
 /**
- * Biharmonic map computed using the method of fundamental solutions (MFS)
+ * Harmonic map computed with the method of fundamental solutions (MFS)
  *
- * Xu et al. (2013). Biharmonic volumetric mapping using fundamental solutions. 
- * IEEE Transactions on Visualization and Computer Graphics, 19(5), 787–798.
+ * Li et al. (2009). Meshless harmonic volumetric mapping using fundamental solution methods.
+ * IEEE Transactions on Automation Science and Engineering, 6(3), 409–422.
  */
-class BiharmonicFundamentalMap : public HarmonicFundamentalMap
+class MeshlessHarmonicMap : public MeshlessMap
 {
-  mirtkObjectMacro(BiharmonicFundamentalMap);
+  mirtkObjectMacro(MeshlessHarmonicMap);
 
 public:
 
   // ---------------------------------------------------------------------------
   // Auxiliaries
 
-  /// Biharmonic kernel function
+  /// Harmonic kernel function
   ///
   /// \param[in] d Distance of point to source point.
   ///
-  /// \returns Biharmonic kernel function value.
-  static double B(double d);
+  /// \returns Harmonic kernel function value.
+  static double H(double d);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
 
   /// Default constructor
-  BiharmonicFundamentalMap();
+  MeshlessHarmonicMap();
 
   /// Copy constructor
-  BiharmonicFundamentalMap(const BiharmonicFundamentalMap &);
+  MeshlessHarmonicMap(const MeshlessHarmonicMap &);
 
   /// Assignment operator
-  BiharmonicFundamentalMap &operator =(const BiharmonicFundamentalMap &);
-
-  /// Initialize map after inputs and parameters are set
-  virtual void Initialize();
+  MeshlessHarmonicMap &operator =(const MeshlessHarmonicMap &);
 
   /// Make deep copy of this volumetric map
   virtual Mapping *NewCopy() const;
 
   /// Destructor
-  virtual ~BiharmonicFundamentalMap();
+  virtual ~MeshlessHarmonicMap();
 
   // ---------------------------------------------------------------------------
   // Evaluation
 
   // Import other overloads
-  using FundamentalMap::Evaluate;
+  using MeshlessMap::Evaluate;
 
   /// Evaluate map at a given point
   ///
@@ -83,7 +84,7 @@ public:
   /// \param[in]  z Coordinate of point along z axis at which to evaluate map.
   ///
   /// \returns Whether input point is inside map domain.
-  virtual bool Evaluate(double *v, double x, double y, double z = 0) const;
+  virtual bool Evaluate(double *v, double x, double y, double z = .0) const;
 
   /// Evaluate map at a given point
   ///
@@ -94,7 +95,7 @@ public:
   ///
   /// \returns The l-th component of the map value evaluated at the given point
   ///          or the \c OutsideValue when input point is outside the map domain.
-  virtual double Evaluate(double x, double y, double z = 0, int l = 0) const;
+  virtual double Evaluate(double x, double y, double z = .0, int l = 0) const;
 
 };
 
@@ -103,12 +104,12 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 // -----------------------------------------------------------------------------
-inline double BiharmonicFundamentalMap::B(double d)
+inline double MeshlessHarmonicMap::H(double d)
 {
-  return d / (8.0 * pi);
+  return .25 / (d * pi);
 }
 
 
 } // namespace mirtk
 
-#endif // MIRTK_BiharmonicFundamentalMap_H
+#endif // MIRTK_MeshlessHarmonicMap_H

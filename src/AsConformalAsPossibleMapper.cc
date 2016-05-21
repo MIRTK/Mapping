@@ -17,13 +17,13 @@
  * limitations under the License.
  */
 
-#include "mirtk/AsConformalAsPossibleVolumeParameterizer.h"
+#include "mirtk/AsConformalAsPossibleMapper.h"
 
 #include "mirtk/Math.h"
 #include "mirtk/Array.h"
 #include "mirtk/Matrix3x3.h"
 #include "mirtk/Parallel.h"
-#include "mirtk/HarmonicTetrahedralVolumeParameterizer.h" // used to obtain initial map
+#include "mirtk/HarmonicTetrahedralMeshMapper.h" // used to obtain initial map
 #include "mirtk/VtkMath.h"
 
 #include "vtkSmartPointer.h"
@@ -40,7 +40,7 @@ namespace mirtk {
 // Construction/destruction
 // =============================================================================
 
-namespace AsConformalAsPossibleVolumeParameterizerUtils {
+namespace AsConformalAsPossibleMapperUtils {
 
 
 // -----------------------------------------------------------------------------
@@ -171,50 +171,50 @@ public:
 
 
 }
-// namespace AsConformalAsPossibleVolumeParameterizerUtils
-using namespace AsConformalAsPossibleVolumeParameterizerUtils;
+// namespace AsConformalAsPossibleMapperUtils
+using namespace AsConformalAsPossibleMapperUtils;
 
 // =============================================================================
 // Construction/destruction
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void AsConformalAsPossibleVolumeParameterizer
-::CopyAttributes(const AsConformalAsPossibleVolumeParameterizer &other)
+void AsConformalAsPossibleMapper
+::CopyAttributes(const AsConformalAsPossibleMapper &other)
 {
   _UniformWeight = other._UniformWeight;
   _Orientation   = other._Orientation;
 }
 
 // -----------------------------------------------------------------------------
-AsConformalAsPossibleVolumeParameterizer::AsConformalAsPossibleVolumeParameterizer()
+AsConformalAsPossibleMapper::AsConformalAsPossibleMapper()
 :
   _UniformWeight(.7)
 {
 }
 
 // -----------------------------------------------------------------------------
-AsConformalAsPossibleVolumeParameterizer
-::AsConformalAsPossibleVolumeParameterizer(const AsConformalAsPossibleVolumeParameterizer &other)
+AsConformalAsPossibleMapper
+::AsConformalAsPossibleMapper(const AsConformalAsPossibleMapper &other)
 :
-  LinearTetrahedralVolumeParameterizer(other)
+  LinearTetrahedralMeshMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-AsConformalAsPossibleVolumeParameterizer &AsConformalAsPossibleVolumeParameterizer
-::operator =(const AsConformalAsPossibleVolumeParameterizer &other)
+AsConformalAsPossibleMapper &AsConformalAsPossibleMapper
+::operator =(const AsConformalAsPossibleMapper &other)
 {
   if (this != &other) {
-    LinearTetrahedralVolumeParameterizer::operator =(other);
+    LinearTetrahedralMeshMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-AsConformalAsPossibleVolumeParameterizer::~AsConformalAsPossibleVolumeParameterizer()
+AsConformalAsPossibleMapper::~AsConformalAsPossibleMapper()
 {
 }
 
@@ -223,12 +223,12 @@ AsConformalAsPossibleVolumeParameterizer::~AsConformalAsPossibleVolumeParameteri
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void AsConformalAsPossibleVolumeParameterizer::Initialize()
+void AsConformalAsPossibleMapper::Initialize()
 {
   const int d = 3; // dimension of output domain
 
   // Initialize base class
-  LinearTetrahedralVolumeParameterizer::Initialize();
+  LinearTetrahedralMeshMapper::Initialize();
 
   // Limit uniform scaling weight to interval [0, 1]
   _UniformWeight = max(.0, min(1.0, _UniformWeight));
@@ -247,7 +247,7 @@ void AsConformalAsPossibleVolumeParameterizer::Initialize()
 
   // Obtain initial harmonic map
   if (no_initial_map) {
-    HarmonicTetrahedralVolumeParameterizer harmonic_map;
+    HarmonicTetrahedralMeshMapper harmonic_map;
     Solve(&harmonic_map);
   }
 
@@ -262,10 +262,10 @@ void AsConformalAsPossibleVolumeParameterizer::Initialize()
 }
 
 // -----------------------------------------------------------------------------
-void AsConformalAsPossibleVolumeParameterizer::Finalize()
+void AsConformalAsPossibleMapper::Finalize()
 {
   // Finalize base class
-  LinearTetrahedralVolumeParameterizer::Finalize();
+  LinearTetrahedralMeshMapper::Finalize();
 
   // Clear orientation matrices
   _Orientation.clear();
@@ -294,7 +294,7 @@ static inline Matrix3x3 GetAngleMatrix(const double n[3], double w)
 }
 
 // -----------------------------------------------------------------------------
-Matrix3x3 AsConformalAsPossibleVolumeParameterizer
+Matrix3x3 AsConformalAsPossibleMapper
 ::GetWeight(vtkIdType cellId, const double v0[3], const double v1[3],
                               const double v2[3], const double v3[3], double volume) const
 {

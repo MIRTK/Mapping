@@ -24,41 +24,59 @@
 
 set(HEADERS
   ${BINARY_INCLUDE_DIR}/mirtk/${PROJECT_NAME}Export.h
-  # Mappings
+  # Map types
   Mapping.h
+  MeshlessMap.h
+  MeshlessHarmonicMap.h
+  MeshlessBiharmonicMap.h
   PiecewiseLinearMap.h
-  FundamentalMap.h
-  HarmonicFundamentalMap.h
-  BiharmonicFundamentalMap.h
+  # Surface boundary curve parameterization
+  BoundaryParameterizer.h
+  LinearBoundaryParameterizer.h
+  # Surface boundary mapping
+  BoundaryMapper.h
+  BoundaryToDiskMapper.h
+  BoundaryToSquareMapper.h
+  BoundaryToPolygonMapper.h
   # Surface mapping
-  # ...
+  SurfaceMapper.h
+  LinearSpringSurfaceMapper.h
   # Volumetric mapping
-  VolumeParameterizer.h
-  TetrahedralVolumeParameterizer.h
-  LinearTetrahedralVolumeParameterizer.h
-  FundamentalVolumeParameterizer.h
-  HarmonicTetrahedralVolumeParameterizer.h
-  HarmonicFundamentalVolumeParameterizer.h
-  AsConformalAsPossibleVolumeParameterizer.h
+  VolumeMapper.h
+  TetrahedralMeshMapper.h
+  LinearTetrahedralMeshMapper.h
+  HarmonicTetrahedralMeshMapper.h
+  AsConformalAsPossibleMapper.h
+  MeshlessVolumeMapper.h
+  MeshlessHarmonicVolumeMapper.h
 )
 
 set(SOURCES
-  # Mappings
+  # Map types
   Mapping.cc
+  MeshlessMap.cc
+  MeshlessHarmonicMap.cc
+  MeshlessBiharmonicMap.cc
   PiecewiseLinearMap.cc
-  FundamentalMap.cc
-  HarmonicFundamentalMap.cc
-  BiharmonicFundamentalMap.cc
+  # Surface boundary curve parameterization
+  BoundaryParameterizer.cc
+  LinearBoundaryParameterizer.cc
+  # Surface boundary mapping
+  BoundaryMapper.cc
+  BoundaryToDiskMapper.cc
+  BoundaryToSquareMapper.cc
+  BoundaryToPolygonMapper.cc
   # Surface mapping
-  # ...
+  SurfaceMapper.cc
+  LinearSpringSurfaceMapper.cc
   # Volumetric mapping
-  VolumeParameterizer.cc
-  TetrahedralVolumeParameterizer.cc
-  LinearTetrahedralVolumeParameterizer.cc
-  FundamentalVolumeParameterizer.cc
-  HarmonicTetrahedralVolumeParameterizer.cc
-  HarmonicFundamentalVolumeParameterizer.cc
-  AsConformalAsPossibleVolumeParameterizer.cc
+  VolumeMapper.cc
+  TetrahedralMeshMapper.cc
+  LinearTetrahedralMeshMapper.cc
+  HarmonicTetrahedralMeshMapper.cc
+  AsConformalAsPossibleMapper.cc
+  MeshlessVolumeMapper.cc
+  MeshlessHarmonicVolumeMapper.cc
 )
 
 set(DEPENDS
