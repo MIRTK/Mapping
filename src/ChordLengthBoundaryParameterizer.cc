@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/LinearBoundaryParameterizer.h"
+#include "mirtk/ChordLengthBoundaryParameterizer.h"
 
 
 namespace mirtk {
@@ -28,21 +28,21 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-LinearBoundaryParameterizer::LinearBoundaryParameterizer()
+ChordLengthBoundaryParameterizer::ChordLengthBoundaryParameterizer()
 {
 }
 
 // -----------------------------------------------------------------------------
-LinearBoundaryParameterizer
-::LinearBoundaryParameterizer(const LinearBoundaryParameterizer &other)
+ChordLengthBoundaryParameterizer
+::ChordLengthBoundaryParameterizer(const ChordLengthBoundaryParameterizer &other)
 :
   BoundaryParameterizer(other)
 {
 }
 
 // -----------------------------------------------------------------------------
-LinearBoundaryParameterizer &LinearBoundaryParameterizer
-::operator =(const LinearBoundaryParameterizer &other)
+ChordLengthBoundaryParameterizer &ChordLengthBoundaryParameterizer
+::operator =(const ChordLengthBoundaryParameterizer &other)
 {
   if (this != &other) {
     BoundaryParameterizer::operator =(other);
@@ -51,14 +51,14 @@ LinearBoundaryParameterizer &LinearBoundaryParameterizer
 }
 
 // -----------------------------------------------------------------------------
-LinearBoundaryParameterizer::~LinearBoundaryParameterizer()
+ChordLengthBoundaryParameterizer::~ChordLengthBoundaryParameterizer()
 {
 }
 
 // -----------------------------------------------------------------------------
-BoundaryParameterizer *LinearBoundaryParameterizer::NewCopy() const
+BoundaryParameterizer *ChordLengthBoundaryParameterizer::NewCopy() const
 {
-  return new LinearBoundaryParameterizer(*this);
+  return new ChordLengthBoundaryParameterizer(*this);
 }
 
 // =============================================================================
@@ -66,42 +66,32 @@ BoundaryParameterizer *LinearBoundaryParameterizer::NewCopy() const
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void LinearBoundaryParameterizer::Parameterize()
+void ChordLengthBoundaryParameterizer::Parameterize()
 {
   const int npoints   = NumberOfBoundaryPoints();
   const int nselected = NumberOfSelectedPoints();
-  const int nfixed    = (nselected > 0 ? nselected             : 1);
-  const int i0        = (nselected > 0 ? SelectedPointIndex(0) : 0);
 
   // Compute edge lengths
-  const Vector l = BoundaryEdgeLengths();
+  Vector l = BoundaryEdgeLengths();
 
-  // Compute distance of each point from point with index i0
-  double d = .0;
-  Vector d1(nfixed);
-  for (int n = 0, s = 0, i = i0; n < npoints; ++n) {
-    _Values[i] = d, d += l(i);
-    if (++i == npoints) i = 0;
-    if (i == i0 || IsSelected(i)) {
-      d1(s) = d, ++s;
-    }
+  // Chord length parameterization
+  double t = .0;
+  const double L = l.Sum();
+  for (int i = 0; i < npoints; ++i) {
+    _Values[i] = t;
+    t += l(i) / L;
   }
 
-  // Map distances to curve parameter values using the linear function:
-  //
-  //   t(d) = ((d - d0) / (d1 - d0)) * (t1 - t0) + t0
-  //
-  // where d0 and d1 are the distances of the nearest selected points,
-  // and t0 and t1 are the respective parameter values of these points.
-  double tdiff = 1.0 / nfixed;
-  double d0    = .0;
-  double scale = tdiff / d1(0);
-  for (int n = 0, s = 0, i = i0; n < npoints; ++n) {
-    _Values[i] = scale * (_Values[i] - d0) + s * tdiff;
-    if (++i == npoints) i = 0;
-    if (i != i0 && IsSelected(i)) {
-      d0 = d1(s), ++s;
-      scale = tdiff / (d1(s) - d0);
+  // Reparameterize such that first selected point has t=0
+  if (nselected > 1) {
+    const int    i0 = SelectedPointIndex(0);
+    const double t0 = _Values[i0];
+    if (t0 != .0) {
+      for (int i = 0; i < npoints; ++i) {
+        _Values[i] -= t0;
+        if (_Values[i] < .0) _Values[i] += 1.0;
+      }
+      _Values[i0] = .0;
     }
   }
 
@@ -111,7 +101,9 @@ void LinearBoundaryParameterizer::Parameterize()
     double t2 = _Values[SelectedPointIndex(2)];
     if (t2 < t1) {
       for (int n = 0; n < npoints; ++n) {
-        if (n != i0) _Values[n] = 1.0 - _Values[n];
+        if (_Values[n] != .0) {
+          _Values[n] = 1.0 - _Values[n];
+        }
       }
     }
   }

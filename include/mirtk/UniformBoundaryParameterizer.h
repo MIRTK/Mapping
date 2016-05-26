@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_LinearBoundaryParameterizer_H
-#define MIRTK_LinearBoundaryParameterizer_H
+#ifndef MIRTK_UniformBoundaryParameterizer_H
+#define MIRTK_UniformBoundaryParameterizer_H
 
 #include "mirtk/BoundaryParameterizer.h"
 
@@ -27,18 +27,17 @@ namespace mirtk {
 
 
 /**
- * Uniform speed boundary curve
+ * Boundary curve parameterization with uniform distance of curve points
  *
- * This class parameterizes the boundary segment as a curve with uniform
- * speed, i.e., without local distortion of the boundary segment. The curve
- * parameter value is linearly proportional to the distance of the boundary
- * points from the point at t=0. The optionally selected points are used to
- * define the point with parameter value t=0 and in which direction the t
- * values are increasing.
+ * This boundary curve parameterization is referred to as uniform
+ * parameterization in Floater (1997).
+ *
+ * - Floater (1997). Parametrization and smooth approximation of surface triangulations.
+ *   Computer Aided Geometric Design, 14(3), 231–250.
  */
-class LinearBoundaryParameterizer : public BoundaryParameterizer
+class UniformBoundaryParameterizer : public BoundaryParameterizer
 {
-  mirtkObjectMacro(LinearBoundaryParameterizer);
+  mirtkObjectMacro(UniformBoundaryParameterizer);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -46,16 +45,16 @@ class LinearBoundaryParameterizer : public BoundaryParameterizer
 public:
 
   /// Default constructor
-  LinearBoundaryParameterizer();
+  UniformBoundaryParameterizer();
 
   /// Copy constructor
-  LinearBoundaryParameterizer(const LinearBoundaryParameterizer &);
+  UniformBoundaryParameterizer(const UniformBoundaryParameterizer &);
 
   /// Assignment operator
-  LinearBoundaryParameterizer &operator =(const LinearBoundaryParameterizer &);
+  UniformBoundaryParameterizer &operator =(const UniformBoundaryParameterizer &);
 
   /// Destructor
-  virtual ~LinearBoundaryParameterizer();
+  virtual ~UniformBoundaryParameterizer();
 
   /// New copy of this parameterizer
   virtual BoundaryParameterizer *NewCopy() const;
@@ -73,4 +72,4 @@ protected:
 
 } // namespace mirtk
 
-#endif // MIRTK_LinearBoundaryParameterizer_H
+#endif // MIRTK_UniformBoundaryParameterizer_H

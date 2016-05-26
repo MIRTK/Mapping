@@ -30,17 +30,29 @@ set(HEADERS
   MeshlessHarmonicMap.h
   MeshlessBiharmonicMap.h
   PiecewiseLinearMap.h
-  # Surface boundary curve parameterization
+  # Surface boundary parameterization
   BoundaryParameterizer.h
-  LinearBoundaryParameterizer.h
+  UniformBoundaryParameterizer.h
+  ChordLengthBoundaryParameterizer.h
+  InteractiveBoundaryParameterizer.h
   # Surface boundary mapping
   BoundaryMapper.h
   BoundaryToDiskMapper.h
-  BoundaryToSquareMapper.h
   BoundaryToPolygonMapper.h
+  BoundaryToSquareMapper.h
   # Surface mapping
   SurfaceMapper.h
-  LinearSpringSurfaceMapper.h
+  LinearSurfaceMapper.h
+  SymmetricLinearSurfaceMapper.h
+  NonSymmetricLinearSurfaceMapper.h
+  UniformSurfaceMapper.h
+  HarmonicSpringSurfaceMapper.h
+  WeightedLeastSquaresSurfaceMapper.h
+  ShapePreservingSurfaceMapper.h
+  MeanValueSurfaceMapper.h
+  IntrinsicParameterizationSurfaceMapper.h
+  ConformalFlatteningSurfaceMapper.h
+  LeastSquaresConformalSurfaceMapper.h
   # Volumetric mapping
   VolumeMapper.h
   TetrahedralMeshMapper.h
@@ -58,17 +70,29 @@ set(SOURCES
   MeshlessHarmonicMap.cc
   MeshlessBiharmonicMap.cc
   PiecewiseLinearMap.cc
-  # Surface boundary curve parameterization
+  # Surface boundary parameterization
   BoundaryParameterizer.cc
-  LinearBoundaryParameterizer.cc
+  UniformBoundaryParameterizer.cc
+  ChordLengthBoundaryParameterizer.cc
+  InteractiveBoundaryParameterizer.cc
   # Surface boundary mapping
   BoundaryMapper.cc
   BoundaryToDiskMapper.cc
-  BoundaryToSquareMapper.cc
   BoundaryToPolygonMapper.cc
+  BoundaryToSquareMapper.cc
   # Surface mapping
   SurfaceMapper.cc
-  LinearSpringSurfaceMapper.cc
+  LinearSurfaceMapper.cc
+  SymmetricLinearSurfaceMapper.cc
+  NonSymmetricLinearSurfaceMapper.cc
+  UniformSurfaceMapper.cc
+  WeightedLeastSquaresSurfaceMapper.cc
+  HarmonicSpringSurfaceMapper.cc
+  ShapePreservingSurfaceMapper.cc
+  MeanValueSurfaceMapper.cc
+  IntrinsicParameterizationSurfaceMapper.cc
+  ConformalFlatteningSurfaceMapper.cc
+  LeastSquaresConformalSurfaceMapper.cc
   # Volumetric mapping
   VolumeMapper.cc
   TetrahedralMeshMapper.cc

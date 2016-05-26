@@ -23,7 +23,7 @@
 #include "mirtk/Memory.h"
 #include "mirtk/EdgeTable.h"
 #include "mirtk/PointSetUtils.h"
-#include "mirtk/LinearBoundaryParameterizer.h"
+#include "mirtk/ChordLengthBoundaryParameterizer.h"
 
 #include "vtkFloatArray.h"
 
@@ -58,7 +58,7 @@ void BoundaryMapper::CopyAttributes(const BoundaryMapper &other)
 // -----------------------------------------------------------------------------
 BoundaryMapper::BoundaryMapper()
 :
-  _Parameterizer(NewShared<LinearBoundaryParameterizer>())
+  _Parameterizer(NewShared<ChordLengthBoundaryParameterizer>())
 {
 }
 

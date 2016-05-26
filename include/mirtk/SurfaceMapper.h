@@ -52,7 +52,7 @@ class SurfaceMapper : public Object
   // Attributes
 
   /// Input surface mesh
-  mirtkPublicAttributeMacro(vtkSmartPointer<vtkPolyData>, Domain);
+  mirtkPublicAttributeMacro(vtkSmartPointer<vtkPolyData>, Mesh);
 
   /// Input map values of (fixed) surface points, i.e., boundary conditions
   ///
@@ -129,8 +129,17 @@ public:
 
 protected:
 
+  /// Create mask of boundary points
+  vtkSmartPointer<vtkDataArray> BoundaryMask() const;
+
   /// Initialize filter after input and parameters are set
   virtual void Initialize();
+
+  /// Initialize map values at surface points
+  virtual void InitializeValues();
+
+  /// Initialize mask of surface points with fixed map values
+  virtual void InitializeMask();
 
   /// Remesh surface if necessary
   virtual bool Remesh();

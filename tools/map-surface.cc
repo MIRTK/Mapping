@@ -22,7 +22,11 @@
 
 #include "mirtk/PointSetIO.h"
 #include "mirtk/PointSetUtils.h"
-#include "mirtk/LinearSpringSurfaceMapper.h"
+
+#include "mirtk/UniformSurfaceMapper.h"                   // Tutte (1964)
+#include "mirtk/WeightedLeastSquaresSurfaceMapper.h"      // Kent et al. (1991), Floater (1997)
+#include "mirtk/IntrinsicParameterizationSurfaceMapper.h" // Meyer et al. (2002)
+#include "mirtk/MeanValueSurfaceMapper.h"                 // Floater (2003)
 
 #include "vtkSmartPointer.h"
 #include "vtkPolyData.h"
@@ -81,44 +85,16 @@ void PrintHelp(const char* name)
 /// Enumeration of implemented surface mapping methods
 enum MapSurfaceMethod
 {
-  MAP_Barycentric, ///< Compute surface map using generalized barycentric coordinates
-  MAP_MeanValue,   ///< Compute surface map using mean value coordinates
-  MAP_Conformal,   ///< Compute conformal surface map
-  MAP_Harmonic,    ///< Compute harmonic surface map
-  MAP_PHarmonic,   ///< Comptue p-harmonic surface map
-  MAP_Spectral,    ///< Compute surface map using spectral coordinates
-  MAP_Spherical    ///< Compute spherical map of genus-0 surface
+  MAP_Uniform,               ///< Uniform edge weights, Tutte's planar graph mapping
+  MAP_WeightedLeastSquares,  ///< Edge weights inverse proportional to edge length
+  MAP_MeanValue,             ///< Floater's mean value convex map
+  MAP_Intrinsic,             ///< Intrinsic parameterization with boundary constraints
+  MAP_NaturalConformal,      ///< Meyer's natural conformal map
+  MAP_PHarmonic,             ///< Joshi's p-harmonic map
+  MAP_LeastSquaresConformal, ///< Levy's least squares conformal map
+  MAP_Spectral,              ///< Spectral surface map w/o boundary constraints
+  MAP_Spherical              ///< Spherical surface map w/o boundary constraints
 };
-
-// -----------------------------------------------------------------------------
-/// Compose planar surface map with inverse stereographic projection to sphere
-vtkSmartPointer<vtkPolyData>
-InverseStereographicProjection(vtkSmartPointer<vtkPolyData> surface)
-{
-  double bounds[6], extent[3], center[3], p[3], scale, radius, radius2;
-  surface->GetBounds(bounds);
-  extent[0] = bounds[1] - bounds[0];
-  extent[1] = bounds[3] - bounds[2];
-  extent[2] = bounds[5] - bounds[4];
-  center[0] = bounds[0] + .5 * extent[0];
-  center[1] = bounds[2] + .5 * extent[1];
-  center[2] = bounds[4] + .5 * extent[2];
-  radius    = .5 * max(max(extent[0], extent[1]), extent[2]);
-  radius2   = radius * radius;
-  vtkSmartPointer<vtkPoints> points = surface->GetPoints()->NewInstance();
-  points->SetNumberOfPoints(surface->GetNumberOfPoints());
-  for (vtkIdType ptId = 0; ptId < surface->GetNumberOfPoints(); ++ptId) {
-    surface->GetPoint(ptId, p);
-    p[0] -= center[0], p[1] -= center[1], p[2] -= center[2];
-    scale = 2.0 * radius2 / (p[0]*p[0] + p[1]*p[1] + radius2);
-    p[0] *= scale, p[1] *= scale, p[2] = (1.0 - scale) * radius;
-    points->SetPoint(ptId, p);
-  }
-  vtkSmartPointer<vtkPolyData> output = surface->NewInstance();
-  output->ShallowCopy(surface);
-  output->SetPoints(points);
-  return output;
-}
 
 // =============================================================================
 // Main
@@ -134,101 +110,146 @@ int main(int argc, char *argv[])
 
   const char      *values_name = nullptr;
   const char      *mask_name   = nullptr;
-  MapSurfaceMethod method      = MAP_Harmonic;
+  MapSurfaceMethod method      = MAP_MeanValue;
   int              niters      = 0;
-  int              p           = 0; // exponent of p-harmonic energy functional
-                                    // <=0: Use Eck's harmonic map approximation
-                                    //  >0: Use A. Joshi's p-harmonic mapping method
+
+  int    pharmonic_exponent = 2;   // Exponent of p-harmonic energy
+  int    wls_exponent       = 1;   // Weighted least squares exponent
+  double intrinsic_lambda   = 0.0; // Conformal energy weight of intrinsic parameterization
+  double intrinsic_mu       = 1.0; // Authalic  energy weight of intrinsic parameterization
 
   for (ALL_OPTIONS) {
     // Point data arrays
     if      (OPTION("-name")) values_name = ARGUMENT;
     else if (OPTION("-mask")) mask_name   = ARGUMENT;
     // Surface mapping method
-    else if (OPTION("-barycentric"))  method = MAP_Barycentric;
-    else if (OPTION("-mean-value"))   method = MAP_MeanValue;
-    else if (OPTION("-conformal"))    method = MAP_Conformal;
-    else if (OPTION("-harmonic"))     method = MAP_Harmonic;
+    else if (OPTION("-uniform")) {
+      method = MAP_Uniform;
+    }
+    else if (OPTION("-edge-length-weighted") || OPTION("-weighted-least-squares")) {
+      method = MAP_WeightedLeastSquares;
+      if (HAS_ARGUMENT) PARSE_ARGUMENT(wls_exponent);
+      else wls_exponent = 1;
+    }
+    else if (OPTION("-p-harmonic") || OPTION("-pharmonic")) {
+      method = MAP_PHarmonic;
+      if (HAS_ARGUMENT) PARSE_ARGUMENT(pharmonic_exponent);
+      else pharmonic_exponent = 2;
+    }
+    else if (OPTION("-intrinsic")) {
+      method = MAP_Intrinsic;
+      if (HAS_ARGUMENT) {
+        PARSE_ARGUMENT(intrinsic_lambda);
+        if (HAS_ARGUMENT) PARSE_ARGUMENT(intrinsic_mu);
+        else {
+          intrinsic_lambda = clamp(intrinsic_lambda, .0, 1.0);
+          intrinsic_mu     = 1.0 - intrinsic_lambda;
+        }
+      } else {
+        intrinsic_lambda = 0.0;
+        intrinsic_mu     = 1.0;
+      }
+    }
+    else if (OPTION("-mean-value")) {
+      method = MAP_MeanValue;
+    }
     // Parameters of mapping method
-    else if (OPTION("-p")) PARSE_ARGUMENT(p);
     else if (OPTION("-max-iterations") || OPTION("-max-iter") || OPTION("-iterations") || OPTION("-iter")) {
       PARSE_ARGUMENT(niters);
     }
     else HANDLE_COMMON_OR_UNKNOWN_OPTION();
   }
-  if (method == MAP_Harmonic && p > 0) method = MAP_PHarmonic;
 
-  vtkSmartPointer<vtkPolyData>  input = ReadPolyData(input_name);
+  vtkSmartPointer<vtkPolyData>  mesh = ReadPolyData(input_name);
   vtkSmartPointer<vtkDataArray> values, mask;
   SharedPtr<Mapping>            map;
 
-  vtkPointData * const pd = input->GetPointData();
+  vtkPointData * const pd = mesh->GetPointData();
 
-  if (values_name) {
-    values = pd->GetArray(values_name);
-    if (values == nullptr) {
-      FatalError("Input point set has no data array named " << values_name);
-    }
-  } else {
-    values = pd->GetTCoords();
-    if (values == nullptr) {
-      FatalError("Input point set has no TCOORDS, use -name option to specify name of map values array!");
+    if (values_name) {
+      values = pd->GetArray(values_name);
+      if (values == nullptr) {
+        FatalError("Input point set has no data array named " << values_name);
+    } else {
+      values = pd->GetTCoords();
+      if (values == nullptr) {
+        FatalError("Input point set has no TCOORDS, use -name option to specify name of map values array!");
+      }
     }
   }
 
   if (mask_name) {
-    mask = input->GetPointData()->GetArray(mask_name);
+    mask = pd->GetArray(mask_name);
     if (mask == nullptr) {
       FatalError("Input point set has no data array named " << mask_name);
     }
   }
 
   switch (method) {
-    case MAP_Barycentric:
-    case MAP_MeanValue:
-    case MAP_Harmonic: {
-      const char *what;
-      LinearSpringSurfaceMapper::SpringConstantType type;
-      if (method == MAP_Barycentric) {
-        what = "barycentric coordinates";
-        type = LinearSpringSurfaceMapper::BarycentricCoordinates;
-      } else if (method == MAP_MeanValue) {
-        what = "mean value coordinates";
-        type = LinearSpringSurfaceMapper::MeanValueCoordinates;
-      } else if (method == MAP_Harmonic) {
-        what = "harmonic spring constants";
-        type = LinearSpringSurfaceMapper::Harmonic;
-      } else {
-        what = "default spring constants";
-        type = LinearSpringSurfaceMapper::Default;
-      }
-      if (verbose) cout << "Computing surface map using " << what << "...", cout.flush();
-      typedef LinearSpringSurfaceMapper Mapper;
-      Mapper mapper(type);
+    case MAP_Uniform: {
+      const char *msg = "Computing uniform surface map...";
+      if (verbose) cout << msg, cout.flush();
+      UniformSurfaceMapper mapper;
       mapper.NumberOfIterations(niters);
-      mapper.Domain(input);
+      mapper.Mesh(mesh);
       mapper.Input(values);
       mapper.Mask(mask);
       mapper.Run();
       map = mapper.Output();
-      if (verbose) cout << "Computing surface map using " << what << "...", cout.flush();
+      if (verbose) cout << msg, cout.flush();
+    } break;
+
+    case MAP_WeightedLeastSquares: {
+      const char *msg = "Computing edge length weighted least squares surface map...";
+      if (verbose) cout << msg, cout.flush();
+      WeightedLeastSquaresSurfaceMapper mapper(wls_exponent);
+      mapper.NumberOfIterations(niters);
+      mapper.Mesh(mesh);
+      mapper.Input(values);
+      mapper.Mask(mask);
+      mapper.Run();
+      map = mapper.Output();
+      if (verbose) cout << msg, cout.flush();
+    } break;
+
+    case MAP_MeanValue: {
+      const char *msg = "Computing surface map using mean value coordinates...";
+      if (verbose) cout << msg, cout.flush();
+      MeanValueSurfaceMapper mapper;
+      mapper.NumberOfIterations(niters);
+      mapper.Mesh(mesh);
+      mapper.Input(values);
+      mapper.Mask(mask);
+      mapper.Run();
+      map = mapper.Output();
+      if (verbose) cout << msg, cout.flush();
+    } break;
+
+    case MAP_Intrinsic: {
+      const char *msg = "Computing surface map using intrinsic parameterization...";
+      if (verbose) cout << msg, cout.flush();
+      IntrinsicParameterizationSurfaceMapper mapper(intrinsic_lambda, intrinsic_mu);
+      if (verbose) {
+        cout << "\n  Conformal energy weight           = " << mapper.ConformalEnergyWeight();
+        cout << "\n  Authalic  energy weight           = " << mapper.AuthalicEnergyWeight();
+        cout.flush();
+      }
+      mapper.NumberOfIterations(niters);
+      mapper.Mesh(mesh);
+      mapper.Input(values);
+      mapper.Mask(mask);
+      mapper.Run();
+      map = mapper.Output();
+      if (verbose) cout << msg, cout.flush();
     } break;
 
     case MAP_PHarmonic: {
       FatalError("p-harmonic mapping using finite element method (FEM) not implemented");
-      if (verbose) cout << "Computing p=" << p << " harmonic surface map...", cout.flush();
+      if (verbose) cout << "Computing p=" << pharmonic_exponent << " harmonic surface map...", cout.flush();
     } break;
 
-    case MAP_Conformal: {
-      FatalError("Conformal surface mapping not implemented");
-    } break;
-
-    case MAP_Spectral: {
-      FatalError("Spectral mapping of a surface mesh not implemented");
-    } break;
-
-    case MAP_Spherical: {
-      FatalError("Spherical mapping of a surface mesh not implemented");
+    default: {
+      FatalError("Selected mapping method not implemented");
     } break;
   }
 

@@ -75,7 +75,7 @@ class BoundaryMapper : public Object
   /// Boundary map values
   mirtkPublicAttributeMacro(vtkSmartPointer<vtkDataArray>, Values);
 
-  /// Closed surface boundary segment parameterizer
+  /// Closed surface boundary curve parameterizer
   mirtkPublicAttributeMacro(SharedPtr<BoundaryParameterizer>, Parameterizer);
 
   /// Closed line strips of surface boundary segments

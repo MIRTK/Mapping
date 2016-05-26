@@ -41,7 +41,7 @@ namespace mirtk {
 // -----------------------------------------------------------------------------
 void SurfaceMapper::CopyAttributes(const SurfaceMapper &other)
 {
-  _Domain      = other._Domain;
+  _Mesh        = other._Mesh;
   _Surface     = other._Surface;
   _Input       = other._Input;
   _Mask        = other._Mask;
@@ -103,45 +103,57 @@ void SurfaceMapper::Run()
 }
 
 // -----------------------------------------------------------------------------
+vtkSmartPointer<vtkDataArray> SurfaceMapper::BoundaryMask() const
+{
+  vtkSmartPointer<vtkUnsignedCharArray> mask;
+  mask = vtkSmartPointer<vtkUnsignedCharArray>::New();
+  mask->SetName("FixedPoints");
+  mask->SetNumberOfComponents(1);
+  mask->SetNumberOfTuples(_Surface->GetNumberOfPoints());
+  mask->FillComponent(0, .0);
+  UnorderedSet<int> ptIds = BoundaryPoints(_Surface);
+  for (auto it = ptIds.begin(); it != ptIds.end(); ++it) {
+    mask->SetComponent(static_cast<vtkIdType>(*it), 0, 1.0);
+  }
+  return mask;
+}
+
+// -----------------------------------------------------------------------------
 void SurfaceMapper::Initialize()
 {
   // Free previous output map
   _Output = nullptr;
 
   // Check input
-  if (!_Domain) {
-    cerr << this->NameOfType() << "::Initialize: Missing input surface" << endl;
+  if (!_Mesh) {
+    cerr << this->NameOfType() << "::Initialize: Missing input surface mesh" << endl;
     exit(1);
   }
-  if (_Domain->GetNumberOfPolys() == 0) {
+  if (_Mesh->GetNumberOfPolys() == 0) {
     cerr << this->NameOfType() << "::Initialize: Input point set must be a surface mesh" << endl;
     exit(1);
   }
-  if (!_Input) {
-    cerr << this->NameOfType() << "::Initialize: Missing boundary conditions" << endl;
-    exit(1);
-  }
-  if (_Input && _Input->GetNumberOfTuples() != _Domain->GetNumberOfPoints()) {
+  if (_Input && _Input->GetNumberOfTuples() != _Mesh->GetNumberOfPoints()) {
     cerr << this->NameOfType() << "::Initialize: Invalid input map values array" << endl;
     exit(1);
   }
-  if (_Fixed && _Fixed->GetNumberOfTuples() != _Domain->GetNumberOfPoints()) {
+  if (_Fixed && _Fixed->GetNumberOfTuples() != _Mesh->GetNumberOfPoints()) {
     cerr << this->NameOfType() << "::Initialize: Invalid input mask" << endl;
     exit(1);
   }
 
-  // Make copy of input values array
-  _Values = _Input->NewInstance();
-  _Values->SetName(_Input->GetName());
-  _Values->DeepCopy(_Input);
-
-  // Internal surface mesh with point data arrays
-  _Surface = _Domain->NewInstance();
-  _Surface->ShallowCopy(_Domain);
+  // Initialize internal surface mesh
+  _Surface = _Mesh->NewInstance();
+  _Surface->ShallowCopy(_Mesh);
   _Surface->SetLines(nullptr);
   _Surface->SetVerts(nullptr);
   _Surface->GetCellData()->Initialize();
   _Surface->GetPointData()->Initialize();
+
+  // Initialize map values at surface points
+  this->InitializeValues();
+
+  // Set point data arrays for remeshing
   _Surface->GetPointData()->SetTCoords(_Values);
   _Surface->GetPointData()->SetScalars(_Mask);
 
@@ -154,17 +166,7 @@ void SurfaceMapper::Initialize()
   _Surface->BuildLinks();
 
   // Initialize boundary mask
-  _Fixed = _Surface->GetPointData()->GetScalars();
-  if (!_Fixed) {
-    _Fixed = vtkSmartPointer<vtkUnsignedCharArray>::New();
-    _Fixed->SetNumberOfComponents(1);
-    _Fixed->SetNumberOfTuples(_Surface->GetNumberOfPoints());
-    _Fixed->FillComponent(0, .0);
-    UnorderedSet<int> ptIds = BoundaryPoints(_Surface);
-    for (auto it = ptIds.begin(); it != ptIds.end(); ++it) {
-      _Fixed->SetComponent(static_cast<vtkIdType>(*it), 0, 1.0);
-    }
-  }
+  this->InitializeMask();
 
   // Set disjoint sets of IDs of free and fixed points
   _FixedPoints = vtkSmartPointer<vtkIdList>::New();
@@ -182,6 +184,25 @@ void SurfaceMapper::Initialize()
   }
   _FixedPoints->Squeeze();
   _FreePoints ->Squeeze();
+}
+
+// -----------------------------------------------------------------------------
+void SurfaceMapper::InitializeValues()
+{
+  if (!_Input) {
+    cerr << this->NameOfType() << "::InitializeValues: Missing boundary conditions" << endl;
+    exit(1);
+  }
+  _Values = _Input->NewInstance();
+  _Values->SetName(_Input->GetName());
+  _Values->DeepCopy(_Input);
+}
+
+// -----------------------------------------------------------------------------
+void SurfaceMapper::InitializeMask()
+{
+  _Fixed = _Surface->GetPointData()->GetScalars();
+  if (!_Fixed) _Fixed = BoundaryMask();
 }
 
 // -----------------------------------------------------------------------------
