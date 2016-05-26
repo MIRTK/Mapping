@@ -27,6 +27,7 @@
 #include "mirtk/WeightedLeastSquaresSurfaceMapper.h"      // Kent et al. (1991), Floater (1997)
 #include "mirtk/IntrinsicParameterizationSurfaceMapper.h" // Meyer et al. (2002)
 #include "mirtk/MeanValueSurfaceMapper.h"                 // Floater (2003)
+#include "mirtk/ConformalFlatteningSurfaceMapper.h"       // Angenent (1999), Haker (2000)
 
 #include "vtkSmartPointer.h"
 #include "vtkPolyData.h"
@@ -92,6 +93,7 @@ enum MapSurfaceMethod
   MAP_NaturalConformal,      ///< Meyer's natural conformal map
   MAP_PHarmonic,             ///< Joshi's p-harmonic map
   MAP_LeastSquaresConformal, ///< Levy's least squares conformal map
+  MAP_ConformalFlattening,   ///< Angenent and Haker's conformal map
   MAP_Spectral,              ///< Spectral surface map w/o boundary constraints
   MAP_Spherical              ///< Spherical surface map w/o boundary constraints
 };
@@ -153,6 +155,9 @@ int main(int argc, char *argv[])
     else if (OPTION("-mean-value")) {
       method = MAP_MeanValue;
     }
+    else if (OPTION("-conformal-flattening")) {
+      method = MAP_ConformalFlattening;
+    }
     // Parameters of mapping method
     else if (OPTION("-max-iterations") || OPTION("-max-iter") || OPTION("-iterations") || OPTION("-iter")) {
       PARSE_ARGUMENT(niters);
@@ -166,10 +171,12 @@ int main(int argc, char *argv[])
 
   vtkPointData * const pd = mesh->GetPointData();
 
+  if (method != MAP_ConformalFlattening) {
     if (values_name) {
       values = pd->GetArray(values_name);
       if (values == nullptr) {
         FatalError("Input point set has no data array named " << values_name);
+      }
     } else {
       values = pd->GetTCoords();
       if (values == nullptr) {
@@ -234,6 +241,19 @@ int main(int argc, char *argv[])
         cout << "\n  Authalic  energy weight           = " << mapper.AuthalicEnergyWeight();
         cout.flush();
       }
+      mapper.NumberOfIterations(niters);
+      mapper.Mesh(mesh);
+      mapper.Input(values);
+      mapper.Mask(mask);
+      mapper.Run();
+      map = mapper.Output();
+      if (verbose) cout << msg, cout.flush();
+    } break;
+
+    case MAP_ConformalFlattening: {
+      const char *msg = "Computing conformal flattening to sphere...";
+      if (verbose) cout << msg, cout.flush();
+      ConformalFlatteningSurfaceMapper mapper;
       mapper.NumberOfIterations(niters);
       mapper.Mesh(mesh);
       mapper.Input(values);
