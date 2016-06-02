@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/NonSymmetricLinearSurfaceMapper.h"
+#include "mirtk/SymmetricWeightsSurfaceMapper.h"
 
 #include "mirtk/EdgeTable.h"
 
@@ -37,35 +37,38 @@ MIRTK_Common_EXPORT extern int verbose;
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void NonSymmetricLinearSurfaceMapper::CopyAttributes(const NonSymmetricLinearSurfaceMapper &other)
+void SymmetricWeightsSurfaceMapper
+::CopyAttributes(const SymmetricWeightsSurfaceMapper &other)
 {
 }
 
 // -----------------------------------------------------------------------------
-NonSymmetricLinearSurfaceMapper::NonSymmetricLinearSurfaceMapper()
+SymmetricWeightsSurfaceMapper::SymmetricWeightsSurfaceMapper()
 {
 }
 
 // -----------------------------------------------------------------------------
-NonSymmetricLinearSurfaceMapper::NonSymmetricLinearSurfaceMapper(const NonSymmetricLinearSurfaceMapper &other)
+SymmetricWeightsSurfaceMapper
+::SymmetricWeightsSurfaceMapper(const SymmetricWeightsSurfaceMapper &other)
 :
-  LinearSurfaceMapper(other)
+  LinearFixedBoundarySurfaceMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-NonSymmetricLinearSurfaceMapper &NonSymmetricLinearSurfaceMapper::operator =(const NonSymmetricLinearSurfaceMapper &other)
+SymmetricWeightsSurfaceMapper &SymmetricWeightsSurfaceMapper
+::operator =(const SymmetricWeightsSurfaceMapper &other)
 {
   if (this != &other) {
-    LinearSurfaceMapper::operator =(other);
+    LinearFixedBoundarySurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-NonSymmetricLinearSurfaceMapper::~NonSymmetricLinearSurfaceMapper()
+SymmetricWeightsSurfaceMapper::~SymmetricWeightsSurfaceMapper()
 {
 }
 
@@ -74,22 +77,7 @@ NonSymmetricLinearSurfaceMapper::~NonSymmetricLinearSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void NonSymmetricLinearSurfaceMapper::Weights(int i, const int *j, double *w_i, int d_i) const
-{
-  for (int k = 0; k < d_i; ++k) {
-    w_i[k] = this->Weight(i, j[k]);
-  }
-}
-
-// -----------------------------------------------------------------------------
-double NonSymmetricLinearSurfaceMapper::Weight(int i, int j) const
-{
-  cerr << this->NameOfClass() << "::Weight[s]: Either one of the overloads must be implemented in subclass" << endl;
-  exit(1);
-}
-
-// -----------------------------------------------------------------------------
-void NonSymmetricLinearSurfaceMapper::Solve()
+void SymmetricWeightsSurfaceMapper::ComputeMap()
 {
   typedef Eigen::MatrixXd             Values;
   typedef Eigen::SparseMatrix<double> Matrix;
@@ -98,54 +86,57 @@ void NonSymmetricLinearSurfaceMapper::Solve()
   const int n = NumberOfFreePoints();
   const int m = NumberOfComponents();
 
-  int i, k, l, r, c;
-  const int *j;
+  int i, j, r, c, l;
 
   Matrix A(n, n);
   Values b(n, m);
   {
-    EdgeTable edgeTable(_Surface);
-    EdgeIterator edgeIt(edgeTable);
-
-    b.setZero();
     Array<NZEntry> w;
     Array<double>  w_ii(n, .0);
-    w.reserve(2 * edgeTable.NumberOfEdges() + n);
+    double         w_ij; // = w_ji
 
-    int     d_i;
-    double *w_i = new double[edgeTable.MaxNumberOfAdjacentPoints()];
-    for (i = 0; i < NumberOfPoints(); ++i) {
+    w.reserve(2 * _EdgeTable->NumberOfEdges() + n);
+    b.setZero();
+
+    EdgeIterator edgeIt(*_EdgeTable);
+    for (edgeIt.InitTraversal(); edgeIt.GetNextEdge(i, j) != -1;) {
       r = FreePointIndex(i);
-      if (r >= 0) {
-        edgeTable.GetAdjacentPoints(i, d_i, j);
-        this->Weights(i, j, w_i, d_i);
-        for (k = 0; k < d_i; ++k) {
-          c = FreePointIndex(j[k]);
-          if (c >= 0) {
-            w.push_back(NZEntry(r, c, -w_i[k]));
-          } else {
-            for (l = 0; l < m; ++l) {
-              b(r, l) += w_i[k] * GetValue(j[k], l);
-            }
+      c = FreePointIndex(j);
+      if (r >= 0 || c >= 0) {
+        w_ij = this->Weight(i, j);
+        if (r >= 0 && c >= 0) {
+          w.push_back(NZEntry(r, c, -w_ij));
+          w.push_back(NZEntry(c, r, -w_ij));
+        } else if (r >= 0) {
+          for (l = 0; l < m; ++l) {
+            b(r, l) += w_ij * GetValue(j, l);
           }
-          w_ii[r] += w_i[k];
+        } else if (c >= 0) {
+          for (l = 0; l < m; ++l) {
+            b(c, l) += w_ij * GetValue(i, l);
+          }
+        }
+        if (r >= 0) {
+          w_ii[r] += w_ij;
+        }
+        if (c >= 0) {
+          w_ii[c] += w_ij;
         }
       }
     }
     for (r = 0; r < n; ++r) {
       w.push_back(NZEntry(r, r, w_ii[r]));
     }
-    delete[] w_i;
 
     A.setFromTriplets(w.begin(), w.end());
   }
 
   if (verbose) {
     cout << "\n";
-    cout << "  No. of surface points             = " << NumberOfPoints() << "\n";
-    cout << "  No. of free points                = " << n << "\n";
-    cout << "  No. of non-zero stiffness values  = " << A.nonZeros() << "\n";
-    cout << "  Dimension of surface map codomain = " << m << "\n";
+    cout << "  No. of surface points        = " << NumberOfPoints() << "\n";
+    cout << "  No. of free points           = " << n << "\n";
+    cout << "  No. of non-zero coefficients = " << A.nonZeros() << "\n";
+    cout << "  Dimension of map codomain    = " << m << "\n";
     cout.flush();
   }
 
@@ -157,10 +148,13 @@ void NonSymmetricLinearSurfaceMapper::Solve()
     }
   }
 
+  // TODO: Use sparse LU decomposition to solve system directly when build with
+  //       UMFPACK from SuiteSparse and _NumberOfIterations is 1 (recommended).
+
   int    niter = 0;
   double error = .0;
 
-  Eigen::BiCGSTAB<Matrix> solver(A);
+  Eigen::ConjugateGradient<Matrix> solver(A);
   if (_NumberOfIterations >  0) solver.setMaxIterations(_NumberOfIterations);
   if (_Tolerance          > .0) solver.setTolerance(_Tolerance);
   x = solver.solveWithGuess(b, x);
@@ -168,8 +162,8 @@ void NonSymmetricLinearSurfaceMapper::Solve()
   error = solver.error();
 
   if (verbose) {
-    cout << "  No. of iterations                 = " << niter << "\n";
-    cout << "  Estimated error                   = " << error << "\n";
+    cout << "  No. of iterations            = " << niter << "\n";
+    cout << "  Estimated error              = " << error << "\n";
     cout.flush();
   }
 

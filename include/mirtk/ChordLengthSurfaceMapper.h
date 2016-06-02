@@ -17,27 +17,33 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_UniformBoundaryParameterizer_H
-#define MIRTK_UniformBoundaryParameterizer_H
+#ifndef MIRTK_ChordLengthSurfaceMapper_H
+#define MIRTK_ChordLengthSurfaceMapper_H
 
-#include "mirtk/BoundaryParameterizer.h"
+#include "mirtk/SymmetricWeightsSurfaceMapper.h"
 
 
 namespace mirtk {
 
 
 /**
- * Boundary curve parameterization with uniform distance of curve points
- *
- * This boundary curve parameterization is referred to as uniform
- * parameterization in Floater (1997).
+ * Piecewise linear surface mapper with convex combination weights inverse proportional to edge length
  *
  * - Floater (1997). Parametrization and smooth approximation of surface triangulations.
  *   Computer Aided Geometric Design, 14(3), 231–250.
  */
-class UniformBoundaryParameterizer : public BoundaryParameterizer
+class ChordLengthSurfaceMapper : public SymmetricWeightsSurfaceMapper
 {
-  mirtkObjectMacro(UniformBoundaryParameterizer);
+  mirtkObjectMacro(ChordLengthSurfaceMapper);
+
+  // ---------------------------------------------------------------------------
+  // Attributes
+
+  /// Number of times the edge length is exponentiated
+  mirtkPublicAttributeMacro(int, Exponent);
+
+  /// Copy attributes of this class from another instance
+  void CopyAttributes(const ChordLengthSurfaceMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -45,31 +51,35 @@ class UniformBoundaryParameterizer : public BoundaryParameterizer
 public:
 
   /// Default constructor
-  UniformBoundaryParameterizer();
+  ///
+  /// \param[in] Edge length exponent.
+  ChordLengthSurfaceMapper(int p = 2);
 
   /// Copy constructor
-  UniformBoundaryParameterizer(const UniformBoundaryParameterizer &);
+  ChordLengthSurfaceMapper(const ChordLengthSurfaceMapper &);
 
   /// Assignment operator
-  UniformBoundaryParameterizer &operator =(const UniformBoundaryParameterizer &);
+  ChordLengthSurfaceMapper &operator =(const ChordLengthSurfaceMapper &);
 
   /// Destructor
-  virtual ~UniformBoundaryParameterizer();
-
-  /// New copy of this parameterizer
-  virtual BoundaryParameterizer *NewCopy() const;
+  virtual ~ChordLengthSurfaceMapper();
 
   // ---------------------------------------------------------------------------
   // Execution
 
 protected:
 
-  /// Parameterize boundary curve
-  virtual void Parameterize();
+  /// Weight of undirected edge (i, j)
+  ///
+  /// \param[in] i First end point.
+  /// \param[in] j Second end point.
+  ///
+  /// \returns Weight of undirected edge (i, j).
+  virtual double Weight(int i, int j) const;
 
 };
 
 
 } // namespace mirtk
 
-#endif // MIRTK_UniformBoundaryParameterizer_H
+#endif // MIRTK_ChordLengthSurfaceMapper_H

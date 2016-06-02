@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_UniformSurfaceMapper_H
-#define MIRTK_UniformSurfaceMapper_H
+#ifndef MIRTK_AuthalicSurfaceMapper_H
+#define MIRTK_AuthalicSurfaceMapper_H
 
 #include "mirtk/SymmetricWeightsSurfaceMapper.h"
 
@@ -27,22 +27,27 @@ namespace mirtk {
 
 
 /**
- * Piecewise linear surface mapper with uniform convex combination weights
+ * Computes piecewise linear authalic surface map with fixed boundary
  *
- * - Tutte (1963). How to draw a graph. Proc. London Math. Soc, 8(May 1962), 743–767.
- * - Taubin (1995). A Signal Processing Approach To Fair Surface Design. SIGGRAPH, 351–358.
- * - Floater (1997). Parametrization and smooth approximation of surface triangulations.
- *   Computer Aided Geometric Design, 14(3), 231–250.
+ * This surface map minimizes the discrete authalic energy outlined in
+ * Desbrun et al. (2002). The coefficients of the sparse linear system of
+ * equations solved correspond to the generalized Barycentric coordinates
+ * in Meyer et al. (2002).
+ *
+ * - Desbrun, Meyer, and Alliez (2002). Intrinsic parameterizations of surface meshes.
+ *   Computer Graphics Forum, 21(3), 209–218.
+ * - Meyer et al. (2002). Generalized Barycentric Coordinates on Irregular Polygons.
+ *   Journal of Graphics Tools, 7(1), 13–22.
  */
-class UniformSurfaceMapper : public SymmetricWeightsSurfaceMapper
+class AuthalicSurfaceMapper : public SymmetricWeightsSurfaceMapper
 {
-  mirtkObjectMacro(UniformSurfaceMapper);
+  mirtkObjectMacro(AuthalicSurfaceMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const UniformSurfaceMapper &);
+  void CopyAttributes(const AuthalicSurfaceMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -50,28 +55,28 @@ class UniformSurfaceMapper : public SymmetricWeightsSurfaceMapper
 public:
 
   /// Default constructor
-  UniformSurfaceMapper();
+  AuthalicSurfaceMapper();
 
   /// Copy constructor
-  UniformSurfaceMapper(const UniformSurfaceMapper &);
+  AuthalicSurfaceMapper(const AuthalicSurfaceMapper &);
 
   /// Assignment operator
-  UniformSurfaceMapper &operator =(const UniformSurfaceMapper &);
+  AuthalicSurfaceMapper &operator =(const AuthalicSurfaceMapper &);
 
   /// Destructor
-  virtual ~UniformSurfaceMapper();
+  virtual ~AuthalicSurfaceMapper();
 
   // ---------------------------------------------------------------------------
   // Execution
 
 protected:
 
-  /// Weight of undirected edge (i, j)
+  /// Weight of directed edge (i, j)
   ///
-  /// \param[in] i First end point.
-  /// \param[in] j Second end point.
+  /// \param[in] i Index of start point.
+  /// \param[in] j Index of end point.
   ///
-  /// \returns Weight of undirected edge (i, j).
+  /// \returns Weight of directed edge (i, j).
   virtual double Weight(int i, int j) const;
 
 };
@@ -79,4 +84,4 @@ protected:
 
 } // namespace mirtk
 
-#endif // MIRTK_UniformSurfaceMapper_H
+#endif // MIRTK_DiscreteAuthalicSurfaceMapper_H

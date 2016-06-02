@@ -48,12 +48,23 @@ const double PiecewiseLinearMap::_Tolerance2 = 1e-9;
 // -----------------------------------------------------------------------------
 void PiecewiseLinearMap::CopyAttributes(const PiecewiseLinearMap &other)
 {
-  _Domain = other._Domain;
-  _Values = other._Values;
+  _Domain      = other._Domain;
+  _Values      = other._Values;
+  _MaxCellSize = other._MaxCellSize;
+
+  if (other._Locator) {
+    _Locator = vtkSmartPointer<vtkCellLocator>::New();
+    _Locator->SetDataSet(_Domain);
+    _Locator->BuildLocator();
+  } else {
+    _Locator = nullptr;
+  }
 }
 
 // -----------------------------------------------------------------------------
 PiecewiseLinearMap::PiecewiseLinearMap()
+:
+  _MaxCellSize(0)
 {
 }
 
@@ -80,24 +91,20 @@ void PiecewiseLinearMap::Initialize()
 {
   // Check input mesh
   if (!_Domain) {
-    cerr << this->NameOfType() << "::Initialize: No domain mesh set" << endl;
+    cerr << this->NameOfType() << "::Initialize: No domain mesh is set" << endl;
     exit(1);
   }
   if (_Domain->GetNumberOfCells() == 0) {
     cerr << this->NameOfType() << "::Initialize: Domain mesh has no cells" << endl;
     exit(1);
   }
-  // Determine maximum number of cell points
-  _MaxCellSize = _Domain->GetMaxCellSize();
-  // Get point data array if not set
-  vtkPointData *pd = _Domain->GetPointData();
-  if (!_Values) _Values = pd->GetTCoords();
-  if (!_Values) _Values = pd->GetVectors();
-  if (!_Values) _Values = pd->GetScalars();
   if (!_Values) {
-    cerr << this->NameOfType() << "::Initialize: Discrete map has neither TCOORDS, VECTORS, nor SCALARS as point data!" << endl;
+    cerr << this->NameOfType() << "::Initialize: No discrete map values at domain mesh points is set!" << endl;
     exit(1);
   }
+  // Determine maximum number of cell points
+  _MaxCellSize = _Domain->GetMaxCellSize();
+
   // Build cell locator
   _Locator = vtkSmartPointer<vtkCellLocator>::New();
   _Locator->SetDataSet(_Domain);
@@ -236,6 +243,7 @@ bool PiecewiseLinearMap::Read(const char *fname)
       _Domain->GetNumberOfCells()  == 0) return false;
   if (_Domain->GetPointData()->GetNumberOfArrays() == 1) {
     _Values = _Domain->GetPointData()->GetArray(0);
+    _Domain->GetPointData()->Initialize();
   } else {
     _Values = nullptr;
   }

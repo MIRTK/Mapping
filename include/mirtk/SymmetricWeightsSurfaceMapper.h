@@ -17,27 +17,27 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_SymmetricLinearSurfaceMapper_H
-#define MIRTK_SymmetricLinearSurfaceMapper_H
+#ifndef MIRTK_SymmetricWeightsSurfaceMapper_H
+#define MIRTK_SymmetricWeightsSurfaceMapper_H
 
-#include "mirtk/LinearSurfaceMapper.h"
+#include "mirtk/LinearFixedBoundarySurfaceMapper.h"
 
 
 namespace mirtk {
 
 
 /**
- * Obtains surface map as the solution of a symmetric system of linear equations
+ * Piecewise linear fixed boundary surface mapping with symmetric edge weights
  */
-class SymmetricLinearSurfaceMapper : public LinearSurfaceMapper
+class SymmetricWeightsSurfaceMapper : public LinearFixedBoundarySurfaceMapper
 {
-  mirtkAbstractMacro(SymmetricLinearSurfaceMapper);
+  mirtkAbstractMacro(SymmetricWeightsSurfaceMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const SymmetricLinearSurfaceMapper &);
+  void CopyAttributes(const SymmetricWeightsSurfaceMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -45,21 +45,24 @@ class SymmetricLinearSurfaceMapper : public LinearSurfaceMapper
 protected:
 
   /// Default constructor
-  SymmetricLinearSurfaceMapper();
+  SymmetricWeightsSurfaceMapper();
 
   /// Copy constructor
-  SymmetricLinearSurfaceMapper(const SymmetricLinearSurfaceMapper &);
+  SymmetricWeightsSurfaceMapper(const SymmetricWeightsSurfaceMapper &);
 
   /// Assignment operator
-  SymmetricLinearSurfaceMapper &operator =(const SymmetricLinearSurfaceMapper &);
+  SymmetricWeightsSurfaceMapper &operator =(const SymmetricWeightsSurfaceMapper &);
 
 public:
 
   /// Destructor
-  virtual ~SymmetricLinearSurfaceMapper();
+  virtual ~SymmetricWeightsSurfaceMapper();
 
   // ---------------------------------------------------------------------------
   // Execution
+
+  /// Construct and solve symmetric system of linear equations
+  virtual void ComputeMap();
 
 protected:
 
@@ -71,12 +74,9 @@ protected:
   /// \returns Weight of undirected edge (i, j).
   virtual double Weight(int i, int j) const = 0;
 
-  /// Construct and solve symmetric system of linear equations
-  virtual void Solve();
-
 };
 
 
 } // namespace mirtk
 
-#endif // MIRTK_SymmetricLinearSurfaceMapper_H
+#endif // MIRTK_SymmetricWeightsSurfaceMapper_H

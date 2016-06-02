@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/InteractiveBoundaryParameterizer.h"
+#include "mirtk/SubdividedBoundarySegmentParameterizer.h"
 
 
 namespace mirtk {
@@ -28,37 +28,44 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-InteractiveBoundaryParameterizer::InteractiveBoundaryParameterizer()
+void SubdividedBoundarySegmentParameterizer::CopyAttributes(const SubdividedBoundarySegmentParameterizer &)
 {
 }
 
 // -----------------------------------------------------------------------------
-InteractiveBoundaryParameterizer
-::InteractiveBoundaryParameterizer(const InteractiveBoundaryParameterizer &other)
+SubdividedBoundarySegmentParameterizer::SubdividedBoundarySegmentParameterizer()
+{
+}
+
+// -----------------------------------------------------------------------------
+SubdividedBoundarySegmentParameterizer
+::SubdividedBoundarySegmentParameterizer(const SubdividedBoundarySegmentParameterizer &other)
 :
-  BoundaryParameterizer(other)
+  BoundarySegmentParameterizer(other)
 {
+  CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-InteractiveBoundaryParameterizer &InteractiveBoundaryParameterizer
-::operator =(const InteractiveBoundaryParameterizer &other)
+SubdividedBoundarySegmentParameterizer &SubdividedBoundarySegmentParameterizer
+::operator =(const SubdividedBoundarySegmentParameterizer &other)
 {
   if (this != &other) {
-    BoundaryParameterizer::operator =(other);
+    BoundarySegmentParameterizer::operator =(other);
+    CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-InteractiveBoundaryParameterizer::~InteractiveBoundaryParameterizer()
+SubdividedBoundarySegmentParameterizer::~SubdividedBoundarySegmentParameterizer()
 {
 }
 
 // -----------------------------------------------------------------------------
-BoundaryParameterizer *InteractiveBoundaryParameterizer::NewCopy() const
+BoundarySegmentParameterizer *SubdividedBoundarySegmentParameterizer::NewCopy() const
 {
-  return new InteractiveBoundaryParameterizer(*this);
+  return new SubdividedBoundarySegmentParameterizer(*this);
 }
 
 // =============================================================================
@@ -66,15 +73,15 @@ BoundaryParameterizer *InteractiveBoundaryParameterizer::NewCopy() const
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void InteractiveBoundaryParameterizer::Parameterize()
+void SubdividedBoundarySegmentParameterizer::Parameterize()
 {
-  const int npoints   = NumberOfBoundaryPoints();
-  const int nselected = NumberOfSelectedPoints();
-  const int nfixed    = (nselected > 0 ? nselected             : 1);
-  const int i0        = (nselected > 0 ? SelectedPointIndex(0) : 0);
+  const int npoints   = _Boundary.NumberOfPoints();
+  const int nselected = _Boundary.NumberOfSelectedPoints();
+  const int nfixed    = (nselected > 0 ? nselected                       : 1);
+  const int i0        = (nselected > 0 ? _Boundary.SelectedPointIndex(0) : 0);
 
   // Compute edge lengths
-  const Vector l = BoundaryEdgeLengths();
+  const Vector l = _Boundary.EdgeLengths();
 
   // Compute distance of each point from point with index i0
   double d = .0;
@@ -82,7 +89,7 @@ void InteractiveBoundaryParameterizer::Parameterize()
   for (int n = 0, s = 0, i = i0; n < npoints; ++n) {
     _Values[i] = d, d += l(i);
     if (++i == npoints) i = 0;
-    if (i == i0 || IsSelected(i)) {
+    if (i == i0 || _Boundary.IsSelected(i)) {
       d1(s) = d, ++s;
     }
   }
@@ -99,20 +106,9 @@ void InteractiveBoundaryParameterizer::Parameterize()
   for (int n = 0, s = 0, i = i0; n < npoints; ++n) {
     _Values[i] = scale * (_Values[i] - d0) + s * tdiff;
     if (++i == npoints) i = 0;
-    if (i != i0 && IsSelected(i)) {
+    if (i != i0 && _Boundary.IsSelected(i)) {
       d0 = d1(s), ++s;
       scale = tdiff / (d1(s) - d0);
-    }
-  }
-
-  // Revert orientation of curve if points where selected in reverse order
-  if (nselected > 2) {
-    double t1 = _Values[SelectedPointIndex(1)];
-    double t2 = _Values[SelectedPointIndex(2)];
-    if (t2 < t1) {
-      for (int n = 0; n < npoints; ++n) {
-        if (n != i0) _Values[n] = 1.0 - _Values[n];
-      }
     }
   }
 }

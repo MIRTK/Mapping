@@ -17,7 +17,10 @@
  * limitations under the License.
  */
 
-#include "mirtk/UniformSurfaceMapper.h"
+#include "mirtk/SphericalSurfaceMapper.h"
+
+#include "mirtk/PointSetUtils.h"
+
 
 namespace mirtk {
 
@@ -27,35 +30,35 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void UniformSurfaceMapper::CopyAttributes(const UniformSurfaceMapper &other)
+void SphericalSurfaceMapper::CopyAttributes(const SphericalSurfaceMapper &other)
 {
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper()
+SphericalSurfaceMapper::SphericalSurfaceMapper()
 {
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper(const UniformSurfaceMapper &other)
+SphericalSurfaceMapper::SphericalSurfaceMapper(const SphericalSurfaceMapper &other)
 :
-  SymmetricWeightsSurfaceMapper(other)
+  SurfaceMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper &UniformSurfaceMapper::operator =(const UniformSurfaceMapper &other)
+SphericalSurfaceMapper &SphericalSurfaceMapper::operator =(const SphericalSurfaceMapper &other)
 {
   if (this != &other) {
-    SymmetricWeightsSurfaceMapper::operator =(other);
+    SurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::~UniformSurfaceMapper()
+SphericalSurfaceMapper::~SphericalSurfaceMapper()
 {
 }
 
@@ -64,9 +67,22 @@ UniformSurfaceMapper::~UniformSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-double UniformSurfaceMapper::Weight(int, int) const
+void SphericalSurfaceMapper::Initialize()
 {
-  return 1.0;
+  // Initialize base class
+  SurfaceMapper::Initialize();
+
+  // Input surface must not have a boundary
+  if (_Boundary->NumberOfPoints() > 0) {
+    cerr << this->NameOfType() << "::Initialize: Surface mesh must be closed without boundary!" << endl;
+    exit(1);
+  }
+
+  // Check genus of surface mesh
+  if (Genus(_Surface, *_EdgeTable) != 0.) {
+    cerr << this->NameOfType() << "::Initialize: Surface mesh topology must be equivalent to a sphere!" << endl;
+    exit(1);
+  }
 }
 
 

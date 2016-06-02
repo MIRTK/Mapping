@@ -20,7 +20,7 @@
 #ifndef MIRTK_BoundaryToSquareMapper_H
 #define MIRTK_BoundaryToSquareMapper_H
 
-#include "mirtk/BoundaryMapper.h"
+#include "mirtk/BoundarySegmentMapper.h"
 
 
 namespace mirtk {
@@ -29,7 +29,7 @@ namespace mirtk {
 /**
  * Map surface boundary to a square
  */
-class BoundaryToSquareMapper : public BoundaryMapper
+class BoundaryToSquareMapper : public BoundarySegmentMapper
 {
   mirtkObjectMacro(BoundaryToSquareMapper);
 
@@ -58,6 +58,9 @@ public:
 
   /// Destructor
   virtual ~BoundaryToSquareMapper();
+
+  /// Create new copy of this instance
+  virtual BoundaryMapper *NewCopy() const;
 
   // ---------------------------------------------------------------------------
   // Execution

@@ -17,50 +17,52 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_BoundaryToDiskMapper_H
-#define MIRTK_BoundaryToDiskMapper_H
+#ifndef MIRTK_BoundarySegmentMapper_H
+#define MIRTK_BoundarySegmentMapper_H
 
-#include "mirtk/BoundarySegmentMapper.h"
+#include "mirtk/BoundaryMapper.h"
+
+#include "mirtk/Memory.h"
+#include "mirtk/BoundarySegmentParameterizer.h"
 
 
 namespace mirtk {
 
 
 /**
- * Map surface boundary to a circle, i.e., the boundary of a disk
+ * Base class of filters which assign map values to one surface boundary segment
  */
-class BoundaryToDiskMapper : public BoundarySegmentMapper
+class BoundarySegmentMapper : public BoundaryMapper
 {
-  mirtkObjectMacro(BoundaryToDiskMapper);
+  mirtkAbstractMacro(BoundarySegmentMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
 
-  /// Radius of the disk
-  mirtkPublicAttributeMacro(double, Radius);
+  /// Closed boundary segment parameterizer
+  mirtkPublicAttributeMacro(SharedPtr<BoundarySegmentParameterizer>, Parameterizer);
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const BoundaryToDiskMapper &);
+  void CopyAttributes(const BoundarySegmentMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
 
-public:
+protected:
 
   /// Default constructor
-  BoundaryToDiskMapper();
+  BoundarySegmentMapper();
 
   /// Copy constructor
-  BoundaryToDiskMapper(const BoundaryToDiskMapper &);
+  BoundarySegmentMapper(const BoundarySegmentMapper &);
 
   /// Assignment operator
-  BoundaryToDiskMapper &operator =(const BoundaryToDiskMapper &);
+  BoundarySegmentMapper &operator =(const BoundarySegmentMapper &);
+
+public:
 
   /// Destructor
-  virtual ~BoundaryToDiskMapper();
-
-  /// Create new copy of this instance
-  virtual BoundaryMapper *NewCopy() const;
+  virtual ~BoundarySegmentMapper();
 
   // ---------------------------------------------------------------------------
   // Execution
@@ -68,7 +70,35 @@ public:
   /// Initialize filter after input and parameters are set
   virtual void Initialize();
 
+  /// Process longest boundary segment
+  void MapLongest();
+
+  /// Process boundary segment with the most number of points
+  void MapLargest();
+
+  /// Process specified boundary segment
+  ///
+  /// \param[in] n Index of boundary segment.
+  void MapSegment(int n);
+
+  /// Finalize boundary map
+  virtual void Finalize();
+
 protected:
+
+  /// Assign map values to longest boundary of input surface
+  ///
+  /// When the surface has more than one boundary segment and a different boundary
+  /// segment should be processed or when multiple boundary segments should be
+  /// processed with different boundary map settings, perform the following steps
+  /// instead of calling the Run() function.
+  ///
+  /// 1. Initialize() filter
+  /// 2. Repeat the following steps for each boundary segment to be mapped:
+  ///    a) Set selected boundary segment points and map parameters.
+  ///    b) MapSegment() to assign map values to current segment.
+  /// 3. Finalize() boundary map
+  virtual void ComputeMap();
 
   /// Map boundary segment
   ///
@@ -83,11 +113,11 @@ protected:
   ///                      selected boundary points.
   virtual void MapBoundarySegment(int n, const Array<int>    &indices,
                                          const Array<double> &tvalues,
-                                         const Array<int>    &selection);
+                                         const Array<int>    &selection) = 0;
 
 };
 
 
 } // namespace mirtk
 
-#endif // MIRTK_BoundaryToDiskMapper_H
+#endif // MIRTK_BoundarySegmentMapper_H

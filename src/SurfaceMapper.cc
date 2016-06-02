@@ -19,16 +19,7 @@
 
 #include "mirtk/SurfaceMapper.h"
 
-#include "mirtk/EdgeTable.h"
-#include "mirtk/PointSetUtils.h"
-#include "mirtk/PiecewiseLinearMap.h"
-
-#include "vtkSmartPointer.h"
-#include "vtkPointSet.h"
-#include "vtkPointData.h"
-#include "vtkCellData.h"
-#include "vtkDataArray.h"
-#include "vtkUnsignedCharArray.h"
+#include "mirtk/Assert.h"
 
 
 namespace mirtk {
@@ -41,21 +32,9 @@ namespace mirtk {
 // -----------------------------------------------------------------------------
 void SurfaceMapper::CopyAttributes(const SurfaceMapper &other)
 {
-  _Mesh        = other._Mesh;
-  _Surface     = other._Surface;
-  _Input       = other._Input;
-  _Mask        = other._Mask;
-  _Fixed       = other._Fixed;
-  _FixedPoints = other._FixedPoints;
-  _FreePoints  = other._FreePoints;
-  _PointIndex  = other._PointIndex;
-
-  if (other._Values) {
-    _Values = other._Values->NewInstance();
-    _Values->DeepCopy(other._Values);
-  } else {
-    _Values = nullptr;
-  }
+  _Surface   = other._Surface;
+  _Boundary  = other._Boundary;
+  _EdgeTable = other._EdgeTable;
 
   if (other._Output) {
     _Output = SharedPtr<Mapping>(other._Output->NewCopy());
@@ -98,129 +77,79 @@ SurfaceMapper::~SurfaceMapper()
 void SurfaceMapper::Run()
 {
   this->Initialize();
-  this->Solve();
+  this->ComputeMap();
   this->Finalize();
-}
-
-// -----------------------------------------------------------------------------
-vtkSmartPointer<vtkDataArray> SurfaceMapper::BoundaryMask() const
-{
-  vtkSmartPointer<vtkUnsignedCharArray> mask;
-  mask = vtkSmartPointer<vtkUnsignedCharArray>::New();
-  mask->SetName("FixedPoints");
-  mask->SetNumberOfComponents(1);
-  mask->SetNumberOfTuples(_Surface->GetNumberOfPoints());
-  mask->FillComponent(0, .0);
-  UnorderedSet<int> ptIds = BoundaryPoints(_Surface);
-  for (auto it = ptIds.begin(); it != ptIds.end(); ++it) {
-    mask->SetComponent(static_cast<vtkIdType>(*it), 0, 1.0);
-  }
-  return mask;
 }
 
 // -----------------------------------------------------------------------------
 void SurfaceMapper::Initialize()
 {
-  // Free previous output map
+  // Free previous map
   _Output = nullptr;
 
   // Check input
-  if (!_Mesh) {
-    cerr << this->NameOfType() << "::Initialize: Missing input surface mesh" << endl;
+  if (!_Surface) {
+    cerr << this->NameOfType() << "::Initialize: Missing input surface" << endl;
     exit(1);
   }
-  if (_Mesh->GetNumberOfPolys() == 0) {
-    cerr << this->NameOfType() << "::Initialize: Input point set must be a surface mesh" << endl;
+  if (_Surface->GetNumberOfPolys() == 0 && _Surface->GetNumberOfLines() == 0) {
+    cerr << this->NameOfType() << "::Initialize: Input point set must be a surface mesh or polygon" << endl;
     exit(1);
-  }
-  if (_Input && _Input->GetNumberOfTuples() != _Mesh->GetNumberOfPoints()) {
-    cerr << this->NameOfType() << "::Initialize: Invalid input map values array" << endl;
-    exit(1);
-  }
-  if (_Fixed && _Fixed->GetNumberOfTuples() != _Mesh->GetNumberOfPoints()) {
-    cerr << this->NameOfType() << "::Initialize: Invalid input mask" << endl;
-    exit(1);
-  }
-
-  // Initialize internal surface mesh
-  _Surface = _Mesh->NewInstance();
-  _Surface->ShallowCopy(_Mesh);
-  _Surface->SetLines(nullptr);
-  _Surface->SetVerts(nullptr);
-  _Surface->GetCellData()->Initialize();
-  _Surface->GetPointData()->Initialize();
-
-  // Initialize map values at surface points
-  this->InitializeValues();
-
-  // Set point data arrays for remeshing
-  _Surface->GetPointData()->SetTCoords(_Values);
-  _Surface->GetPointData()->SetScalars(_Mask);
-
-  // Remesh surface if necessary
-  if (this->Remesh()) {
-    _Values = _Surface->GetPointData()->GetTCoords();
   }
 
   // Build links
   _Surface->BuildLinks();
 
-  // Initialize boundary mask
-  this->InitializeMask();
-
-  // Set disjoint sets of IDs of free and fixed points
-  _FixedPoints = vtkSmartPointer<vtkIdList>::New();
-  _FixedPoints->Allocate(_Surface->GetNumberOfPoints());
-  _FreePoints = vtkSmartPointer<vtkIdList>::New();
-  _FreePoints->Allocate(_Surface->GetNumberOfPoints());
-  _PointIndex = vtkSmartPointer<vtkIdList>::New();
-  _PointIndex->SetNumberOfIds(_Surface->GetNumberOfPoints());
-  for (vtkIdType ptId = 0; ptId < _Surface->GetNumberOfPoints(); ++ptId) {
-    if (IsFixedPoint(ptId)) {
-      _PointIndex->SetId(ptId, -(_FixedPoints->InsertNextId(ptId) + 1));
-    } else {
-      _PointIndex->SetId(ptId, _FreePoints->InsertNextId(ptId));
-    }
+  // Determine adjacencies
+  if (!_EdgeTable) {
+    _EdgeTable = SharedPtr<class EdgeTable>(new class EdgeTable(_Surface));
   }
-  _FixedPoints->Squeeze();
-  _FreePoints ->Squeeze();
-}
 
-// -----------------------------------------------------------------------------
-void SurfaceMapper::InitializeValues()
-{
-  if (!_Input) {
-    cerr << this->NameOfType() << "::InitializeValues: Missing boundary conditions" << endl;
-    exit(1);
+  // Extract boundaries
+  if (!_Boundary) {
+    _Boundary = SharedPtr<SurfaceBoundary>(new SurfaceBoundary(_Surface, _EdgeTable));
   }
-  _Values = _Input->NewInstance();
-  _Values->SetName(_Input->GetName());
-  _Values->DeepCopy(_Input);
-}
-
-// -----------------------------------------------------------------------------
-void SurfaceMapper::InitializeMask()
-{
-  _Fixed = _Surface->GetPointData()->GetScalars();
-  if (!_Fixed) _Fixed = BoundaryMask();
-}
-
-// -----------------------------------------------------------------------------
-bool SurfaceMapper::Remesh()
-{
-  // Override in subclass if surface mesh must meet certain topological requirements
-  return false;
 }
 
 // -----------------------------------------------------------------------------
 void SurfaceMapper::Finalize()
 {
-  if (_Output == nullptr) {
-    SharedPtr<PiecewiseLinearMap> map = NewShared<PiecewiseLinearMap>();
-    map->Domain(_Surface);
-    map->Values(_Values);
-    _Output = map;
+  // Check that subclass produced output map
+  mirtkAssert(_Output != nullptr, "output surface map is not nullptr");
+}
+
+// =============================================================================
+// Auxiliaries
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+int SurfaceMapper::GetEdgeNeighborPoints(int i, int j, int &k, int &l) const
+{
+  k = l = -1;
+  unsigned short ncells1, ncells2, ncells = 0;
+  vtkIdType      *cells1, *cells2, npts, *pts, ptId;
+  _Surface->GetPointCells(static_cast<vtkIdType>(i), ncells1, cells1);
+  _Surface->GetPointCells(static_cast<vtkIdType>(j), ncells2, cells2);
+  for (unsigned short idx1 = 0; idx1 < ncells1; ++idx1) {
+    for (unsigned short idx2 = 0; idx2 < ncells2; ++idx2) {
+      if (cells1[idx1] == cells2[idx2]) {
+        ++ncells;
+        if (ncells < 3) {
+          _Surface->GetCellPoints(cells1[idx1], npts, pts);
+          if (npts == 3) {
+            if      (pts[0] != i && pts[0] != j) ptId = pts[0];
+            else if (pts[1] != i && pts[1] != j) ptId = pts[1];
+            else if (pts[2] != i && pts[2] != j) ptId = pts[2];
+            switch (ncells) {
+              case 1: k = ptId; break;
+              case 2: l = ptId; break;
+            }
+          }
+        }
+      }
+    }
   }
+  return ncells;
 }
 
 

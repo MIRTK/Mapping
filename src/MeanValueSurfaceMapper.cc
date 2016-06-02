@@ -48,7 +48,7 @@ MeanValueSurfaceMapper::MeanValueSurfaceMapper()
 // -----------------------------------------------------------------------------
 MeanValueSurfaceMapper::MeanValueSurfaceMapper(const MeanValueSurfaceMapper &other)
 :
-  NonSymmetricLinearSurfaceMapper(other)
+  NonSymmetricWeightsSurfaceMapper(other)
 {
   CopyAttributes(other);
 }
@@ -57,7 +57,7 @@ MeanValueSurfaceMapper::MeanValueSurfaceMapper(const MeanValueSurfaceMapper &oth
 MeanValueSurfaceMapper &MeanValueSurfaceMapper::operator =(const MeanValueSurfaceMapper &other)
 {
   if (this != &other) {
-    NonSymmetricLinearSurfaceMapper::operator =(other);
+    NonSymmetricWeightsSurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
@@ -73,36 +73,34 @@ MeanValueSurfaceMapper::~MeanValueSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-bool MeanValueSurfaceMapper::Remesh()
-{
-  if (!IsTriangularMesh(_Surface)) {
-    _Surface = Triangulate(_Surface);
-    return true;
-  }
-  return false;
-}
-
-// -----------------------------------------------------------------------------
 double MeanValueSurfaceMapper::Weight(int i, int j) const
 {
+  double p1[3], p2[3], p3[3], e1[3], e2[3], l12, w = .0;
+
   vtkIdType npts, *pts;
   vtkIdType ptId1 = static_cast<vtkIdType>(i);
   vtkIdType ptId2 = static_cast<vtkIdType>(j);
   vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-  _Surface->GetCellEdgeNeighbors(-1, ptId1, ptId2, cellIds);
-  double p1[3], p2[3], p3[3], e1[3], e2[3], l12, w = .0;
+
   _Surface->GetPoint(ptId1, p1);
   _Surface->GetPoint(ptId2, p2);
   vtkMath::Subtract(p2, p1, e1);
   l12 = vtkMath::Normalize(e1);
+
+  _Surface->GetCellEdgeNeighbors(-1, ptId1, ptId2, cellIds);
   for (vtkIdType cellIdx = 0; cellIdx < cellIds->GetNumberOfIds(); ++cellIdx) {
     _Surface->GetCellPoints(cellIds->GetId(cellIdx), npts, pts);
+    if (npts != 3) {
+      cerr << this->NameOfType() << "::Weight: Surface mesh cells must be triangles" << endl;
+      exit(1);
+    }
     while (pts[0] == ptId1 || pts[0] == ptId2) ++pts;
     _Surface->GetPoint(pts[0], p3);
     vtkMath::Subtract(p3, p1, e2);
     vtkMath::Normalize(e2);
     w += tan(.5 * acos(vtkMath::Dot(e1, e2))) / l12;
   }
+
   return w;
 }
 

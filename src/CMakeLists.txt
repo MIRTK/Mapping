@@ -22,87 +22,78 @@
 # @brief Build configuration of MIRTK Mapping library.
 ##############################################################################
 
-set(HEADERS
-  ${BINARY_INCLUDE_DIR}/mirtk/${PROJECT_NAME}Export.h
+set(HEADERS ${BINARY_INCLUDE_DIR}/mirtk/${PROJECT_NAME}Export.h)
+set(SOURCES)
+
+# List of library classes where indentation reflects inheritance
+# Note: Header only classes must be included with the .h file name extension.
+set(CLASSES
   # Map types
-  Mapping.h
-  MeshlessMap.h
-  MeshlessHarmonicMap.h
-  MeshlessBiharmonicMap.h
-  PiecewiseLinearMap.h
+  Mapping
+    MeshlessMap
+      MeshlessHarmonicMap
+        MeshlessBiharmonicMap
+    PiecewiseLinearMap
   # Surface boundary parameterization
-  BoundaryParameterizer.h
-  UniformBoundaryParameterizer.h
-  ChordLengthBoundaryParameterizer.h
-  InteractiveBoundaryParameterizer.h
+  BoundarySegmentParameterizer
+    UniformBoundarySegmentParameterizer
+    ChordLengthBoundarySegmentParameterizer
+    SubdividedBoundarySegmentParameterizer
   # Surface boundary mapping
-  BoundaryMapper.h
-  BoundaryToDiskMapper.h
-  BoundaryToPolygonMapper.h
-  BoundaryToSquareMapper.h
+  BoundaryMapper
+    BoundarySegmentMapper
+      BoundaryToDiskMapper
+      BoundaryToPolygonMapper
+      BoundaryToSquareMapper
   # Surface mapping
-  SurfaceMapper.h
-  LinearSurfaceMapper.h
-  SymmetricLinearSurfaceMapper.h
-  NonSymmetricLinearSurfaceMapper.h
-  UniformSurfaceMapper.h
-  HarmonicSpringSurfaceMapper.h
-  WeightedLeastSquaresSurfaceMapper.h
-  ShapePreservingSurfaceMapper.h
-  MeanValueSurfaceMapper.h
-  IntrinsicParameterizationSurfaceMapper.h
-  ConformalFlatteningSurfaceMapper.h
-  LeastSquaresConformalSurfaceMapper.h
+  SurfaceMapper
+    FixedBoundarySurfaceMapper
+      LinearFixedBoundarySurfaceMapper
+        SymmetricWeightsSurfaceMapper
+          UniformSurfaceMapper
+          ChordLengthSurfaceMapper
+          HarmonicSurfaceMapper
+          AuthalicSurfaceMapper
+          IntrinsicSurfaceMapper
+          NearOptimalSurfaceMapper
+            NearLeastEdgeDistortionSurfaceMapper
+            NearLeastAreaDistortionSurfaceMapper
+        NonSymmetricWeightsSurfaceMapper
+          ShapePreservingSurfaceMapper
+          MeanValueSurfaceMapper
+      #FlatSurfaceMapper
+      #  RegularGridSurfaceMapper
+      #    HarmonicRegularGridSurfaceMapper
+    FreeBoundarySurfaceMapper
+      LeastSquaresConformalSurfaceMapper
+    SphericalSurfaceMapper
+      ConformalSurfaceFlattening
+    #  SphericalMultiDimensionalScaling
   # Volumetric mapping
-  VolumeMapper.h
-  TetrahedralMeshMapper.h
-  LinearTetrahedralMeshMapper.h
-  HarmonicTetrahedralMeshMapper.h
-  AsConformalAsPossibleMapper.h
-  MeshlessVolumeMapper.h
-  MeshlessHarmonicVolumeMapper.h
+  VolumeMapper
+    TetrahedralMeshMapper
+      LinearTetrahedralMeshMapper
+        HarmonicTetrahedralMeshMapper
+        AsConformalAsPossibleMapper
+    MeshlessVolumeMapper
+      MeshlessHarmonicVolumeMapper
 )
 
-set(SOURCES
-  # Map types
-  Mapping.cc
-  MeshlessMap.cc
-  MeshlessHarmonicMap.cc
-  MeshlessBiharmonicMap.cc
-  PiecewiseLinearMap.cc
-  # Surface boundary parameterization
-  BoundaryParameterizer.cc
-  UniformBoundaryParameterizer.cc
-  ChordLengthBoundaryParameterizer.cc
-  InteractiveBoundaryParameterizer.cc
-  # Surface boundary mapping
-  BoundaryMapper.cc
-  BoundaryToDiskMapper.cc
-  BoundaryToPolygonMapper.cc
-  BoundaryToSquareMapper.cc
-  # Surface mapping
-  SurfaceMapper.cc
-  LinearSurfaceMapper.cc
-  SymmetricLinearSurfaceMapper.cc
-  NonSymmetricLinearSurfaceMapper.cc
-  UniformSurfaceMapper.cc
-  WeightedLeastSquaresSurfaceMapper.cc
-  HarmonicSpringSurfaceMapper.cc
-  ShapePreservingSurfaceMapper.cc
-  MeanValueSurfaceMapper.cc
-  IntrinsicParameterizationSurfaceMapper.cc
-  ConformalFlatteningSurfaceMapper.cc
-  LeastSquaresConformalSurfaceMapper.cc
-  # Volumetric mapping
-  VolumeMapper.cc
-  TetrahedralMeshMapper.cc
-  LinearTetrahedralMeshMapper.cc
-  HarmonicTetrahedralMeshMapper.cc
-  AsConformalAsPossibleMapper.cc
-  MeshlessVolumeMapper.cc
-  MeshlessHarmonicVolumeMapper.cc
-)
+if (MIRTK_Numerics_WITH_eigs)
+  list(APPEND CLASSES SpectralConformalSurfaceMapper)
+endif ()
 
+# Add source files implementing each class to HEADERS and SOURCES lists
+foreach (class IN LISTS CLASSES)
+  if (class MATCHES "\\.h$")
+    list(APPEND HEADERS ${class})
+  else ()
+    list(APPEND HEADERS ${class}.h)
+    list(APPEND SOURCES ${class}.cc)
+  endif ()
+endforeach ()
+
+# List of link dependencies
 set(DEPENDS
   LibCommon
   LibNumerics
@@ -116,4 +107,5 @@ if (TARGET TBB::tbb)
   list(APPEND DEPENDS TBB::tbb)
 endif ()
 
+# Add library target
 mirtk_add_library()

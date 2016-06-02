@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/ChordLengthBoundaryParameterizer.h"
+#include "mirtk/ChordLengthBoundarySegmentParameterizer.h"
 
 
 namespace mirtk {
@@ -28,37 +28,44 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-ChordLengthBoundaryParameterizer::ChordLengthBoundaryParameterizer()
+void ChordLengthBoundarySegmentParameterizer::CopyAttributes(const ChordLengthBoundarySegmentParameterizer &)
 {
 }
 
 // -----------------------------------------------------------------------------
-ChordLengthBoundaryParameterizer
-::ChordLengthBoundaryParameterizer(const ChordLengthBoundaryParameterizer &other)
+ChordLengthBoundarySegmentParameterizer::ChordLengthBoundarySegmentParameterizer()
+{
+}
+
+// -----------------------------------------------------------------------------
+ChordLengthBoundarySegmentParameterizer
+::ChordLengthBoundarySegmentParameterizer(const ChordLengthBoundarySegmentParameterizer &other)
 :
-  BoundaryParameterizer(other)
+  BoundarySegmentParameterizer(other)
 {
+  CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-ChordLengthBoundaryParameterizer &ChordLengthBoundaryParameterizer
-::operator =(const ChordLengthBoundaryParameterizer &other)
+ChordLengthBoundarySegmentParameterizer &ChordLengthBoundarySegmentParameterizer
+::operator =(const ChordLengthBoundarySegmentParameterizer &other)
 {
   if (this != &other) {
-    BoundaryParameterizer::operator =(other);
+    BoundarySegmentParameterizer::operator =(other);
+    CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-ChordLengthBoundaryParameterizer::~ChordLengthBoundaryParameterizer()
+ChordLengthBoundarySegmentParameterizer::~ChordLengthBoundarySegmentParameterizer()
 {
 }
 
 // -----------------------------------------------------------------------------
-BoundaryParameterizer *ChordLengthBoundaryParameterizer::NewCopy() const
+BoundarySegmentParameterizer *ChordLengthBoundarySegmentParameterizer::NewCopy() const
 {
-  return new ChordLengthBoundaryParameterizer(*this);
+  return new ChordLengthBoundarySegmentParameterizer(*this);
 }
 
 // =============================================================================
@@ -66,46 +73,15 @@ BoundaryParameterizer *ChordLengthBoundaryParameterizer::NewCopy() const
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void ChordLengthBoundaryParameterizer::Parameterize()
+void ChordLengthBoundarySegmentParameterizer::Parameterize()
 {
-  const int npoints   = NumberOfBoundaryPoints();
-  const int nselected = NumberOfSelectedPoints();
-
-  // Compute edge lengths
-  Vector l = BoundaryEdgeLengths();
-
-  // Chord length parameterization
-  double t = .0;
+  const Vector l = _Boundary.EdgeLengths();
   const double L = l.Sum();
-  for (int i = 0; i < npoints; ++i) {
+
+  double t = .0;
+  for (int i = 0; i < _Boundary.NumberOfPoints(); ++i) {
     _Values[i] = t;
     t += l(i) / L;
-  }
-
-  // Reparameterize such that first selected point has t=0
-  if (nselected > 1) {
-    const int    i0 = SelectedPointIndex(0);
-    const double t0 = _Values[i0];
-    if (t0 != .0) {
-      for (int i = 0; i < npoints; ++i) {
-        _Values[i] -= t0;
-        if (_Values[i] < .0) _Values[i] += 1.0;
-      }
-      _Values[i0] = .0;
-    }
-  }
-
-  // Revert orientation of curve if points where selected in reverse order
-  if (nselected > 2) {
-    double t1 = _Values[SelectedPointIndex(1)];
-    double t2 = _Values[SelectedPointIndex(2)];
-    if (t2 < t1) {
-      for (int n = 0; n < npoints; ++n) {
-        if (_Values[n] != .0) {
-          _Values[n] = 1.0 - _Values[n];
-        }
-      }
-    }
   }
 }
 

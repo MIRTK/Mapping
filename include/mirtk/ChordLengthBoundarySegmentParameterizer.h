@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_ChordLengthBoundaryParameterizer_H
-#define MIRTK_ChordLengthBoundaryParameterizer_H
+#ifndef MIRTK_ChordLengthBoundarySegmentParameterizer_H
+#define MIRTK_ChordLengthBoundarySegmentParameterizer_H
 
-#include "mirtk/BoundaryParameterizer.h"
+#include "mirtk/BoundarySegmentParameterizer.h"
 
 
 namespace mirtk {
@@ -42,9 +42,15 @@ namespace mirtk {
  * - Floater (1997). Parametrization and smooth approximation of surface triangulations.
  *   Computer Aided Geometric Design, 14(3), 231–250.
  */
-class ChordLengthBoundaryParameterizer : public BoundaryParameterizer
+class ChordLengthBoundarySegmentParameterizer : public BoundarySegmentParameterizer
 {
-  mirtkObjectMacro(ChordLengthBoundaryParameterizer);
+  mirtkObjectMacro(ChordLengthBoundarySegmentParameterizer);
+
+  // ---------------------------------------------------------------------------
+  // Attributes
+
+  /// Copy attributes of this class from another instance
+  void CopyAttributes(const ChordLengthBoundarySegmentParameterizer &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -52,19 +58,19 @@ class ChordLengthBoundaryParameterizer : public BoundaryParameterizer
 public:
 
   /// Default constructor
-  ChordLengthBoundaryParameterizer();
+  ChordLengthBoundarySegmentParameterizer();
 
   /// Copy constructor
-  ChordLengthBoundaryParameterizer(const ChordLengthBoundaryParameterizer &);
+  ChordLengthBoundarySegmentParameterizer(const ChordLengthBoundarySegmentParameterizer &);
 
   /// Assignment operator
-  ChordLengthBoundaryParameterizer &operator =(const ChordLengthBoundaryParameterizer &);
+  ChordLengthBoundarySegmentParameterizer &operator =(const ChordLengthBoundarySegmentParameterizer &);
 
   /// Destructor
-  virtual ~ChordLengthBoundaryParameterizer();
+  virtual ~ChordLengthBoundarySegmentParameterizer();
 
   /// New copy of this parameterizer
-  virtual BoundaryParameterizer *NewCopy() const;
+  virtual BoundarySegmentParameterizer *NewCopy() const;
 
   // ---------------------------------------------------------------------------
   // Execution
@@ -79,4 +85,4 @@ protected:
 
 } // namespace mirtk
 
-#endif // MIRTK_ChordLengthBoundaryParameterizer_H
+#endif // MIRTK_ChordLengthBoundarySegmentParameterizer_H

@@ -20,13 +20,15 @@
 #include "mirtk/Common.h"
 #include "mirtk/Options.h"
 
-#include "mirtk/Vector.h"
-#include "mirtk/EdgeTable.h"
+#include "mirtk/List.h"
 #include "mirtk/PointSetUtils.h"
 #include "mirtk/PointSetIO.h"
-#include "mirtk/VtkMath.h"
 
 #include "mirtk/BoundaryMapper.h"
+
+#include "mirtk/UniformBoundarySegmentParameterizer.h"
+#include "mirtk/ChordLengthBoundarySegmentParameterizer.h"
+#include "mirtk/SubdividedBoundarySegmentParameterizer.h"
 
 #include "mirtk/BoundaryToDiskMapper.h"
 #include "mirtk/BoundaryToSquareMapper.h"
@@ -62,16 +64,18 @@ void PrintHelp(const char* name)
   cout << "             - disk (default)\n";
   cout << "             - square\n";
   cout << "             - polygon\n";
-  cout << "  output     Output point set with boundary values as point data.\n";
+  cout << "  output     Computed boundary map.\n";
   cout << "\n";
   cout << "Optional arguments:\n";
-  cout << "  -radius <float>\n";
-  cout << "      Radius of primitive codomain shape. When non-positive, the radius is\n";
-  cout << "      chosen such that the area matches the area of the input surface. (default: 0)\n";
-  cout << "  -name <string>\n";
-  cout << "      Name of boundary values point data array. (default: Map)\n";
-  cout << "  -mask <string>\n";
-  cout << "      Name of output boundary mask point data array. (default: none)\n";
+  cout << "  -radius <float>   Radius of primitive codomain shape. When non-positive, the radius\n";
+  cout << "                    is chosen such that the area matches the area of the input surface.\n";
+  cout << "                    (default: 0)\n";
+  cout << "  -uniform          Uniformly distribute boundary points.\n";
+  cout << "  -chord-length     Map boundary curve proportionally to the boundary edge length.\n";
+  cout << "  -subdivided       Map each sub-segment defined by the selected points to the same\n";
+  cout << "                    output curve length with chord-length parameterization of each\n";
+  cout << "                    selected boundary sub-segment. (default)\n";
+  cout << "  -select <id>...   Indices of selected surface points. (default: none)\n";
   PrintCommonOptions(cout);
   cout << "\n";
 }
@@ -91,8 +95,10 @@ int main(int argc, char *argv[])
   const char *values_name   = "Map";     // Name of boundary values array
   const char *mask_name     = nullptr;   // Name of boundary mask array
   double      radius        = .0;        // Radius of primitive shape
+  List<int>   selection;                 // Selected (boundary) points
 
-  vtkSmartPointer<vtkIdList> selection = vtkSmartPointer<vtkIdList>::New();
+  SharedPtr<BoundarySegmentParameterizer> parameterizer;
+  parameterizer = NewShared<SubdividedBoundarySegmentParameterizer>();
 
   for (ALL_OPTIONS) {
     if      (OPTION("-name")) values_name = ARGUMENT;
@@ -100,11 +106,21 @@ int main(int argc, char *argv[])
     else if (OPTION("-codomain")) codomain_name = ARGUMENT;
     else if (OPTION("-radius")) PARSE_ARGUMENT(radius);
     else if (OPTION("-select")) {
-      unsigned int ptId;
+      int ptId;
       do {
         PARSE_ARGUMENT(ptId);
-        selection->InsertNextId(static_cast<vtkIdType>(ptId));
+        if (ptId < 0) FatalError("Selected point IDs must be non-negative!");
+        selection.push_back(ptId);
       } while (HAS_ARGUMENT);
+    }
+    else if (OPTION("-uniform")) {
+      parameterizer = NewShared<UniformBoundarySegmentParameterizer>();
+    }
+    else if (OPTION("-chord-length")) {
+      parameterizer = NewShared<ChordLengthBoundarySegmentParameterizer>();
+    }
+    else if (OPTION("-subdivided")) {
+      parameterizer = NewShared<SubdividedBoundarySegmentParameterizer>();
     }
     else HANDLE_COMMON_OR_UNKNOWN_OPTION();
   }
@@ -136,17 +152,17 @@ int main(int argc, char *argv[])
 
   if (verbose) cout << "Reading input surface...", cout.flush();
   vtkSmartPointer<vtkPointSet>  input    = ReadPointSet(domain_name);
-  vtkSmartPointer<vtkPolyData>  domain   = DataSetSurface(input, true);
-  vtkSmartPointer<vtkDataArray> orig_ids = domain->GetPointData()->GetArray("vtkOriginalPointIds");
+  vtkSmartPointer<vtkPolyData>  surface  = DataSetSurface(input, true);
+  vtkSmartPointer<vtkDataArray> orig_ids = surface->GetPointData()->GetArray("vtkOriginalPointIds");
 
-  int nbounds, ncomps;
-  double genus = Genus(domain, nullptr, nullptr, nullptr, &nbounds, &ncomps, nullptr);
-  if (genus != .0 || ncomps != 1 || nbounds != 1) {
-    FatalError("Input must be a single non-closed genus-0 surface!");
+  SharedPtr<SurfaceBoundary> boundary = NewShared<SurfaceBoundary>(surface);
+  for (auto ptId : selection) {
+    auto i = boundary->Find(ptId);
+    if (i >= 0) boundary->SelectPoint(i);
   }
 
   if (verbose) cout << " done\nComputing boundary map...", cout.flush();
-  SharedPtr<BoundaryMapper> mapper;
+  SharedPtr<BoundarySegmentMapper> mapper;
 
   if (codomain_shape == "disk") {
     SharedPtr<BoundaryToDiskMapper> disk_mapper(new BoundaryToDiskMapper());
@@ -164,37 +180,13 @@ int main(int argc, char *argv[])
     FatalError("Mapping of surface boundary to arbitrary codomain polygon not implemented");
   }
 
-  mapper->Surface(domain);
-  mapper->Selection(selection);
+  mapper->Boundary(boundary);
+  mapper->Parameterizer(parameterizer);
   mapper->Run();
-
-  vtkSmartPointer<vtkDataArray> mask;
-  if (mask_name) {
-    mask = vtkSmartPointer<vtkUnsignedCharArray>::New();
-    mask->SetName(mask_name);
-    mask->SetNumberOfComponents(1);
-    mask->SetNumberOfTuples(input->GetNumberOfPoints());
-    mask->FillComponent(0, .0);
-    input->GetPointData()->AddArray(mask);
+  if (!mapper->Output()->Write(output_name)) {
+    FatalError("Failed to write boundary map to " << output_name);
   }
-
-  vtkSmartPointer<vtkDataArray> values;
-  vtkSmartPointer<vtkDataArray> bvalues = mapper->Values();
-  values = vtkSmartPointer<vtkFloatArray>::New();
-  values->SetName(values_name);
-  values->SetNumberOfComponents(bvalues->GetNumberOfComponents());
-  values->SetNumberOfTuples(input->GetNumberOfPoints());
-  for (int j = 0; j < values->GetNumberOfComponents(); ++j) {
-    values->FillComponent(j, .0);
-  }
-  for (vtkIdType i = 0, ptId; i < bvalues->GetNumberOfTuples(); ++i) {
-    ptId = static_cast<vtkIdType>(mapper->BoundaryPointId(i));
-    ptId = static_cast<vtkIdType>(orig_ids->GetComponent(ptId, 0));
-    values->SetTuple(ptId, bvalues->GetTuple(i));
-    if (mask) mask->SetComponent(ptId, 0, 1.0);
-  }
-  input->GetPointData()->SetTCoords(values);
-
   if (verbose) cout << " done" << endl;
-  return WritePointSet(output_name, input) ? 0 : 1;
+
+  return 0;
 }

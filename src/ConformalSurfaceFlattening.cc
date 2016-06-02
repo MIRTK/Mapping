@@ -17,18 +17,28 @@
  * limitations under the License.
  */
 
-#include "mirtk/ConformalFlatteningSurfaceMapper.h"
+#include "mirtk/ConformalSurfaceFlattening.h"
 
 #include "mirtk/VtkMath.h"
+#include "mirtk/Triangle.h"
 #include "mirtk/EdgeTable.h"
 #include "mirtk/PointSetUtils.h"
 #include "mirtk/PolyDataCurvature.h"
+#include "mirtk/PiecewiseLinearMap.h"
 
 #include "vtkIdList.h"
 #include "vtkPointData.h"
-#include "vtkFloatArray.h"
+#include "vtkCellData.h"
+
+#if MIRTK_USE_FLOAT_BY_DEFAULT
+  #include "vtkFloatArray.h"
+#else
+  #include "vtkDoubleArray.h"
+#endif
 
 #include "Eigen/SparseCore"
+#include "Eigen/SparseLU"
+#include "Eigen/OrderingMethods"
 #include "Eigen/IterativeLinearSolvers"
 
 
@@ -44,47 +54,51 @@ MIRTK_Common_EXPORT extern int verbose;
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void ConformalFlatteningSurfaceMapper
-::CopyAttributes(const ConformalFlatteningSurfaceMapper &other)
+void ConformalSurfaceFlattening
+::CopyAttributes(const ConformalSurfaceFlattening &other)
 {
-  _PolarCellId = other._PolarCellId;
-  _MapToSphere = other._MapToSphere;
-  _Scale       = other._Scale;
-  _Radius      = other._Radius;
+  _PolarCellId        = other._PolarCellId;
+  _MapToSphere        = other._MapToSphere;
+  _Scale              = other._Scale;
+  _Radius             = other._Radius;
+  _NumberOfIterations = other._NumberOfIterations;
+  _Tolerance          = other._Tolerance;
 }
 
 // -----------------------------------------------------------------------------
-ConformalFlatteningSurfaceMapper::ConformalFlatteningSurfaceMapper()
+ConformalSurfaceFlattening::ConformalSurfaceFlattening()
 :
   _PolarCellId(-1),
   _MapToSphere(true),
-  _Scale(.0),
-  _Radius(1.0)
+  _Scale(0.),
+  _Radius(1.),
+  _NumberOfIterations(0),
+  _Tolerance(-1.)
 {
 }
 
 // -----------------------------------------------------------------------------
-ConformalFlatteningSurfaceMapper::ConformalFlatteningSurfaceMapper(
-  const ConformalFlatteningSurfaceMapper &other
+ConformalSurfaceFlattening::ConformalSurfaceFlattening(
+  const ConformalSurfaceFlattening &other
 ) :
-  LinearSurfaceMapper(other)
+  SphericalSurfaceMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-ConformalFlatteningSurfaceMapper &ConformalFlatteningSurfaceMapper
-::operator =(const ConformalFlatteningSurfaceMapper &other)
+ConformalSurfaceFlattening &ConformalSurfaceFlattening
+::operator =(const ConformalSurfaceFlattening &other)
 {
   if (this != &other) {
-    LinearSurfaceMapper::operator =(other);
+    SphericalSurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-ConformalFlatteningSurfaceMapper::~ConformalFlatteningSurfaceMapper()
+ConformalSurfaceFlattening::~ConformalSurfaceFlattening()
 {
 }
 
@@ -93,10 +107,10 @@ ConformalFlatteningSurfaceMapper::~ConformalFlatteningSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void ConformalFlatteningSurfaceMapper::Initialize()
+void ConformalSurfaceFlattening::Initialize()
 {
   // Initialize base class
-  LinearSurfaceMapper::Initialize();
+  SphericalSurfaceMapper::Initialize();
 
   // Check that fixed point cell ID is valid
   if (_PolarCellId >= _Surface->GetNumberOfCells()) {
@@ -104,34 +118,7 @@ void ConformalFlatteningSurfaceMapper::Initialize()
     exit(1);
   }
 
-  // Input surface must have genus 0
-  if (Genus(_Surface) != .0) {
-    cerr << this->NameOfType() << "::Initialize: Input surface must have genus 0!" << endl;
-    exit(1);
-  }
-}
-
-// -----------------------------------------------------------------------------
-void ConformalFlatteningSurfaceMapper::InitializeValues()
-{
-  if (_Input) {
-    _Values = _Input->NewInstance();
-    _Values->SetName(_Input->GetName());
-  } else {
-    _Values = vtkSmartPointer<vtkFloatArray>::New();
-    _Values->SetName("Map");
-  }
-  _Values->SetNumberOfComponents(_MapToSphere ? 3 : 2);
-  _Values->SetNumberOfTuples(_Surface->GetNumberOfPoints());
-  for (int j = 0; j < _Values->GetNumberOfComponents(); ++j) {
-    _Values->FillComponent(j, .0);
-  }
-}
-
-// -----------------------------------------------------------------------------
-void ConformalFlatteningSurfaceMapper::InitializeMask()
-{
-  // Choose cell containing polar point automatically
+  // Select cell with lowest average curvature as cell containing the polar point
   if (_PolarCellId < 0) {
     PolyDataCurvature filter(PolyDataCurvature::Mean);
     filter.Input(_Surface);
@@ -155,7 +142,7 @@ void ConformalFlatteningSurfaceMapper::InitializeMask()
     double avgValue, minValue = .0;
     for (unsigned short i = 0; i < ncells; ++i) {
       _Surface->GetCellPoints(cells[i], npts, pts);
-      avgValue = .0;
+      avgValue = 0.;
       for (vtkIdType j = 0; j < npts; ++j) {
         avgValue += curvature->GetComponent(pts[j], 0);
       }
@@ -167,41 +154,25 @@ void ConformalFlatteningSurfaceMapper::InitializeMask()
     }
   }
 
-  // Mark corners of cell with polar point as points with fixed values
-  vtkIdType npts, *pts;
-  _Surface->GetCellPoints(_PolarCellId, npts, pts);
-
-  _Fixed = vtkSmartPointer<vtkUnsignedCharArray>::New();
-  _Fixed->SetName("FixedPoints");
-  _Fixed->SetNumberOfComponents(1);
-  _Fixed->SetNumberOfTuples(_Surface->GetNumberOfPoints());
-
-  _Fixed->FillComponent(0, .0);
-  for (vtkIdType i = 0; i < npts; ++i) {
-    _Fixed->SetComponent(pts[i], 0, 1.0);
+  // Initialize map values
+  #if MIRTK_USE_FLOAT_BY_DEFAULT
+    _Values = vtkSmartPointer<vtkFloatArray>::New();
+  #else
+    _Values = vtkSmartPointer<vtkDoubleArray>::New();
+  #endif
+  _Values->SetName("SurfaceMap");
+  _Values->SetNumberOfComponents(_MapToSphere ? 3 : 2);
+  _Values->SetNumberOfTuples(_Surface->GetNumberOfPoints());
+  for (int j = 0; j < _Values->GetNumberOfComponents(); ++j) {
+    _Values->FillComponent(j, 0.);
   }
 }
 
 // -----------------------------------------------------------------------------
-bool ConformalFlatteningSurfaceMapper::Remesh()
+void ConformalSurfaceFlattening::ComputeMap()
 {
-  // Triangulate surface if necessary
-  if (!IsTriangularMesh(_Surface)) {
-    _Surface = Triangulate(_Surface);
-    if (_PolarCellId >= 0) {
-      // TODO: Map _PolarCellId to corresponding triangle ID
-      cerr << this->NameOfType() << "::Remesh: Polar cell ID to triangle ID of new mesh conversion not implemented!" << endl;
-      cerr << "  Triangulate surface mesh before running this filter." << endl;
-      exit(1);
-    }
-    return true;
-  }
-  return false;
-}
+  MIRTK_START_TIMING();
 
-// -----------------------------------------------------------------------------
-void ConformalFlatteningSurfaceMapper::Solve()
-{
   typedef Eigen::MatrixXd             Values;
   typedef Eigen::SparseMatrix<double> Matrix;
 
@@ -215,14 +186,16 @@ void ConformalFlatteningSurfaceMapper::Solve()
 
     vtkIdType npts, *pts;                // cell links list reference
     double posA [3], posB [3], posC [3]; // position of cell corner points
-    double ctgABC, ctgBCA, ctgCAB;       // cotangent of cell angles
+    double cotABC, cotBCA, cotCAB;       // cotangent of cell angles
 
-    {
-      EdgeTable edgeTable(_Surface);
-      D.reserve(Vector::Constant(n, edgeTable.MaxNumberOfAdjacentPoints() + 1));
-    }
+    D.reserve(Vector::Constant(n, _EdgeTable->MaxNumberOfAdjacentPoints() + 1));
     for (vtkIdType cellId = 0; cellId < _Surface->GetNumberOfCells(); ++cellId) {
       _Surface->GetCellPoints(cellId, npts, pts);
+      if (npts != 3) {
+        cerr << this->NameOfType() << "::ComputeMap: Surface mesh must be triangulated!" << endl;
+        exit(1);
+      }
+
       const vtkIdType &ptIdA = pts[0];
       const vtkIdType &ptIdB = pts[1];
       const vtkIdType &ptIdC = pts[2];
@@ -231,21 +204,21 @@ void ConformalFlatteningSurfaceMapper::Solve()
       _Surface->GetPoint(ptIdB, posB);
       _Surface->GetPoint(ptIdC, posC);
 
-      ctgABC = Cotangent(posA, posB, posC);
-      ctgBCA = Cotangent(posB, posC, posA);
-      ctgCAB = Cotangent(posC, posA, posB);
+      cotABC = Triangle::Cotangent(posA, posB, posC);
+      cotBCA = Triangle::Cotangent(posB, posC, posA);
+      cotCAB = Triangle::Cotangent(posC, posA, posB);
 
-      D.coeffRef(ptIdA, ptIdA) += ctgABC + ctgBCA;
-      D.coeffRef(ptIdA, ptIdB) -= ctgBCA;
-      D.coeffRef(ptIdA, ptIdC) -= ctgABC;
+      D.coeffRef(ptIdA, ptIdA) += cotABC + cotBCA;
+      D.coeffRef(ptIdA, ptIdB) -= cotBCA;
+      D.coeffRef(ptIdA, ptIdC) -= cotABC;
 
-      D.coeffRef(ptIdB, ptIdB) += ctgBCA + ctgCAB;
-      D.coeffRef(ptIdB, ptIdA) -= ctgBCA;
-      D.coeffRef(ptIdB, ptIdC) -= ctgCAB;
+      D.coeffRef(ptIdB, ptIdB) += cotBCA + cotCAB;
+      D.coeffRef(ptIdB, ptIdA) -= cotBCA;
+      D.coeffRef(ptIdB, ptIdC) -= cotCAB;
 
-      D.coeffRef(ptIdC, ptIdC) += ctgCAB + ctgABC;
-      D.coeffRef(ptIdC, ptIdB) -= ctgCAB;
-      D.coeffRef(ptIdC, ptIdA) -= ctgABC;
+      D.coeffRef(ptIdC, ptIdC) += cotCAB + cotABC;
+      D.coeffRef(ptIdC, ptIdB) -= cotCAB;
+      D.coeffRef(ptIdC, ptIdA) -= cotABC;
     }
     D.makeCompressed();
   }
@@ -284,52 +257,67 @@ void ConformalFlatteningSurfaceMapper::Solve()
     // Constraints of corner points
     b.setZero();
 
-    const double x = 2.0 / sqrt(normAB2);
+    const double x = 2. / sqrt(normAB2);
     b(ptIdA, 0) = -x;
     b(ptIdB, 0) =  x;
 
-    const double y = 2.0 / vtkMath::Norm(vecEC);
-    b(ptIdA, 1) =  y * (1.0 - theta);
+    const double y = 2. / vtkMath::Norm(vecEC);
+    b(ptIdA, 1) =  y * (1. - theta);
     b(ptIdB, 1) =  y * theta;
     b(ptIdC, 1) = -y;
   }
+
+  MIRTK_DEBUG_TIMING(1, "building sparse linear system");
 
   // Solve linear system
   if (verbose) {
     cout << "\n";
     cout << "  No. of surface points  = " << NumberOfPoints() << "\n";
-    cout << "  No. of fixed points    = " << NumberOfFixedPoints() << "\n";
+    cout << "  No. of fixed points    = 3\n";
     cout << "  No. of non-zero values = " << D.nonZeros() << "\n";
     cout << "  Dimension of codomain  = " << m << "\n";
     cout.flush();
   }
 
+  MIRTK_RESET_TIMING();
+
+  Values x(n, m);
   int    niter = 0;
-  double error = .0;
+  double error = nan;
 
-  Eigen::ConjugateGradient<Matrix> solver(D);
-  if (_NumberOfIterations >  0) solver.setMaxIterations(_NumberOfIterations);
-  if (_Tolerance          > .0) solver.setTolerance(_Tolerance);
-  Values x = solver.solve(b);
-  niter = solver.iterations();
-  error = solver.error();
-
-  if (verbose) {
-    cout << "  No. of iterations      = " << niter << "\n";
-    cout << "  Estimated error        = " << error << "\n";
-    cout.flush();
+  if (_NumberOfIterations == 1) {
+    Eigen::SparseLU<Matrix> solver;
+    solver.analyzePattern(D);
+    solver.factorize(D);
+    x = solver.solve(b);
+  } else {
+    Eigen::ConjugateGradient<Matrix> solver(D);
+    if (_NumberOfIterations > 0 ) solver.setMaxIterations(_NumberOfIterations);
+    if (_Tolerance          > 0.) solver.setTolerance(_Tolerance);
+    x = solver.solve(b);
+    niter = solver.iterations();
+    error = solver.error();
   }
 
   for (int i = 0; i < n; ++i) {
     for (int l = 0; l < m; ++l) {
-      SetValue(i, l, x(i, l));
+      _Values->SetComponent(static_cast<vtkIdType>(i), l, x(i, l));
     }
+  }
+
+  MIRTK_DEBUG_TIMING(1, "solving sparse linear system");
+
+  if (verbose && _NumberOfIterations > 1) {
+    cout << "  No. of iterations      = " << niter << "\n";
+    cout << "  Estimated error        = " << error << "\n";
+    cout.flush();
   }
 }
 
 // -----------------------------------------------------------------------------
-void ConformalFlatteningSurfaceMapper::Finalize()
+void ConformalSurfaceFlattening::Finalize()
 {
+  // Inverse stereographic projection
   if (_MapToSphere) {
     const int n = NumberOfPoints();
     double x, y, r2, scale = _Scale;
@@ -340,8 +328,8 @@ void ConformalFlatteningSurfaceMapper::Finalize()
       Array<double> v_r2(n);
       auto v_r2_it = v_r2.begin();
       for (int i = 0; i < n; ++i, ++v_r2_it) {
-        x = GetValue(i, 0);
-        y = GetValue(i, 1);
+        x = _Values->GetComponent(static_cast<vtkIdType>(i), 0);
+        y = _Values->GetComponent(static_cast<vtkIdType>(i), 1);
         *v_r2_it = x*x + y*y;
       }
       sort(v_r2.begin(), v_r2.end());
@@ -350,19 +338,29 @@ void ConformalFlatteningSurfaceMapper::Finalize()
     }
 
     // Perform inverse stereographic projection
-    const double s = 2.0 * _Radius;
+    const double s = 2. * _Radius;
     for (int i = 0; i < n; ++i) {
-      x = scale * GetValue(i, 0);
-      y = scale * GetValue(i, 1);
+      x = scale * _Values->GetComponent(static_cast<vtkIdType>(i), 0);
+      y = scale * _Values->GetComponent(static_cast<vtkIdType>(i), 1);
       r2 = x*x + y*y;
-      SetValue(i, 0, s * x / (1.0 + r2));
-      SetValue(i, 1, s * y / (1.0 + r2));
-      SetValue(i, 2, s * r2 / ( 1.0 + r2) - 1.0);
+      _Values->SetComponent(static_cast<vtkIdType>(i), 0, s *  x / (1. + r2));
+      _Values->SetComponent(static_cast<vtkIdType>(i), 1, s *  y / (1. + r2));
+      _Values->SetComponent(static_cast<vtkIdType>(i), 2, s * r2 / (1. + r2) - 1.);
     }
   }
 
+  // Set output surface map
+  SharedPtr<PiecewiseLinearMap> map = NewShared<PiecewiseLinearMap>();
+  vtkSmartPointer<vtkPolyData> domain = _Surface->NewInstance();
+  domain->ShallowCopy(_Surface);
+  domain->GetPointData()->Initialize();
+  domain->GetCellData()->Initialize();
+  map->Domain(domain);
+  map->Values(_Values);
+  _Output = map;
+
   // Finalize base class
-  LinearSurfaceMapper::Finalize();
+  SphericalSurfaceMapper::Finalize();
 }
 
 

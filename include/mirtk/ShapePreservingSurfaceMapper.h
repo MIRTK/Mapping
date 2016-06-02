@@ -20,7 +20,7 @@
 #ifndef MIRTK_ShapePreservingSurfaceMapper_H
 #define MIRTK_ShapePreservingSurfaceMapper_H
 
-#include "mirtk/NonSymmetricLinearSurfaceMapper.h"
+#include "mirtk/NonSymmetricWeightsSurfaceMapper.h"
 
 
 namespace mirtk {
@@ -36,9 +36,10 @@ namespace mirtk {
  *
  * - Floater (1997). Parametrization and smooth approximation of surface triangulations.
  *   Computer Aided Geometric Design, 14(3), 231–250.
- * - Floater (2003). Mean value coordinates. Computer Aided Geometric Design, 20(1), 19–27.
+ * - Guskov (2004). An anisotropic mesh parameterization scheme. 
+ *   Engineering with Computers, 20(2), 129–135.
  */
-class ShapePreservingSurfaceMapper : public NonSymmetricLinearSurfaceMapper
+class ShapePreservingSurfaceMapper : public NonSymmetricWeightsSurfaceMapper
 {
   mirtkObjectMacro(ShapePreservingSurfaceMapper);
 

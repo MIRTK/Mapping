@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_InteractiveBoundaryParameterizer_H
-#define MIRTK_InteractiveBoundaryParameterizer_H
+#ifndef MIRTK_SubdividedBoundarySegmentParameterizer_H
+#define MIRTK_SubdividedBoundarySegmentParameterizer_H
 
-#include "mirtk/BoundaryParameterizer.h"
+#include "mirtk/BoundarySegmentParameterizer.h"
 
 
 namespace mirtk {
@@ -37,11 +37,17 @@ namespace mirtk {
  * to the same fraction of the total boundary curve length, with chord length
  * parameterization within each sub-segment.
  *
- * @sa UniformBoundaryParameterizer, ChordLengthBoundaryParameterizer
+ * \sa UniformBoundarySegmentParameterizer, ChordLengthBoundarySegmentParameterizer
  */
-class InteractiveBoundaryParameterizer : public BoundaryParameterizer
+class SubdividedBoundarySegmentParameterizer : public BoundarySegmentParameterizer
 {
-  mirtkObjectMacro(InteractiveBoundaryParameterizer);
+  mirtkObjectMacro(SubdividedBoundarySegmentParameterizer);
+
+  // ---------------------------------------------------------------------------
+  // Attributes
+
+  /// Copy attributes of this class from another instance
+  void CopyAttributes(const SubdividedBoundarySegmentParameterizer &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -49,19 +55,19 @@ class InteractiveBoundaryParameterizer : public BoundaryParameterizer
 public:
 
   /// Default constructor
-  InteractiveBoundaryParameterizer();
+  SubdividedBoundarySegmentParameterizer();
 
   /// Copy constructor
-  InteractiveBoundaryParameterizer(const InteractiveBoundaryParameterizer &);
+  SubdividedBoundarySegmentParameterizer(const SubdividedBoundarySegmentParameterizer &);
 
   /// Assignment operator
-  InteractiveBoundaryParameterizer &operator =(const InteractiveBoundaryParameterizer &);
+  SubdividedBoundarySegmentParameterizer &operator =(const SubdividedBoundarySegmentParameterizer &);
 
   /// Destructor
-  virtual ~InteractiveBoundaryParameterizer();
+  virtual ~SubdividedBoundarySegmentParameterizer();
 
   /// New copy of this parameterizer
-  virtual BoundaryParameterizer *NewCopy() const;
+  virtual BoundarySegmentParameterizer *NewCopy() const;
 
   // ---------------------------------------------------------------------------
   // Execution
@@ -76,4 +82,4 @@ protected:
 
 } // namespace mirtk
 
-#endif // MIRTK_InteractiveBoundaryParameterizer_H
+#endif // MIRTK_SubdividedBoundarySegmentParameterizer_H

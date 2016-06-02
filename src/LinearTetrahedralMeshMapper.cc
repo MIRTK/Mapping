@@ -30,6 +30,7 @@
 #include "vtkIdList.h"
 #include "vtkTetra.h"
 
+#include "Eigen/SparseCore"
 #include "Eigen/IterativeLinearSolvers"
 
 

@@ -22,29 +22,22 @@
 
 #include "mirtk/Object.h"
 
+#include "mirtk/Matrix.h"
 #include "mirtk/Memory.h"
-#include "mirtk/Array.h"
-#include "mirtk/EdgeTable.h"
-#include "mirtk/Point.h"
-
-#include "mirtk/BoundaryParameterizer.h"
-
-#include "vtkSmartPointer.h"
-#include "vtkPolyData.h"
-#include "vtkDataArray.h"
-#include "vtkCellArray.h"
-#include "vtkIdList.h"
+#include "mirtk/SurfaceBoundary.h"
+#include "mirtk/PiecewiseLinearMap.h"
 
 
 namespace mirtk {
 
 
 /**
- * Base class of objects which assign map values to a surface boundary
+ * Base class of filters which assign map values to surface boundary points
  *
- * Objects of this type take a surface mesh as input and compute a map value
- * for each point on the surface boundary. Such piecewise linear boundary map
- * can be used as boundary condition for a surface map.
+ * Filters of this type take a piecewice linear surface boundary segments
+ * extracted from a surface mesh as input and compute a map value for each point
+ * on the surface boundary. Such piecewise linear boundary map can be used as
+ * fixed boundary condition for a surface map.
  *
  * \sa SurfaceMapper
  */
@@ -55,197 +48,20 @@ class BoundaryMapper : public Object
   // ---------------------------------------------------------------------------
   // Attributes
 
-  /// Input surface mesh
-  mirtkPublicAttributeMacro(vtkSmartPointer<vtkPolyData>, Surface);
+  /// Extracted surface mesh boundary
+  mirtkPublicAttributeMacro(SharedPtr<SurfaceBoundary>, Boundary);
 
-  /// Edge table of input surface mesh
-  mirtkPublicAttributeMacro(SharedPtr<mirtk::EdgeTable>, EdgeTable);
-
-  /// List of user selected points
+  /// Map values at boundary points
   ///
-  /// How many points need to be selected depends on the specific parameterizer.
-  /// In general, no points have to be selected, but selecting boundary points
-  /// can be used to orient the curve, i.e., to decide in which direction along
-  /// the closed curve the t values are increasing. The curve orientation is
-  /// generally defined by the order of the selected points. The first point in
-  /// the selection usually defines the boundary point corresponding to the curve
-  /// parameter t=0.
-  mirtkPublicAttributeMacro(vtkSmartPointer<vtkIdList>, Selection);
+  /// Not all boundary points need to have a boundary map value assigned by the
+  /// subclass implementation. The map value at these points is Not-a-Number (NaN).
+  mirtkAttributeMacro(Matrix, Values);
 
-  /// Boundary map values
-  mirtkPublicAttributeMacro(vtkSmartPointer<vtkDataArray>, Values);
-
-  /// Closed surface boundary curve parameterizer
-  mirtkPublicAttributeMacro(SharedPtr<BoundaryParameterizer>, Parameterizer);
-
-  /// Closed line strips of surface boundary segments
-  vtkSmartPointer<vtkCellArray> _BoundarySegments;
-
-  /// Boundary point index of surface point or -1 if point is not on the boundary
-  vtkSmartPointer<vtkIdList> _BoundaryPointIndex;
-
-  /// IDs of surface boundary points
-  vtkSmartPointer<vtkIdList> _BoundaryPointIds;
+  /// Piecewise linear boundary map
+  mirtkReadOnlyAttributeMacro(SharedPtr<PiecewiseLinearMap>, Output);
 
   /// Copy attributes of this class from another instance
   void CopyAttributes(const BoundaryMapper &);
-
-  // ---------------------------------------------------------------------------
-  // Auxiliary functions -- Initialize function must be called first
-
-public:
-
-  /// Number of map value components
-  virtual int NumberOfComponents() const;
-
-  /// Number of surface points
-  int NumberOfPoints() const;
- 
-  /// Number of boundary segments
-  int NumberOfBoundarySegments() const;
-
-  /// Number of surface boundary points
-  int NumberOfBoundaryPoints() const;
- 
-  /// Number of points on boundary segment
-  int NumberOfBoundaryPoints(int) const;
- 
-  /// Number of interior surface points
-  int NumberOfInteriorPoints() const;
-
-  /// Get indices of surface boundary points making up a boundary segment
-  ///
-  /// A boundary segment is a closed line strip. The last boundary point
-  /// in the returned list of boundary point indices is connected to the
-  /// first point. 
-  ///
-  /// \param[in]  n     Index of boundary segment.
-  /// \param[out] ptIds Indices of surface boundary points.
-  void BoundaryPointIds(int n, vtkIdList *ptIds) const;
-
-  /// Get indices of surface boundary points making up a boundary segment
-  ///
-  /// A boundary segment is a closed line strip. The last boundary point
-  /// in the returned list of boundary point indices is connected to the
-  /// first point. 
-  ///
-  /// \param[in]  n Index of boundary segment.
-  ///
-  /// \returns Indices of surface boundary points.
-  vtkSmartPointer<vtkIdList> BoundaryPointIds(int n) const;
-
-  /// Get indices of boundary points making up a boundary segment
-  ///
-  /// A boundary segment is a closed line strip. The last boundary point
-  /// in the returned list of boundary point indices is connected to the
-  /// first point. 
-  ///
-  /// \param[in]  n Index of boundary segment.
-  /// \param[out] i Indices of boundary points.
-  void BoundaryPointIndices(int n, Array<int> &i) const;
-
-  /// Get indices of boundary points making up a boundary segment
-  ///
-  /// A boundary segment is a closed line strip. The last boundary point
-  /// in the returned list of boundary point indices is connected to the
-  /// first point. 
-  ///
-  /// \param[in]  n Index of boundary segment.
-  ///
-  /// \returns Indices of boundary points.
-  Array<int> BoundaryPointIndices(int n) const;
-
-  /// Get index of boundary segment that a surface point belongs to
-  ///
-  /// \param[in] ptId Index of surface point.
-  ///
-  /// \returns Index of boundary segment or -1 when point is not a boundary point.
-  template <class IdType>
-  int BoundarySegmentIndex(IdType ptId) const;
-
-  /// Surface point index of boundary point
-  ///
-  /// \param[in] i Boundary point index.
-  ///
-  /// \returns Surface point index of i-th boundary point.
-  template <class IndexType>
-  int BoundaryPointId(IndexType i) const;
- 
-  /// Coordinates of boundary point
-  ///
-  /// \param[in]  i Boundary point index.
-  /// \param[out] p Point coordinates.
-  template <class IndexType>
-  void BoundaryPoint(IndexType i, double p[3]) const;
-
-  /// Coordinates of boundary point
-  ///
-  /// \param[in]  i Boundary point index.
-  ///
-  /// \return Point coordinates.
-  template <class IndexType>
-  Point BoundaryPoint(IndexType i) const;
-
-  /// Index of surface boundary point
-  ///
-  /// \param[in] ptId Surface point index.
-  ///
-  /// \returns Index of surface boundary point or -1 if point is not on the boundary.
-  template <class IdType>
-  int BoundaryPointIndex(IdType ptId) const;
- 
-  /// Check if surface point is on the boundary
-  ///
-  /// \param[in] ptId Surface point index.
-  ///
-  /// \returns Whether a given surface point is on the boundary.
-  template <class IdType>
-  bool IsBoundaryPoint(IdType ptId) const;
-
-  /// Check if surface point is not on the boundary
-  ///
-  /// \param[in] ptId Surface point index.
-  ///
-  /// \returns Whether a given surface point is not on the boundary.
-  template <class IdType>
-  bool IsInteriorPoint(IdType ptId) const;
-
-  /// Get map value at boundary point
-  ///
-  /// \param[in] i Boundary point index.
-  /// \param[in] j Index of map value component.
-  ///
-  /// \returns Map value component at surface boundary point.
-  template <class IndexType>
-  double GetBoundaryValue(IndexType i, int j = 0) const;
-
-  /// Set map value at boundary point
-  ///
-  /// \param[in] i Boundary point index.
-  /// \param[in] v Value of j-th map component.
-  ///
-  /// \returns Map value component at surface point.
-  template <class IndexType>
-  void SetBoundaryValue(IndexType i, double v) const;
-
-  /// Set map value at boundary point
-  ///
-  /// \param[in] i Boundary point index.
-  /// \param[in] j Index of map value component.
-  /// \param[in] v Value of j-th map component.
-  ///
-  /// \returns Map value component at surface point.
-  template <class IndexType>
-  void SetBoundaryValue(IndexType i, int j, double v) const;
-
-  /// Get map value at surface point
-  ///
-  /// \param[in] ptId Surface point index.
-  /// \param[in] j    Index of map value component.
-  ///
-  /// \returns Map value component at surface point.
-  template <class IdType>
-  double GetSurfaceValue(IdType ptId, int j = 0) const;
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -266,49 +82,68 @@ public:
   /// Destructor
   virtual ~BoundaryMapper();
 
+  /// Create new copy of this instance
+  virtual BoundaryMapper *NewCopy() const = 0;
+
   // ---------------------------------------------------------------------------
   // Execution
 
-  /// Assign map values to boundary of input surface
+  /// Compute boundary map values
+  virtual void Run();
+
+  /// Number of map value components
+  virtual int NumberOfComponents() const;
+
+  /// Whether a given boundary point has a mapped value
   ///
-  /// When only a single boundary segment should be mapped or this boundary
-  /// mapper processes all boundary segments at once, this function can be
-  /// used as a short-hand for calling Initialize, MapBoundary, and Finalize.
+  /// \param[in] i Boundary point index.
   ///
-  /// When multiple boundary segments should be processed, call Initialize once
-  /// and then repeatedly set the anchor points and change other map attributes
-  /// followed by MapBoundary to process the selected boundary segment.
-  /// When all boundary segments are processed, generate the surface map by
-  /// calling the Finalize function.
-  void Run();
+  /// \returns Whether this mapper assigned a map value to the specified boundary point.
+  bool HasBoundaryValue(int i) const;
+
+  /// Get map value at boundary point
+  ///
+  /// \param[in] i Boundary point index.
+  /// \param[in] j Index of map value component.
+  ///
+  /// \returns Map value component at surface boundary point.
+  double GetBoundaryValue(int i, int j = 0) const;
+
+  /// Get map value at surface point
+  ///
+  /// \param[in] ptId Surface point index.
+  /// \param[in] j    Index of map value component.
+  ///
+  /// \returns Map value component at surface point.
+  double GetSurfaceValue(int ptId, int j = 0) const;
+
+protected:
 
   /// Initialize filter after input and parameters are set
   virtual void Initialize();
 
-  /// Process boundary segment
-  ///
-  /// \param[in] n Index of boundary segment.
-  virtual void MapBoundary(int n);
+  /// Assign map values to boundary points of surface mesh
+  virtual void ComputeMap() = 0;
 
-  /// Finalize filter execution
+  /// Finalize boundary map
   virtual void Finalize();
 
-protected:
-
-  /// Map boundary segment
+  /// Set map value at boundary point
   ///
-  /// \param[in] n         Index of boundary segment.
-  /// \param[in] indices   Indices of boundary points forming a closed line strip
-  ///                      that discretizes the current surface boundary segment.
-  /// \param[in] tvalues   Curve parameter in [0, 1) for each boundary segment point,
-  ///                      where the first point has value t=0 and the parameter value
-  ///                      for consecutive points is proportional to the distance of
-  ///                      the point from the first point along the boundary curve.
-  /// \param[in] selection Indices in \p i and \p t arrays corresponding to
-  ///                      selected boundary points.
-  virtual void MapBoundarySegment(int n, const Array<int>    &indices,
-                                         const Array<double> &tvalues,
-                                         const Array<int>    &selection) = 0;
+  /// \param[in] i Boundary point index.
+  /// \param[in] v Value of j-th map component.
+  ///
+  /// \returns Map value component at surface point.
+  void SetBoundaryValue(int i, double v);
+
+  /// Set map value at boundary point
+  ///
+  /// \param[in] i Boundary point index.
+  /// \param[in] j Index of map value component.
+  /// \param[in] v Value of j-th map component.
+  ///
+  /// \returns Map value component at surface point.
+  void SetBoundaryValue(int i, int j, double v);
 
 };
 
@@ -316,151 +151,44 @@ protected:
 // Inline definitions
 ////////////////////////////////////////////////////////////////////////////////
 
-// -----------------------------------------------------------------------------
-inline int BoundaryMapper::NumberOfPoints() const
-{
-  return static_cast<int>(_Surface->GetNumberOfPoints());
-}
+// =============================================================================
+// Boundary map
+// =============================================================================
 
 // -----------------------------------------------------------------------------
-inline int BoundaryMapper::NumberOfBoundaryPoints() const
+inline bool BoundaryMapper::HasBoundaryValue(int i) const
 {
-  return static_cast<int>(_BoundaryPointIds->GetNumberOfIds());
-}
-
-// -----------------------------------------------------------------------------
-inline int BoundaryMapper::NumberOfBoundaryPoints(int n) const
-{
-  vtkIdType npts, *pts;
-  _BoundarySegments->GetCell(n, npts, pts);
-  return static_cast<int>(npts);
-}
-
-// -----------------------------------------------------------------------------
-inline int BoundaryMapper::NumberOfInteriorPoints() const
-{
-  return NumberOfPoints() - NumberOfBoundaryPoints();
-}
-
-// -----------------------------------------------------------------------------
-inline void BoundaryMapper::BoundaryPointIds(int n, vtkIdList *ptIds) const
-{
-  _BoundarySegments->GetCell(n, ptIds);
-}
-
-// -----------------------------------------------------------------------------
-inline vtkSmartPointer<vtkIdList> BoundaryMapper::BoundaryPointIds(int n) const
-{
-  vtkSmartPointer<vtkIdList> ptIds = vtkSmartPointer<vtkIdList>::New();
-  _BoundarySegments->GetCell(n, ptIds);
-  return ptIds;
-}
-
-// -----------------------------------------------------------------------------
-inline Array<int> BoundaryMapper::BoundaryPointIndices(int n) const
-{
-  Array<int> i;
-  BoundaryPointIndices(n, i);
-  return i;
-}
-
-// -----------------------------------------------------------------------------
-template <class IdType>
-inline int BoundaryMapper::BoundarySegmentIndex(IdType ptId) const
-{
-  int i = -1;
-  if (_BoundarySegments) {
-    vtkSmartPointer<vtkIdList> ptIds;
-    for (vtkIdType loc = 0; loc < _BoundarySegments->GetNumberOfCells(); ++loc) {
-      _BoundarySegments->GetCell(loc, ptIds);
-      if (ptIds->IsId(static_cast<vtkIdType>(ptId)) != -1) {
-        i = static_cast<int>(loc);
-        break;
-      }
-    }
+  const int dim = _Values.Rows();
+  const double *value = _Values.Col(i);
+  for (int j = 0; j < dim; ++j) {
+    if (IsNaN(value[j])) return false;
   }
-  return i;
+  return true;
 }
 
 // -----------------------------------------------------------------------------
-template <class IndexType>
-inline int BoundaryMapper::BoundaryPointId(IndexType i) const
+inline void BoundaryMapper::SetBoundaryValue(int i, int j, double v)
 {
-  return static_cast<int>(_BoundaryPointIds->GetId(static_cast<vtkIdType>(i)));
+  _Values.Col(i)[j] = v;
 }
 
 // -----------------------------------------------------------------------------
-template <class IdType>
-inline int BoundaryMapper::BoundaryPointIndex(IdType ptId) const
+inline void BoundaryMapper::SetBoundaryValue(int i, double v)
 {
-  int i = static_cast<int>(_BoundaryPointIndex->GetId(static_cast<vtkIdType>(ptId)));
-  return (i < 0 ? -1 : i);
+  SetBoundaryValue(i, 0, v);
 }
 
 // -----------------------------------------------------------------------------
-template <class IndexType>
-inline void BoundaryMapper::BoundaryPoint(IndexType i, double p[3]) const
+inline double BoundaryMapper::GetBoundaryValue(int i, int j) const
 {
-  _Surface->GetPoint(static_cast<vtkIdType>(BoundaryPointId(i)), p);
+  return (HasBoundaryValue(i) ? _Values.Col(i)[j] : .0);
 }
 
 // -----------------------------------------------------------------------------
-template <class IndexType>
-inline Point BoundaryMapper::BoundaryPoint(IndexType i) const
+inline double BoundaryMapper::GetSurfaceValue(int ptId, int j) const
 {
-  double p[3];
-  BoundaryPoint(i, p);
-  return Point(p);
-}
-
-// -----------------------------------------------------------------------------
-template <class IdType>
-inline bool BoundaryMapper::IsBoundaryPoint(IdType ptId) const
-{
-  return BoundaryPointIndex(ptId) != -1;
-}
-
-// -----------------------------------------------------------------------------
-template <class IdType>
-inline bool BoundaryMapper::IsInteriorPoint(IdType ptId) const
-{
-  return !IsBoundaryPoint(ptId);
-}
-
-// -----------------------------------------------------------------------------
-template <class IndexType>
-inline double BoundaryMapper::GetBoundaryValue(IndexType i, int j) const
-{
-  return _Values->GetComponent(static_cast<vtkIdType>(i), j);
-}
-
-// -----------------------------------------------------------------------------
-template <class IndexType>
-inline void BoundaryMapper::SetBoundaryValue(IndexType i, double v) const
-{
-  return _Values->SetComponent(static_cast<vtkIdType>(i), 0, v);
-}
-
-// -----------------------------------------------------------------------------
-template <class IndexType>
-inline void BoundaryMapper::SetBoundaryValue(IndexType i, int j, double v) const
-{
-  return _Values->SetComponent(static_cast<vtkIdType>(i), j, v);
-}
-
-// -----------------------------------------------------------------------------
-template <class IdType>
-inline double BoundaryMapper::GetSurfaceValue(IdType ptId, int j) const
-{
-  const int i = BoundaryPointIndex(ptId);
-  if (i < 0) {
-    if (_Values) {
-      return _Values->GetComponent(static_cast<vtkIdType>(ptId), j);
-    } else {
-      return .0;
-    }
-  }
-  return GetBoundaryValue(i, j);
+  const int i = _Boundary->Find(ptId);
+  return (i < .0 ? .0 : GetBoundaryValue(i, j));
 }
 
 

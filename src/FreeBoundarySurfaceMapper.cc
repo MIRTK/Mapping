@@ -17,7 +17,8 @@
  * limitations under the License.
  */
 
-#include "mirtk/UniformSurfaceMapper.h"
+#include "mirtk/FreeBoundarySurfaceMapper.h"
+
 
 namespace mirtk {
 
@@ -27,35 +28,38 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void UniformSurfaceMapper::CopyAttributes(const UniformSurfaceMapper &other)
+void FreeBoundarySurfaceMapper
+::CopyAttributes(const FreeBoundarySurfaceMapper &other)
 {
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper()
+FreeBoundarySurfaceMapper::FreeBoundarySurfaceMapper()
 {
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper(const UniformSurfaceMapper &other)
+FreeBoundarySurfaceMapper
+::FreeBoundarySurfaceMapper(const FreeBoundarySurfaceMapper &other)
 :
-  SymmetricWeightsSurfaceMapper(other)
+  SurfaceMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper &UniformSurfaceMapper::operator =(const UniformSurfaceMapper &other)
+FreeBoundarySurfaceMapper &FreeBoundarySurfaceMapper
+::operator =(const FreeBoundarySurfaceMapper &other)
 {
   if (this != &other) {
-    SymmetricWeightsSurfaceMapper::operator =(other);
+    SurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::~UniformSurfaceMapper()
+FreeBoundarySurfaceMapper::~FreeBoundarySurfaceMapper()
 {
 }
 
@@ -64,9 +68,16 @@ UniformSurfaceMapper::~UniformSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-double UniformSurfaceMapper::Weight(int, int) const
+void FreeBoundarySurfaceMapper::Initialize()
 {
-  return 1.0;
+  // Initialize base class
+  SurfaceMapper::Initialize();
+
+  // Input surface must have a boundary
+  if (_Boundary->NumberOfSegments() == 0) {
+    cerr << this->NameOfType() << "::Initialize: Surface mesh must have at least one boundary segment!" << endl;
+    exit(1);
+  }
 }
 
 

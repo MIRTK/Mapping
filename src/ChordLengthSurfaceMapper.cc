@@ -17,7 +17,11 @@
  * limitations under the License.
  */
 
-#include "mirtk/UniformSurfaceMapper.h"
+#include "mirtk/ChordLengthSurfaceMapper.h"
+
+#include "mirtk/Math.h"
+#include "mirtk/VtkMath.h"
+
 
 namespace mirtk {
 
@@ -27,17 +31,20 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void UniformSurfaceMapper::CopyAttributes(const UniformSurfaceMapper &other)
+void ChordLengthSurfaceMapper::CopyAttributes(const ChordLengthSurfaceMapper &other)
+{
+  _Exponent = other._Exponent;
+}
+
+// -----------------------------------------------------------------------------
+ChordLengthSurfaceMapper::ChordLengthSurfaceMapper(int p)
+:
+  _Exponent(p)
 {
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper()
-{
-}
-
-// -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper(const UniformSurfaceMapper &other)
+ChordLengthSurfaceMapper::ChordLengthSurfaceMapper(const ChordLengthSurfaceMapper &other)
 :
   SymmetricWeightsSurfaceMapper(other)
 {
@@ -45,7 +52,8 @@ UniformSurfaceMapper::UniformSurfaceMapper(const UniformSurfaceMapper &other)
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper &UniformSurfaceMapper::operator =(const UniformSurfaceMapper &other)
+ChordLengthSurfaceMapper &ChordLengthSurfaceMapper
+::operator =(const ChordLengthSurfaceMapper &other)
 {
   if (this != &other) {
     SymmetricWeightsSurfaceMapper::operator =(other);
@@ -55,7 +63,7 @@ UniformSurfaceMapper &UniformSurfaceMapper::operator =(const UniformSurfaceMappe
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::~UniformSurfaceMapper()
+ChordLengthSurfaceMapper::~ChordLengthSurfaceMapper()
 {
 }
 
@@ -64,9 +72,17 @@ UniformSurfaceMapper::~UniformSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-double UniformSurfaceMapper::Weight(int, int) const
+double ChordLengthSurfaceMapper::Weight(int i, int j) const
 {
-  return 1.0;
+  double p[3], q[3];
+  _Surface->GetPoint(static_cast<vtkIdType>(i), p);
+  _Surface->GetPoint(static_cast<vtkIdType>(j), q);
+  const double dist2 = vtkMath::Distance2BetweenPoints(p, q);
+  if (_Exponent <= 0) return 1.0;
+  if (_Exponent == 1) return sqrt(dist2);
+  if (_Exponent == 2) return dist2;
+  if (_Exponent % 2 == 0) return pow(dist2, _Exponent / 2);
+  return pow(sqrt(dist2), _Exponent);
 }
 
 

@@ -24,10 +24,14 @@
 #include "mirtk/PointSetUtils.h"
 
 #include "mirtk/UniformSurfaceMapper.h"                   // Tutte (1964)
-#include "mirtk/WeightedLeastSquaresSurfaceMapper.h"      // Kent et al. (1991), Floater (1997)
-#include "mirtk/IntrinsicParameterizationSurfaceMapper.h" // Meyer et al. (2002)
+#include "mirtk/ChordLengthSurfaceMapper.h"               // Kent et al. (1991), Floater (1997)
+#include "mirtk/HarmonicSurfaceMapper.h"                  // Pinker & Polthier (1993)
+#include "mirtk/ShapePreservingSurfaceMapper.h"           // Floater (1997)
+#include "mirtk/AuthalicSurfaceMapper.h"                  // Meyer et al. (2002)
+#include "mirtk/IntrinsicSurfaceMapper.h"                 // Meyer et al. (2002)
 #include "mirtk/MeanValueSurfaceMapper.h"                 // Floater (2003)
-#include "mirtk/ConformalFlatteningSurfaceMapper.h"       // Angenent (1999), Haker (2000)
+#include "mirtk/ConformalSurfaceFlattening.h"             // Angenent (1999), Haker (2000)
+#include "mirtk/LeastSquaresConformalSurfaceMapper.h"     // Levy (2002), Desbrun et al. (2002)
 
 #include "vtkSmartPointer.h"
 #include "vtkPolyData.h"
@@ -84,16 +88,23 @@ void PrintHelp(const char* name)
 
 // -----------------------------------------------------------------------------
 /// Enumeration of implemented surface mapping methods
-enum MapSurfaceMethod
+enum SurfaceMappingMethod
 {
   MAP_Uniform,               ///< Uniform edge weights, Tutte's planar graph mapping
-  MAP_WeightedLeastSquares,  ///< Edge weights inverse proportional to edge length
+  MAP_ChordLength,           ///< Edge weights inverse proportional to edge length
+  MAP_ShapePreserving,       ///< Floater's shape-preserving weights
   MAP_MeanValue,             ///< Floater's mean value convex map
-  MAP_Intrinsic,             ///< Intrinsic parameterization with boundary constraints
-  MAP_NaturalConformal,      ///< Meyer's natural conformal map
+  MAP_Harmonic,              ///< Pinker and Polthier's cotangent weights
+                             ///< also known as discrete conformal parameterization (DCP)
   MAP_PHarmonic,             ///< Joshi's p-harmonic map
-  MAP_LeastSquaresConformal, ///< Levy's least squares conformal map
-  MAP_ConformalFlattening,   ///< Angenent and Haker's conformal map
+  MAP_Authalic,              ///< Desbrun and Meyer's area preserving weights
+                             ///< referred to as discrete authalic parameterization (DAP)
+  MAP_Intrinsic,             ///< Meyer's intrinsic parameterization based on
+                             ///< generalized Barycentric coordinates
+  MAP_LeastSquaresConformal, ///< Levy's least squares conformal map (LSCM) which
+                             ///< is identical to Meyer's discrete natural conformal
+                             ///< parameterization (DNCP)
+  MAP_ConformalFlattening,   ///< Angenent and Haker's conformal map to the sphere
   MAP_Spectral,              ///< Spectral surface map w/o boundary constraints
   MAP_Spherical              ///< Spherical surface map w/o boundary constraints
 };
@@ -107,89 +118,77 @@ int main(int argc, char *argv[])
 {
   REQUIRES_POSARGS(2);
 
-  const char *input_name  = POSARG(1);
-  const char *output_name = POSARG(2);
+  const char *input_name        = POSARG(1);
+  const char *output_name       = POSARG(2);
+  const char *boundary_map_name = nullptr;
 
-  const char      *values_name = nullptr;
-  const char      *mask_name   = nullptr;
-  MapSurfaceMethod method      = MAP_MeanValue;
-  int              niters      = 0;
+  SurfaceMappingMethod method = MAP_MeanValue;
 
-  int    pharmonic_exponent = 2;   // Exponent of p-harmonic energy
-  int    wls_exponent       = 1;   // Weighted least squares exponent
-  double intrinsic_lambda   = 0.0; // Conformal energy weight of intrinsic parameterization
-  double intrinsic_mu       = 1.0; // Authalic  energy weight of intrinsic parameterization
+  int    niters                = 0;   // Number of iterations
+  int    p_harmonic_exponent   = 2;   // Exponent of p-harmonic energy
+  int    chord_length_exponent = 1;   // Weighted least squares exponent
+  double intrinsic_lambda      = .5;  // Conformal vs. authalic energy weight
 
   for (ALL_OPTIONS) {
-    // Point data arrays
-    if      (OPTION("-name")) values_name = ARGUMENT;
-    else if (OPTION("-mask")) mask_name   = ARGUMENT;
+    // Fixed boundary map
+    if (OPTION("-boundary-map")) boundary_map_name = ARGUMENT;
     // Surface mapping method
     else if (OPTION("-uniform")) {
       method = MAP_Uniform;
     }
-    else if (OPTION("-edge-length-weighted") || OPTION("-weighted-least-squares")) {
-      method = MAP_WeightedLeastSquares;
-      if (HAS_ARGUMENT) PARSE_ARGUMENT(wls_exponent);
-      else wls_exponent = 1;
+    else if (OPTION("-chord-length")) {
+      method = MAP_ChordLength;
+      if (HAS_ARGUMENT) PARSE_ARGUMENT(chord_length_exponent);
+      else chord_length_exponent = 1;
     }
-    else if (OPTION("-p-harmonic") || OPTION("-pharmonic")) {
-      method = MAP_PHarmonic;
-      if (HAS_ARGUMENT) PARSE_ARGUMENT(pharmonic_exponent);
-      else pharmonic_exponent = 2;
-    }
-    else if (OPTION("-intrinsic")) {
-      method = MAP_Intrinsic;
-      if (HAS_ARGUMENT) {
-        PARSE_ARGUMENT(intrinsic_lambda);
-        if (HAS_ARGUMENT) PARSE_ARGUMENT(intrinsic_mu);
-        else {
-          intrinsic_lambda = clamp(intrinsic_lambda, .0, 1.0);
-          intrinsic_mu     = 1.0 - intrinsic_lambda;
-        }
-      } else {
-        intrinsic_lambda = 0.0;
-        intrinsic_mu     = 1.0;
-      }
+    else if (OPTION("-shape-preserving")) {
+      method = MAP_ShapePreserving;
     }
     else if (OPTION("-mean-value")) {
       method = MAP_MeanValue;
     }
+    else if (OPTION("-harmonic")) {
+      method = MAP_Harmonic;
+    }
+    else if (OPTION("-p-harmonic")) {
+      method = MAP_PHarmonic;
+      if (HAS_ARGUMENT) PARSE_ARGUMENT(p_harmonic_exponent);
+      else p_harmonic_exponent = 2;
+    }
+    else if (OPTION("-authalic")) {
+      method = MAP_Authalic;
+    }
+    else if (OPTION("-intrinsic")) {
+      method = MAP_Intrinsic;
+      if (HAS_ARGUMENT) PARSE_ARGUMENT(intrinsic_lambda);
+      else intrinsic_lambda = .5;
+    }
     else if (OPTION("-conformal-flattening")) {
       method = MAP_ConformalFlattening;
     }
-    // Parameters of mapping method
+    else if (OPTION("-least-squares-conformal") || OPTION("-lscm") ||
+             OPTION("-natural-conformal") || OPTION("-discrete-natural-conformal") || OPTION("-dncp")) {
+      method = MAP_LeastSquaresConformal;
+    }
+    // Linear solver parameters
     else if (OPTION("-max-iterations") || OPTION("-max-iter") || OPTION("-iterations") || OPTION("-iter")) {
       PARSE_ARGUMENT(niters);
     }
     else HANDLE_COMMON_OR_UNKNOWN_OPTION();
   }
 
-  vtkSmartPointer<vtkPolyData>  mesh = ReadPolyData(input_name);
-  vtkSmartPointer<vtkDataArray> values, mask;
-  SharedPtr<Mapping>            map;
+  vtkSmartPointer<vtkPolyData>  surface;
+  SharedPtr<PiecewiseLinearMap> boundary_map;
+  SharedPtr<Mapping>            surface_map;
 
-  vtkPointData * const pd = mesh->GetPointData();
-
-  if (method != MAP_ConformalFlattening) {
-    if (values_name) {
-      values = pd->GetArray(values_name);
-      if (values == nullptr) {
-        FatalError("Input point set has no data array named " << values_name);
-      }
-    } else {
-      values = pd->GetTCoords();
-      if (values == nullptr) {
-        FatalError("Input point set has no TCOORDS, use -name option to specify name of map values array!");
-      }
+  surface = ReadPolyData(input_name);
+  if (boundary_map_name) {
+    boundary_map = NewShared<PiecewiseLinearMap>();
+    if (!boundary_map->Read(boundary_map_name)) {
+      FatalError("Failed to read boundary map from " << boundary_map_name);
     }
-  }
-
-  if (mask_name) {
-    mask = pd->GetArray(mask_name);
-    if (mask == nullptr) {
-      FatalError("Input point set has no data array named " << mask_name);
-    }
+    boundary_map->OutsideValue(0.);
+    boundary_map->Initialize();
   }
 
   switch (method) {
@@ -198,74 +197,121 @@ int main(int argc, char *argv[])
       if (verbose) cout << msg, cout.flush();
       UniformSurfaceMapper mapper;
       mapper.NumberOfIterations(niters);
-      mapper.Mesh(mesh);
-      mapper.Input(values);
-      mapper.Mask(mask);
+      mapper.Surface(surface);
+      mapper.Input(boundary_map);
       mapper.Run();
-      map = mapper.Output();
+      surface_map = mapper.Output();
       if (verbose) cout << msg, cout.flush();
     } break;
 
-    case MAP_WeightedLeastSquares: {
-      const char *msg = "Computing edge length weighted least squares surface map...";
+    case MAP_ChordLength: {
+      const char *msg = "Computing chord length weighted surface map...";
       if (verbose) cout << msg, cout.flush();
-      WeightedLeastSquaresSurfaceMapper mapper(wls_exponent);
+      ChordLengthSurfaceMapper mapper(chord_length_exponent);
       mapper.NumberOfIterations(niters);
-      mapper.Mesh(mesh);
-      mapper.Input(values);
-      mapper.Mask(mask);
+      mapper.Surface(surface);
+      mapper.Input(boundary_map);
       mapper.Run();
-      map = mapper.Output();
+      surface_map = mapper.Output();
+      if (verbose) cout << msg, cout.flush();
+    } break;
+
+    case MAP_ShapePreserving: {
+      const char *msg = "Computing shape preserving surface map...";
+      if (verbose) cout << msg, cout.flush();
+      ShapePreservingSurfaceMapper mapper;
+      mapper.NumberOfIterations(niters);
+      mapper.Surface(surface);
+      mapper.Input(boundary_map);
+      mapper.Run();
+      surface_map = mapper.Output();
       if (verbose) cout << msg, cout.flush();
     } break;
 
     case MAP_MeanValue: {
-      const char *msg = "Computing surface map using mean value coordinates...";
+      const char *msg = "Computing mean value convex map...";
       if (verbose) cout << msg, cout.flush();
       MeanValueSurfaceMapper mapper;
       mapper.NumberOfIterations(niters);
-      mapper.Mesh(mesh);
-      mapper.Input(values);
-      mapper.Mask(mask);
+      mapper.Surface(surface);
+      mapper.Input(boundary_map);
       mapper.Run();
-      map = mapper.Output();
+      surface_map = mapper.Output();
+      if (verbose) cout << msg, cout.flush();
+    } break;
+
+    case MAP_Harmonic: {
+      const char *msg = "Computing harmonic surface map...";
+      if (verbose) cout << msg, cout.flush();
+      HarmonicSurfaceMapper mapper;
+      mapper.NumberOfIterations(niters);
+      mapper.Surface(surface);
+      mapper.Input(boundary_map);
+      mapper.Run();
+      surface_map = mapper.Output();
+      if (verbose) cout << msg, cout.flush();
+    } break;
+
+    case MAP_PHarmonic: {
+      FatalError("p-harmonic mapping using finite element method (FEM) not implemented");
+      if (verbose) cout << "Computing p=" << p_harmonic_exponent << " harmonic surface map...", cout.flush();
+    } break;
+
+    case MAP_Authalic: {
+      const char *msg = "Computing discrete authalic surface map...";
+      if (verbose) cout << msg, cout.flush();
+      AuthalicSurfaceMapper mapper;
+      mapper.NumberOfIterations(niters);
+      mapper.Surface(surface);
+      mapper.Input(boundary_map);
+      mapper.Run();
+      surface_map = mapper.Output();
       if (verbose) cout << msg, cout.flush();
     } break;
 
     case MAP_Intrinsic: {
       const char *msg = "Computing surface map using intrinsic parameterization...";
       if (verbose) cout << msg, cout.flush();
-      IntrinsicParameterizationSurfaceMapper mapper(intrinsic_lambda, intrinsic_mu);
+      IntrinsicSurfaceMapper mapper(intrinsic_lambda);
       if (verbose) {
-        cout << "\n  Conformal energy weight           = " << mapper.ConformalEnergyWeight();
-        cout << "\n  Authalic  energy weight           = " << mapper.AuthalicEnergyWeight();
+        cout << "\n  Conformal energy weight      = " << mapper.Lambda();
+        cout << "\n  Authalic  energy weight      = " << 1. - mapper.Lambda();
         cout.flush();
       }
       mapper.NumberOfIterations(niters);
-      mapper.Mesh(mesh);
-      mapper.Input(values);
-      mapper.Mask(mask);
+      mapper.Surface(surface);
+      mapper.Input(boundary_map);
       mapper.Run();
-      map = mapper.Output();
+      surface_map = mapper.Output();
       if (verbose) cout << msg, cout.flush();
     } break;
 
     case MAP_ConformalFlattening: {
-      const char *msg = "Computing conformal flattening to sphere...";
+      if (boundary_map) {
+        FatalError("Conformal flattening requires closed genus-0 input surface mesh! Input -boundary-map makes no sense.");
+      }
+      const char *msg = "Computing conformal flattening...";
       if (verbose) cout << msg, cout.flush();
-      ConformalFlatteningSurfaceMapper mapper;
+      ConformalSurfaceFlattening mapper;
       mapper.NumberOfIterations(niters);
-      mapper.Mesh(mesh);
-      mapper.Input(values);
-      mapper.Mask(mask);
+      mapper.Surface(surface);
       mapper.Run();
-      map = mapper.Output();
+      surface_map = mapper.Output();
       if (verbose) cout << msg, cout.flush();
     } break;
 
-    case MAP_PHarmonic: {
-      FatalError("p-harmonic mapping using finite element method (FEM) not implemented");
-      if (verbose) cout << "Computing p=" << pharmonic_exponent << " harmonic surface map...", cout.flush();
+    case MAP_LeastSquaresConformal: {
+      if (boundary_map) {
+        Warning("Input -boundary-map ignored by least squares conformal mapping.");
+      }
+      const char *msg = "Computing least squares conformal map...";
+      if (verbose) cout << msg, cout.flush();
+      LeastSquaresConformalSurfaceMapper mapper;
+      mapper.NumberOfIterations(niters);
+      mapper.Surface(surface);
+      mapper.Run();
+      surface_map = mapper.Output();
+      if (verbose) cout << msg, cout.flush();
     } break;
 
     default: {
@@ -273,7 +319,7 @@ int main(int argc, char *argv[])
     } break;
   }
 
-  if (!map->Write(output_name)) {
+  if (!surface_map->Write(output_name)) {
     if (verbose) cout << " failed" << endl;
     FatalError("Failed to write surface map to " << output_name);
   }

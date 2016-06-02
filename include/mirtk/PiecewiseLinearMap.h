@@ -1,8 +1,8 @@
 /*
  * Medical Image Registration ToolKit (MIRTK)
  *
- * Copyright 2013-2016 Imperial College London
- * Copyright 2013-2016 Andreas Schuh
+ * Copyright 2015-2016 Imperial College London
+ * Copyright 2015-2016 Andreas Schuh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 #include "mirtk/Point.h"
 
 #include "vtkSmartPointer.h"
-#include "vtkPointSet.h"
+#include "vtkDataSet.h"
 #include "vtkDataArray.h"
 #include "vtkAbstractCellLocator.h"
 
@@ -55,9 +55,7 @@ class PiecewiseLinearMap : public Mapping
   /// Mesh which discretizes the domain of this piecewise linear map
   mirtkPublicAttributeMacro(vtkSmartPointer<vtkDataSet>, Domain);
 
-  /// Point data array with map values for each mesh point
-  ///
-  /// If not set, the active TCOORDS, VECTORS, or SCALARS array is used.
+  /// Point data array with map values at mesh points
   mirtkPublicAttributeMacro(vtkSmartPointer<vtkDataArray>, Values);
 
   /// Locates cell within which a given point lies
@@ -110,7 +108,7 @@ public:
   /// \param[in] i Point index.
   ///
   /// \returns Point coordinates.
-  Point GetPoint(int i) const;
+  class Point Point(int i) const;
 
   /// Get i-th domain mesh point
   ///
@@ -169,9 +167,9 @@ public:
 
   /// Evaluate map at a given mesh point
   ///
-  /// \param[out] v Map value.
   /// \param[in]  i Point index.
-  virtual void Evaluate(double *v, int i) const;
+  /// \param[out] v Map value.
+  void GetValue(int i, double *v) const;
 
   /// Evaluate map at a given mesh point
   ///
@@ -179,7 +177,7 @@ public:
   /// \param[in] l Index of map value component.
   ///
   /// \returns The l-th component of the map value at the given mesh point.
-  virtual double Evaluate(int i, int l = 0) const;
+  double Value(int i, int l = 0) const;
 
   /// Evaluate map at a given point
   ///
@@ -246,21 +244,21 @@ inline void PiecewiseLinearMap::GetPoint(int i, double &x, double &y, double &z)
 }
 
 // -----------------------------------------------------------------------------
-inline Point PiecewiseLinearMap::GetPoint(int i) const
+inline Point PiecewiseLinearMap::Point(int i) const
 {
   double p[3];
   this->GetPoint(i, p);
-  return Point(p);
+  return p;
 }
 
 // -----------------------------------------------------------------------------
-inline void PiecewiseLinearMap::Evaluate(double *v, int i) const
+inline void PiecewiseLinearMap::GetValue(int i, double *v) const
 {
   _Values->GetTuple(static_cast<vtkIdType>(i), v);
 }
 
 // -----------------------------------------------------------------------------
-inline double PiecewiseLinearMap::Evaluate(int i, int l) const
+inline double PiecewiseLinearMap::Value(int i, int l) const
 {
   return _Values->GetComponent(static_cast<vtkIdType>(i), l);
 }

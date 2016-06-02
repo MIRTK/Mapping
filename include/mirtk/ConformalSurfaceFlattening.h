@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_ConformalFlatteningSurfaceMapper_H
-#define MIRTK_ConformalFlatteningSurfaceMapper_H
+#ifndef MIRTK_ConformalSurfaceFlattening_H
+#define MIRTK_ConformalSurfaceFlattening_H
 
-#include "mirtk/LinearSurfaceMapper.h"
+#include "mirtk/SphericalSurfaceMapper.h"
 
 
 namespace mirtk {
@@ -31,35 +31,38 @@ namespace mirtk {
  *
  * The conformal map is the solution of a sparse system of linear equations,
  * where the edge weights are identical to those used by Pinkall and Polthier
- * (1993) and later Eck et al. (1995). These cotangent weights are obtained
- * using the finite element method (FEM) to discretize the Laplace-Beltrami
- * operator. The main difference between the harmonic mapping method of Pinkall
- * and Polthier and the one implemented by this mapper (Angenent & Haker, 1999-2000)
- * are the boundary constraints. While Pinkall and Polthier, as well as Eck et al.,
- * used Dirichlet boundary conditions on the boundary of the non-closed surface,
- * Angenent and Haker derive the linear system from special boundary constraints
- * intended to map a closed surface to the complex plane and subsequently to the
- * sphere. Here, a single point on the surface is constraint to map to the
- * (north/south) pole of the sphere, i.e., the point for which the stereographic
- * projection is undefined. Dirichlet boundary conditions are applied only to the
- * three vertices of the triangle containing the selected point.
+ * (1993) and later Eck et al. (1995). These cotangent weights are well known
+ * in the finite element method (FEM) literature and correspond to a
+ * discretization of the Laplace operator. The main difference of the
+ * method by Angenent et al. (1999-2000) and Haker et al. (2000) compared to
+ * the discrete conformal mapping of Eck et al. (1995) and Desbrun et al. (2002)
+ * are the boundary constraints. While all these methods minimize the discrete
+ * Dirichlet energy, the latter methods fix the boundary values of a non-closed
+ * surface, whereas the method by Angenent and Haker is designed for closed
+ * genus-0 surface meshes with a subsequent inverse stereographic projection
+ * to the sphere. The intermediate parametric domain is a triangular subdomain
+ * of the complex plane.
  *
- * The resulting map to the complex plane can be composed with an inverse
- * stereographic projection to obtain a conformal map to the sphere.
+ * \note This implementation is based on the corresponding ITK implementation
+ *       originally contributed to by Gao et al. https://hdl.handle.net/1926/225
+ *       which was later extended and integrated into ITK version 4 as
+ *       https://itk.org/Doxygen/html/classitk_1_1ConformalFlatteningMeshFilter.html.
  *
+ * - Pinkall and Polthier (1993). Computing Discrete Minimal Surfaces and Their Conjugates.
+ *   Experiment. Math., 2(1), 15–36.
+ * - Eck et al. (1995). Multiresolution analysis of arbitrary meshes. SIGGRAPH.
  * - Angenent et al. (1999). Conformal geometry and brain flattening. MICCAI, 271–278.
  * - Angenent et al. (n.d.). On the Laplace-Beltrami Operator and Brain Surface Flattening.
  * - Angenent et al. (2000). On Area Preserving Mappings of Minimal Distortion.
  *   In System Theory: Modeling, Analysis and Control, pp. 275–286.
  * - Haker et al. (2000). Conformal surface parameterization for texture mapping.
  *   IEEE Trans. Vis. Comput. Graphics, 6(2), 181–189.
- * - Pinkall and Polthier (1993). Computing Discrete Minimal Surfaces and Their Conjugates.
- *   Experiment. Math., 2(1), 15–36.
- * - Eck et al. (1995). Multiresolution analysis of arbitrary meshes. SIGGRAPH.
+ * - Desbrun, Meyer, and Alliez (2002). Intrinsic parameterizations of surface meshes.
+ *   Computer Graphics Forum, 21(3), 209–218.
  */
-class ConformalFlatteningSurfaceMapper : public LinearSurfaceMapper
+class ConformalSurfaceFlattening : public SphericalSurfaceMapper
 {
-  mirtkObjectMacro(ConformalFlatteningSurfaceMapper);
+  mirtkObjectMacro(ConformalSurfaceFlattening);
 
   // ---------------------------------------------------------------------------
   // Attributes
@@ -76,8 +79,19 @@ class ConformalFlatteningSurfaceMapper : public LinearSurfaceMapper
   /// Radius of sphere to which flattened map is projected
   mirtkPublicAttributeMacro(double, Radius);
 
+  /// Maximum number of iterations
+  ///
+  /// When the number of iterations is set to 1, a sparse direct solver is used.
+  mirtkPublicAttributeMacro(int, NumberOfIterations);
+
+  /// Tolerance for sparse linear solver
+  mirtkPublicAttributeMacro(double, Tolerance);
+
+  /// Computed map values at surface points
+  mirtkAttributeMacro(vtkSmartPointer<vtkDataArray>, Values);
+
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const ConformalFlatteningSurfaceMapper &);
+  void CopyAttributes(const ConformalSurfaceFlattening &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -85,16 +99,16 @@ class ConformalFlatteningSurfaceMapper : public LinearSurfaceMapper
 public:
 
   /// Default constructor
-  ConformalFlatteningSurfaceMapper();
+  ConformalSurfaceFlattening();
 
   /// Copy constructor
-  ConformalFlatteningSurfaceMapper(const ConformalFlatteningSurfaceMapper &);
+  ConformalSurfaceFlattening(const ConformalSurfaceFlattening &);
 
   /// Assignment operator
-  ConformalFlatteningSurfaceMapper &operator =(const ConformalFlatteningSurfaceMapper &);
+  ConformalSurfaceFlattening &operator =(const ConformalSurfaceFlattening &);
 
   /// Destructor
-  virtual ~ConformalFlatteningSurfaceMapper();
+  virtual ~ConformalSurfaceFlattening();
 
   // ---------------------------------------------------------------------------
   // Execution
@@ -104,17 +118,8 @@ protected:
   /// Initialize filter after input and parameters are set
   virtual void Initialize();
 
-  /// Initialize map values at surface points
-  virtual void InitializeValues();
-
-  /// Initialize mask of surface points with fixed map values
-  virtual void InitializeMask();
-
-  /// Remesh surface if necessary
-  virtual bool Remesh();
-
   /// Construct and solve symmetric system of linear equations
-  virtual void Solve();
+  virtual void ComputeMap();
 
   /// Finalize filter execution
   virtual void Finalize();
@@ -124,4 +129,4 @@ protected:
 
 } // namespace mirtk
 
-#endif // MIRTK_ConformalFlatteningSurfaceMapper_H
+#endif // MIRTK_ConformalSurfaceFlattening_H

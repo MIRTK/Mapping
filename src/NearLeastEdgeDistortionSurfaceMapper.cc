@@ -17,48 +17,50 @@
  * limitations under the License.
  */
 
-#include "mirtk/UniformBoundaryParameterizer.h"
+#include "mirtk/NearLeastEdgeDistortionSurfaceMapper.h"
 
 
 namespace mirtk {
 
 
 // =============================================================================
-// Construction/Destruction
+// Construction/destruction
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-UniformBoundaryParameterizer::UniformBoundaryParameterizer()
+void NearLeastEdgeDistortionSurfaceMapper
+::CopyAttributes(const NearLeastEdgeDistortionSurfaceMapper &other)
 {
 }
 
 // -----------------------------------------------------------------------------
-UniformBoundaryParameterizer
-::UniformBoundaryParameterizer(const UniformBoundaryParameterizer &other)
+NearLeastEdgeDistortionSurfaceMapper::NearLeastEdgeDistortionSurfaceMapper()
+{
+}
+
+// -----------------------------------------------------------------------------
+NearLeastEdgeDistortionSurfaceMapper
+::NearLeastEdgeDistortionSurfaceMapper(const NearLeastEdgeDistortionSurfaceMapper &other)
 :
-  BoundaryParameterizer(other)
+  NearOptimalSurfaceMapper(other)
 {
+  CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-UniformBoundaryParameterizer &UniformBoundaryParameterizer
-::operator =(const UniformBoundaryParameterizer &other)
+NearLeastEdgeDistortionSurfaceMapper &NearLeastEdgeDistortionSurfaceMapper
+::operator =(const NearLeastEdgeDistortionSurfaceMapper &other)
 {
   if (this != &other) {
-    BoundaryParameterizer::operator =(other);
+    NearOptimalSurfaceMapper::operator =(other);
+    CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-UniformBoundaryParameterizer::~UniformBoundaryParameterizer()
+NearLeastEdgeDistortionSurfaceMapper::~NearLeastEdgeDistortionSurfaceMapper()
 {
-}
-
-// -----------------------------------------------------------------------------
-BoundaryParameterizer *UniformBoundaryParameterizer::NewCopy() const
-{
-  return new UniformBoundaryParameterizer(*this);
 }
 
 // =============================================================================
@@ -66,29 +68,11 @@ BoundaryParameterizer *UniformBoundaryParameterizer::NewCopy() const
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void UniformBoundaryParameterizer::Parameterize()
+double NearLeastEdgeDistortionSurfaceMapper
+::ComputeLambda(vtkDataArray *u, vtkDataArray *v) const
 {
-  const int npoints   = NumberOfBoundaryPoints();
-  const int nselected = NumberOfSelectedPoints();
-  const int i0        = (nselected > 0 ? SelectedPointIndex(0) : 0);
-
-  // Uniform parameterization of piecewise linear curve
-  double t = .0, dt = 1.0 / npoints;
-  for (int n = 0, i = i0; n < npoints; ++n, t += dt) {
-    _Values[i] = t;
-    if (++i == npoints) i = 0;
-  }
-
-  // Revert orientation of curve if points where selected in reverse order
-  if (nselected > 2) {
-    double t1 = _Values[SelectedPointIndex(1)];
-    double t2 = _Values[SelectedPointIndex(2)];
-    if (t2 < t1) {
-      for (int n = 0; n < npoints; ++n) {
-        if (n != i0) _Values[n] = 1.0 - _Values[n];
-      }
-    }
-  }
+  // TODO: Find lambda that minimizes the edge-length distortion
+  return 1.;
 }
 
 

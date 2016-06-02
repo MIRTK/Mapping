@@ -17,7 +17,13 @@
  * limitations under the License.
  */
 
-#include "mirtk/UniformSurfaceMapper.h"
+#include "mirtk/IntrinsicSurfaceMapper.h"
+
+#include "mirtk/Math.h"
+#include "mirtk/Triangle.h"
+
+#include "vtkIdList.h"
+
 
 namespace mirtk {
 
@@ -27,17 +33,20 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void UniformSurfaceMapper::CopyAttributes(const UniformSurfaceMapper &other)
+void IntrinsicSurfaceMapper::CopyAttributes(const IntrinsicSurfaceMapper &other)
+{
+  _Lambda = other._Lambda;
+}
+
+// -----------------------------------------------------------------------------
+IntrinsicSurfaceMapper::IntrinsicSurfaceMapper(double lambda)
+:
+  _Lambda(clamp(lambda, 0., 1.))
 {
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper()
-{
-}
-
-// -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper(const UniformSurfaceMapper &other)
+IntrinsicSurfaceMapper::IntrinsicSurfaceMapper(const IntrinsicSurfaceMapper &other)
 :
   SymmetricWeightsSurfaceMapper(other)
 {
@@ -45,7 +54,7 @@ UniformSurfaceMapper::UniformSurfaceMapper(const UniformSurfaceMapper &other)
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper &UniformSurfaceMapper::operator =(const UniformSurfaceMapper &other)
+IntrinsicSurfaceMapper &IntrinsicSurfaceMapper::operator =(const IntrinsicSurfaceMapper &other)
 {
   if (this != &other) {
     SymmetricWeightsSurfaceMapper::operator =(other);
@@ -55,7 +64,7 @@ UniformSurfaceMapper &UniformSurfaceMapper::operator =(const UniformSurfaceMappe
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::~UniformSurfaceMapper()
+IntrinsicSurfaceMapper::~IntrinsicSurfaceMapper()
 {
 }
 
@@ -64,9 +73,35 @@ UniformSurfaceMapper::~UniformSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-double UniformSurfaceMapper::Weight(int, int) const
+double IntrinsicSurfaceMapper::Weight(int i, int j) const
 {
-  return 1.0;
+  double p1[3], p2[3], p3[3], w = 0.;
+
+  vtkIdType npts, *pts;
+  vtkIdType ptId1 = static_cast<vtkIdType>(i);
+  vtkIdType ptId2 = static_cast<vtkIdType>(j);
+
+  _Surface->GetPoint(ptId1, p1);
+  _Surface->GetPoint(ptId2, p2);
+
+  vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
+  _Surface->GetCellEdgeNeighbors(-1, ptId1, ptId2, cellIds);
+
+  double mu = (1. - _Lambda);
+  if (mu != 0.) mu /= vtkMath::Distance2BetweenPoints(p1, p2);
+  for (vtkIdType cellIdx = 0; cellIdx < cellIds->GetNumberOfIds(); ++cellIdx) {
+    _Surface->GetCellPoints(cellIds->GetId(cellIdx), npts, pts);
+    while (pts[0] == ptId1 || pts[0] == ptId2) ++pts;
+    _Surface->GetPoint(pts[0], p3);
+    if (_Lambda != 0.) {
+      w += _Lambda * Triangle::Cotangent(p1, p3, p2);
+    }
+    if (mu != 0.) {
+      w += mu * Triangle::Cotangent(p1, p2, p3);
+    }
+  }
+
+  return w;
 }
 
 

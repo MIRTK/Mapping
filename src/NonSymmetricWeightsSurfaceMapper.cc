@@ -17,9 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/SymmetricLinearSurfaceMapper.h"
-
-#include "mirtk/EdgeTable.h"
+#include "mirtk/NonSymmetricWeightsSurfaceMapper.h"
 
 #include "Eigen/SparseCore"
 #include "Eigen/IterativeLinearSolvers"
@@ -37,35 +35,38 @@ MIRTK_Common_EXPORT extern int verbose;
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void SymmetricLinearSurfaceMapper::CopyAttributes(const SymmetricLinearSurfaceMapper &other)
+void NonSymmetricWeightsSurfaceMapper
+::CopyAttributes(const NonSymmetricWeightsSurfaceMapper &other)
 {
 }
 
 // -----------------------------------------------------------------------------
-SymmetricLinearSurfaceMapper::SymmetricLinearSurfaceMapper()
+NonSymmetricWeightsSurfaceMapper::NonSymmetricWeightsSurfaceMapper()
 {
 }
 
 // -----------------------------------------------------------------------------
-SymmetricLinearSurfaceMapper::SymmetricLinearSurfaceMapper(const SymmetricLinearSurfaceMapper &other)
+NonSymmetricWeightsSurfaceMapper
+::NonSymmetricWeightsSurfaceMapper(const NonSymmetricWeightsSurfaceMapper &other)
 :
-  LinearSurfaceMapper(other)
+  LinearFixedBoundarySurfaceMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-SymmetricLinearSurfaceMapper &SymmetricLinearSurfaceMapper::operator =(const SymmetricLinearSurfaceMapper &other)
+NonSymmetricWeightsSurfaceMapper &NonSymmetricWeightsSurfaceMapper
+::operator =(const NonSymmetricWeightsSurfaceMapper &other)
 {
   if (this != &other) {
-    LinearSurfaceMapper::operator =(other);
+    LinearFixedBoundarySurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-SymmetricLinearSurfaceMapper::~SymmetricLinearSurfaceMapper()
+NonSymmetricWeightsSurfaceMapper::~NonSymmetricWeightsSurfaceMapper()
 {
 }
 
@@ -74,67 +75,80 @@ SymmetricLinearSurfaceMapper::~SymmetricLinearSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void SymmetricLinearSurfaceMapper::Solve()
+void NonSymmetricWeightsSurfaceMapper
+::Weights(int i, const int *j, double *w_i, int d_i) const
+{
+  for (int k = 0; k < d_i; ++k) {
+    w_i[k] = this->Weight(i, j[k]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+double NonSymmetricWeightsSurfaceMapper::Weight(int i, int j) const
+{
+  cerr << this->NameOfClass() << "::Weight: Either this or Weights function must be implemented by subclass" << endl;
+  exit(1);
+}
+
+// -----------------------------------------------------------------------------
+void NonSymmetricWeightsSurfaceMapper::ComputeMap()
 {
   typedef Eigen::MatrixXd             Values;
   typedef Eigen::SparseMatrix<double> Matrix;
   typedef Eigen::Triplet<double>      NZEntry;
 
+  const int N = NumberOfPoints();
   const int n = NumberOfFreePoints();
   const int m = NumberOfComponents();
 
-  int i, j, r, c, l;
+  int i, k, l, r, c;
+  const int *j;
 
   Matrix A(n, n);
   Values b(n, m);
   {
-    EdgeTable edgeTable(_Surface);
-    EdgeIterator edgeIt(edgeTable);
-
-    b.setZero();
     Array<NZEntry> w;
     Array<double>  w_ii(n, .0);
-    w.reserve(2 * edgeTable.NumberOfEdges() + n);
 
-    double w_ij;
-    for (edgeIt.InitTraversal(); edgeIt.GetNextEdge(i, j) != -1;) {
+    b.setZero();
+    w.reserve(2 * _EdgeTable->NumberOfEdges() + n);
+
+    int     d_i;
+    double *w_i = new double[_EdgeTable->MaxNumberOfAdjacentPoints()];
+
+    EdgeIterator edgeIt(*_EdgeTable);
+    for (i = 0; i < N; ++i) {
       r = FreePointIndex(i);
-      c = FreePointIndex(j);
-      if (r >= 0 || c >= 0) {
-        w_ij = Weight(i, j);
-        if (r >= 0 && c >= 0) {
-          w.push_back(NZEntry(r, c, -w_ij));
-          w.push_back(NZEntry(c, r, -w_ij));
-        } else if (r >= 0) {
-          for (l = 0; l < m; ++l) {
-            b(r, l) += w_ij * GetValue(j, l);
+      if (r >= 0) {
+        _EdgeTable->GetAdjacentPoints(i, d_i, j);
+        this->Weights(i, j, w_i, d_i);
+        for (k = 0; k < d_i; ++k) {
+          c = FreePointIndex(j[k]);
+          if (c >= 0) {
+            w.push_back(NZEntry(r, c, -w_i[k]));
+          } else {
+            for (l = 0; l < m; ++l) {
+              b(r, l) += w_i[k] * GetValue(j[k], l);
+            }
           }
-        } else if (c >= 0) {
-          for (l = 0; l < m; ++l) {
-            b(c, l) += w_ij * GetValue(i, l);
-          }
-        }
-        if (r >= 0) {
-          w_ii[r] += w_ij;
-        }
-        if (c >= 0) {
-          w_ii[c] += w_ij;
+          w_ii[r] += w_i[k];
         }
       }
     }
     for (r = 0; r < n; ++r) {
       w.push_back(NZEntry(r, r, w_ii[r]));
     }
+    delete[] w_i;
 
     A.setFromTriplets(w.begin(), w.end());
   }
 
   if (verbose) {
     cout << "\n";
-    cout << "  No. of surface points             = " << _Surface->GetNumberOfPoints() << "\n";
-    cout << "  No. of free points                = " << n << "\n";
-    cout << "  No. of non-zero stiffness values  = " << A.nonZeros() << "\n";
-    cout << "  Dimension of surface map codomain = " << m << "\n";
+    cout << "  No. of surface points        = " << NumberOfPoints() << "\n";
+    cout << "  No. of free points           = " << n << "\n";
+    cout << "  No. of non-zero coefficients = " << A.nonZeros() << "\n";
+    cout << "  Dimension of map codomain    = " << m << "\n";
     cout.flush();
   }
 
@@ -146,10 +160,13 @@ void SymmetricLinearSurfaceMapper::Solve()
     }
   }
 
+  // TODO: Use sparse LU decomposition to solve system directly.
+  //       http://eigen.tuxfamily.org/dox/classEigen_1_1SparseLU.html
+
   int    niter = 0;
   double error = .0;
 
-  Eigen::ConjugateGradient<Matrix> solver(A);
+  Eigen::BiCGSTAB<Matrix> solver(A);
   if (_NumberOfIterations >  0) solver.setMaxIterations(_NumberOfIterations);
   if (_Tolerance          > .0) solver.setTolerance(_Tolerance);
   x = solver.solveWithGuess(b, x);
@@ -157,8 +174,8 @@ void SymmetricLinearSurfaceMapper::Solve()
   error = solver.error();
 
   if (verbose) {
-    cout << "  No. of iterations                 = " << niter << "\n";
-    cout << "  Estimated error                   = " << error << "\n";
+    cout << "  No. of iterations            = " << niter << "\n";
+    cout << "  Estimated error              = " << error << "\n";
     cout.flush();
   }
 

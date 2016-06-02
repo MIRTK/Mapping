@@ -46,7 +46,7 @@ BoundaryToSquareMapper::BoundaryToSquareMapper()
 // -----------------------------------------------------------------------------
 BoundaryToSquareMapper::BoundaryToSquareMapper(const BoundaryToSquareMapper &other)
 :
-  BoundaryMapper(other)
+  BoundarySegmentMapper(other)
 {
   CopyAttributes(other);
 }
@@ -55,7 +55,7 @@ BoundaryToSquareMapper::BoundaryToSquareMapper(const BoundaryToSquareMapper &oth
 BoundaryToSquareMapper &BoundaryToSquareMapper::operator =(const BoundaryToSquareMapper &other)
 {
   if (this != &other) {
-    BoundaryMapper::operator =(other);
+    BoundarySegmentMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
@@ -66,6 +66,12 @@ BoundaryToSquareMapper::~BoundaryToSquareMapper()
 {
 }
 
+// -----------------------------------------------------------------------------
+BoundaryMapper *BoundaryToSquareMapper::NewCopy() const
+{
+  return new BoundaryToSquareMapper(*this);
+}
+
 // =============================================================================
 // Execution
 // =============================================================================
@@ -74,11 +80,11 @@ BoundaryToSquareMapper::~BoundaryToSquareMapper()
 void BoundaryToSquareMapper::Initialize()
 {
   // Initialize base class
-  BoundaryMapper::Initialize();
+  BoundarySegmentMapper::Initialize();
 
   // Set default side length
   if (_SideLength <= .0) {
-    _SideLength = sqrt(Area(_Surface));
+    _SideLength = sqrt(Area(_Boundary->Surface()));
   }
 }
 

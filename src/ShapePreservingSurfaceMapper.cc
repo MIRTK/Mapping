@@ -19,8 +19,32 @@
 
 #include "mirtk/ShapePreservingSurfaceMapper.h"
 
+#include "mirtk/Math.h"
+#include "mirtk/VtkMath.h"
+#include "mirtk/Matrix.h"
+#include "mirtk/Vector3D.h"
+
+
 namespace mirtk {
 
+
+// =============================================================================
+// Auxiliaries
+// =============================================================================
+
+namespace ShapePreservingSurfaceMapperUtils {
+
+
+/// Compute area of 2D triangle
+/// \sa http://demonstrations.wolfram.com/Signed2DTriangleAreaFromTheCrossProductOfEdgeVectors/
+inline double Area(const double a[2], const double b[2], const double c[2])
+{
+  return .5 * (-a[1]*b[0] + a[0]*b[1] + a[1]*c[0] - b[1]*c[0] - a[0]*c[1] + b[0]*c[1]);
+}
+
+
+} // namespace ShapePreservingSurfaceMapperUtils
+using namespace ShapePreservingSurfaceMapperUtils;
 
 // =============================================================================
 // Construction/destruction
@@ -40,7 +64,7 @@ ShapePreservingSurfaceMapper::ShapePreservingSurfaceMapper()
 // -----------------------------------------------------------------------------
 ShapePreservingSurfaceMapper::ShapePreservingSurfaceMapper(const ShapePreservingSurfaceMapper &other)
 :
-  NonSymmetricLinearSurfaceMapper(other)
+  NonSymmetricWeightsSurfaceMapper(other)
 {
   CopyAttributes(other);
 }
@@ -50,7 +74,7 @@ ShapePreservingSurfaceMapper &ShapePreservingSurfaceMapper
 ::operator =(const ShapePreservingSurfaceMapper &other)
 {
   if (this != &other) {
-    NonSymmetricLinearSurfaceMapper::operator =(other);
+    NonSymmetricWeightsSurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
@@ -69,9 +93,71 @@ ShapePreservingSurfaceMapper::~ShapePreservingSurfaceMapper()
 void ShapePreservingSurfaceMapper
 ::Weights(int i, const int *j, double *w_i, int d_i) const
 {
-  // TODO: Floater, M. S. (1997). Parametrization and smooth approximation of surface triangulations.
-  cerr << this->NameOfClass() << "::Weights: Not implemented" << endl;
-  exit(1);
+  if (d_i < 3) {
+    cerr << this->NameOfType() << "::Weights: Every point must have at least three neighbors!" << endl;
+    exit(1);
+  }
+
+  // Compute side lengths and arcs
+  Vector l(d_i);
+  Vector a(d_i);
+  {
+    const Point q = GetPoint(i);
+    Point            p0, p1, p2;
+    Vector3D<double> e0, e1, e2;
+    p0 = GetPoint(j[0]);
+    e0 = Vector3D<double>(p0 - q);
+    e0.Normalize();
+    p1 = p0, e1 = e0;
+    for (int k = 1; k < d_i; ++k) {
+      p2 = GetPoint(j[k]);
+      e2 = Vector3D<double>(p2 - q);
+      e2.Normalize();
+      l(k-1) = p1.Distance(p2);
+      a(k-1) = acos(clamp(e1.DotProduct(e2), -1., 1.));
+      p1 = p2, e1 = e2;
+    }
+    l(d_i-1) = p1.Distance(p0);
+    a(d_i-1) = acos(clamp(e1.DotProduct(e0), -1., 1.));
+  }
+
+  // Step i) Project subgraph into plane
+  Matrix p(2, d_i);
+  {
+    double alpha = 0.;
+    a *= two_pi / a.Sum();
+    for (int k = 0; k < d_i; ++k) {
+      p.Col(k)[0] = l(k) * cos(alpha);
+      p.Col(k)[1] = l(k) * sin(alpha);
+      alpha += a(k);
+    }
+  }
+
+  // Step ii) Average barycentric coordinates
+  const double center[2] = {0., 0.};
+  double alpha, area, area1, area2, area3;
+  for (int k = 0; k < d_i; ++k) {
+    w_i[k] = 0.;
+  }
+  for (int c1 = 0, c2, c3; c1 < d_i; ++c1) {
+    alpha = a(c1);
+    c3 = (c1 + 1) % d_i;
+    while (alpha < pi) {
+      alpha += a(c3);
+      c3 = (c3 + 1) % d_i;
+    }
+    c2 = (c3 == 0 ? d_i : c3) - 1;
+    area  = Area(p.Col(c1), p.Col(c2), p.Col(c3));
+    area1 = Area(center,    p.Col(c2), p.Col(c3));
+    area2 = Area(p.Col(c1), center,    p.Col(c3));
+    area3 = Area(p.Col(c1), p.Col(c2), center);
+    w_i[c1] += area1 / area;
+    w_i[c2] += area2 / area;
+    w_i[c3] += area3 / area;
+  }
+  for (int k = 0; k < d_i; ++k) {
+    w_i[k] /= d_i;
+  }
 }
 
 

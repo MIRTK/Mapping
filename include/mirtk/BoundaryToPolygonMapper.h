@@ -20,7 +20,7 @@
 #ifndef MIRTK_BoundaryToPolygonMapper_H
 #define MIRTK_BoundaryToPolygonMapper_H
 
-#include "mirtk/BoundaryMapper.h"
+#include "mirtk/BoundarySegmentMapper.h"
 
 
 namespace mirtk {
@@ -30,7 +30,7 @@ namespace mirtk {
  * Map corners of surface boundary to circumcircle of polygon
  * and other points to the edges of the polygon
  */
-class BoundaryToPolygonMapper : public BoundaryMapper
+class BoundaryToPolygonMapper : public BoundarySegmentMapper
 {
   mirtkObjectMacro(BoundaryToPolygonMapper);
 
@@ -59,6 +59,9 @@ public:
 
   /// Destructor
   virtual ~BoundaryToPolygonMapper();
+
+  /// Create new copy of this instance
+  virtual BoundaryMapper *NewCopy() const;
 
   // ---------------------------------------------------------------------------
   // Execution

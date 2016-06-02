@@ -17,13 +17,12 @@
  * limitations under the License.
  */
 
-#include "mirtk/HarmonicSpringSurfaceMapper.h"
+#include "mirtk/HarmonicSurfaceMapper.h"
 
-#include "mirtk/PointSetUtils.h"
 #include "mirtk/VtkMath.h"
+#include "mirtk/Triangle.h"
 
 #include "vtkIdList.h"
-#include "vtkTriangle.h"
 
 
 namespace mirtk {
@@ -34,36 +33,36 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void HarmonicSpringSurfaceMapper::CopyAttributes(const HarmonicSpringSurfaceMapper &other)
+void HarmonicSurfaceMapper::CopyAttributes(const HarmonicSurfaceMapper &other)
 {
 }
 
 // -----------------------------------------------------------------------------
-HarmonicSpringSurfaceMapper::HarmonicSpringSurfaceMapper()
+HarmonicSurfaceMapper::HarmonicSurfaceMapper()
 {
 }
 
 // -----------------------------------------------------------------------------
-HarmonicSpringSurfaceMapper::HarmonicSpringSurfaceMapper(const HarmonicSpringSurfaceMapper &other)
+HarmonicSurfaceMapper::HarmonicSurfaceMapper(const HarmonicSurfaceMapper &other)
 :
-  SymmetricLinearSurfaceMapper(other)
+  SymmetricWeightsSurfaceMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-HarmonicSpringSurfaceMapper &HarmonicSpringSurfaceMapper
-::operator =(const HarmonicSpringSurfaceMapper &other)
+HarmonicSurfaceMapper &HarmonicSurfaceMapper
+::operator =(const HarmonicSurfaceMapper &other)
 {
   if (this != &other) {
-    SymmetricLinearSurfaceMapper::operator =(other);
+    SymmetricWeightsSurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-HarmonicSpringSurfaceMapper::~HarmonicSpringSurfaceMapper()
+HarmonicSurfaceMapper::~HarmonicSurfaceMapper()
 {
 }
 
@@ -72,35 +71,30 @@ HarmonicSpringSurfaceMapper::~HarmonicSpringSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-bool HarmonicSpringSurfaceMapper::Remesh()
+double HarmonicSurfaceMapper::Weight(int i, int j) const
 {
-  if (!IsTriangularMesh(_Surface)) {
-    _Surface = Triangulate(_Surface);
-    return true;
-  }
-  return false;
-}
+  int    k, l;
+  double a[3], b[3], c[3], w;
 
-// -----------------------------------------------------------------------------
-double HarmonicSpringSurfaceMapper::Weight(int i, int j) const
-{
-  vtkIdType npts, *pts;
-  vtkIdType ptId1 = static_cast<vtkIdType>(i);
-  vtkIdType ptId2 = static_cast<vtkIdType>(j);
-  vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-  double p1[3], p2[3], p3[3], l12, l13, l23, w = .0;
-  _Surface->GetPoint(ptId1, p1);
-  _Surface->GetPoint(ptId2, p2);
-  _Surface->GetCellEdgeNeighbors(-1, ptId1, ptId2, cellIds);
-  l12 = vtkMath::Distance2BetweenPoints(p1, p2);
-  for (vtkIdType cellIdx = 0; cellIdx < cellIds->GetNumberOfIds(); ++cellIdx) {
-    _Surface->GetCellPoints(cellIds->GetId(cellIdx), npts, pts);
-    while (pts[0] == ptId1 || pts[0] == ptId2) ++pts;
-    _Surface->GetPoint(pts[0], p3);
-    l13 = vtkMath::Distance2BetweenPoints(p1, p3);
-    l23 = vtkMath::Distance2BetweenPoints(p2, p3);
-    w += (l13 + l23 - l12) / vtkTriangle::TriangleArea(p1, p2, p3);
+  const int n = GetEdgeNeighborPoints(i, j, k, l);
+  if (n == 0 || n > 2) {
+    cerr << this->NameOfType() << "::Weight: Surface mesh must be triangulated!" << endl;
+    exit(1);
   }
+
+  // The value computed by the Cotangent function found in Meyer et al. (2002)
+  // is identical to the spring constants in Eck et al. (1995) up to a constant
+  // factor of 1/4 missing from Eck et al.'s formula.
+  _Surface->GetPoint(static_cast<vtkIdType>(i), a);
+  _Surface->GetPoint(static_cast<vtkIdType>(k), b);
+  _Surface->GetPoint(static_cast<vtkIdType>(j), c);
+  w = Triangle::Cotangent(a, b, c);
+  if (n == 2) {
+    _Surface->GetPoint(static_cast<vtkIdType>(l), b);
+    w += Triangle::Cotangent(a, b, c);
+  }
+
+  // Factor 1/2 canceled by multiplying both sides of the linear equations with 2.
   return w;
 }
 

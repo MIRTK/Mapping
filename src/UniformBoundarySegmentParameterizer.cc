@@ -17,52 +17,69 @@
  * limitations under the License.
  */
 
-#include "mirtk/LinearSurfaceMapper.h"
+#include "mirtk/UniformBoundarySegmentParameterizer.h"
 
 
 namespace mirtk {
 
 
 // =============================================================================
-// Construction/destruction
+// Construction/Destruction
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void LinearSurfaceMapper::CopyAttributes(const LinearSurfaceMapper &other)
-{
-  _NumberOfIterations = other._NumberOfIterations;
-  _Tolerance          = other._Tolerance;
-}
-
-// -----------------------------------------------------------------------------
-LinearSurfaceMapper::LinearSurfaceMapper()
-:
-  _NumberOfIterations(0),
-  _Tolerance(.0)
+void UniformBoundarySegmentParameterizer::CopyAttributes(const UniformBoundarySegmentParameterizer &)
 {
 }
 
 // -----------------------------------------------------------------------------
-LinearSurfaceMapper::LinearSurfaceMapper(const LinearSurfaceMapper &other)
+UniformBoundarySegmentParameterizer::UniformBoundarySegmentParameterizer()
+{
+}
+
+// -----------------------------------------------------------------------------
+UniformBoundarySegmentParameterizer
+::UniformBoundarySegmentParameterizer(const UniformBoundarySegmentParameterizer &other)
 :
-  SurfaceMapper(other)
+  BoundarySegmentParameterizer(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-LinearSurfaceMapper &LinearSurfaceMapper::operator =(const LinearSurfaceMapper &other)
+UniformBoundarySegmentParameterizer &UniformBoundarySegmentParameterizer
+::operator =(const UniformBoundarySegmentParameterizer &other)
 {
   if (this != &other) {
-    SurfaceMapper::operator =(other);
+    BoundarySegmentParameterizer::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-LinearSurfaceMapper::~LinearSurfaceMapper()
+UniformBoundarySegmentParameterizer::~UniformBoundarySegmentParameterizer()
 {
+}
+
+// -----------------------------------------------------------------------------
+BoundarySegmentParameterizer *UniformBoundarySegmentParameterizer::NewCopy() const
+{
+  return new UniformBoundarySegmentParameterizer(*this);
+}
+
+// =============================================================================
+// Execution
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+void UniformBoundarySegmentParameterizer::Parameterize()
+{
+  double       t  = 0.;
+  const double dt = 1. / _Boundary.NumberOfPoints();
+  for (auto && v : _Values) {
+    v = t, t += dt;
+  }
 }
 
 

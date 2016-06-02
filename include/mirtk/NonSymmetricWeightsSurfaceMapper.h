@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_NonSymmetricLinearSurfaceMapper_H
-#define MIRTK_NonSymmetricLinearSurfaceMapper_H
+#ifndef MIRTK_NonSymmetricWeightsSurfaceMapper_H
+#define MIRTK_NonSymmetricWeightsSurfaceMapper_H
 
-#include "mirtk/LinearSurfaceMapper.h"
+#include "mirtk/LinearFixedBoundarySurfaceMapper.h"
 
 
 namespace mirtk {
@@ -29,15 +29,15 @@ namespace mirtk {
 /**
  * Obtains surface map as the solution of a non-symmetric system of linear equations
  */
-class NonSymmetricLinearSurfaceMapper : public LinearSurfaceMapper
+class NonSymmetricWeightsSurfaceMapper : public LinearFixedBoundarySurfaceMapper
 {
-  mirtkAbstractMacro(NonSymmetricLinearSurfaceMapper);
+  mirtkAbstractMacro(NonSymmetricWeightsSurfaceMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const NonSymmetricLinearSurfaceMapper &);
+  void CopyAttributes(const NonSymmetricWeightsSurfaceMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -45,21 +45,24 @@ class NonSymmetricLinearSurfaceMapper : public LinearSurfaceMapper
 public:
 
   /// Default constructor
-  NonSymmetricLinearSurfaceMapper();
+  NonSymmetricWeightsSurfaceMapper();
 
   /// Copy constructor
-  NonSymmetricLinearSurfaceMapper(const NonSymmetricLinearSurfaceMapper &);
+  NonSymmetricWeightsSurfaceMapper(const NonSymmetricWeightsSurfaceMapper &);
 
   /// Assignment operator
-  NonSymmetricLinearSurfaceMapper &operator =(const NonSymmetricLinearSurfaceMapper &);
+  NonSymmetricWeightsSurfaceMapper &operator =(const NonSymmetricWeightsSurfaceMapper &);
 
 public:
 
   /// Destructor
-  virtual ~NonSymmetricLinearSurfaceMapper();
+  virtual ~NonSymmetricWeightsSurfaceMapper();
 
   // ---------------------------------------------------------------------------
   // Execution
+
+  /// Construct and solve (non-symmetric) system of linear equations
+  virtual void ComputeMap();
 
 protected:
 
@@ -88,12 +91,9 @@ protected:
   ///       implementation of this function. The Weight function is then unused.
   virtual void Weights(int i, const int *j, double *w, int d) const;
 
-  /// Construct and solve non-symmetric system of linear equations
-  virtual void Solve();
-
 };
 
 
 } // namespace mirtk
 
-#endif // MIRTK_NonSymmetricLinearSurfaceMapper_H
+#endif // MIRTK_NonSymmetricWeightsSurfaceMapper_H

@@ -46,7 +46,7 @@ BoundaryToDiskMapper::BoundaryToDiskMapper()
 // -----------------------------------------------------------------------------
 BoundaryToDiskMapper::BoundaryToDiskMapper(const BoundaryToDiskMapper &other)
 :
-  BoundaryMapper(other)
+  BoundarySegmentMapper(other)
 {
   CopyAttributes(other);
 }
@@ -55,7 +55,7 @@ BoundaryToDiskMapper::BoundaryToDiskMapper(const BoundaryToDiskMapper &other)
 BoundaryToDiskMapper &BoundaryToDiskMapper::operator =(const BoundaryToDiskMapper &other)
 {
   if (this != &other) {
-    BoundaryMapper::operator =(other);
+    BoundarySegmentMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
@@ -66,6 +66,12 @@ BoundaryToDiskMapper::~BoundaryToDiskMapper()
 {
 }
 
+// -----------------------------------------------------------------------------
+BoundaryMapper *BoundaryToDiskMapper::NewCopy() const
+{
+  return new BoundaryToDiskMapper(*this);
+}
+
 // =============================================================================
 // Execution
 // =============================================================================
@@ -74,11 +80,11 @@ BoundaryToDiskMapper::~BoundaryToDiskMapper()
 void BoundaryToDiskMapper::Initialize()
 {
   // Initialize base class
-  BoundaryMapper::Initialize();
+  BoundarySegmentMapper::Initialize();
 
   // Set default radius
   if (_Radius <= .0) {
-    _Radius = sqrt(Area(_Surface) / pi);
+    _Radius = sqrt(Area(_Boundary->Surface()) / pi);
   }
 }
 

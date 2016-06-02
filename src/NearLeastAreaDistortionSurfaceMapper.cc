@@ -17,7 +17,8 @@
  * limitations under the License.
  */
 
-#include "mirtk/UniformSurfaceMapper.h"
+#include "mirtk/NearLeastAreaDistortionSurfaceMapper.h"
+
 
 namespace mirtk {
 
@@ -27,35 +28,38 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void UniformSurfaceMapper::CopyAttributes(const UniformSurfaceMapper &other)
+void NearLeastAreaDistortionSurfaceMapper
+::CopyAttributes(const NearLeastAreaDistortionSurfaceMapper &other)
 {
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper()
+NearLeastAreaDistortionSurfaceMapper::NearLeastAreaDistortionSurfaceMapper()
 {
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper(const UniformSurfaceMapper &other)
+NearLeastAreaDistortionSurfaceMapper
+::NearLeastAreaDistortionSurfaceMapper(const NearLeastAreaDistortionSurfaceMapper &other)
 :
-  SymmetricWeightsSurfaceMapper(other)
+  NearOptimalSurfaceMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper &UniformSurfaceMapper::operator =(const UniformSurfaceMapper &other)
+NearLeastAreaDistortionSurfaceMapper &NearLeastAreaDistortionSurfaceMapper
+::operator =(const NearLeastAreaDistortionSurfaceMapper &other)
 {
   if (this != &other) {
-    SymmetricWeightsSurfaceMapper::operator =(other);
+    NearOptimalSurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::~UniformSurfaceMapper()
+NearLeastAreaDistortionSurfaceMapper::~NearLeastAreaDistortionSurfaceMapper()
 {
 }
 
@@ -64,9 +68,11 @@ UniformSurfaceMapper::~UniformSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-double UniformSurfaceMapper::Weight(int, int) const
+double NearLeastAreaDistortionSurfaceMapper
+::ComputeLambda(vtkDataArray *u, vtkDataArray *v) const
 {
-  return 1.0;
+  // TODO: Find lambda that minimizes the area distortion
+  return 1.;
 }
 
 

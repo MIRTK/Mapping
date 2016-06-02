@@ -17,33 +17,33 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_WeightedLeastSquaresSurfaceMapper_H
-#define MIRTK_WeightedLeastSquaresSurfaceMapper_H
+#ifndef MIRTK_UniformBoundarySegmentParameterizer_H
+#define MIRTK_UniformBoundarySegmentParameterizer_H
 
-#include "mirtk/SymmetricLinearSurfaceMapper.h"
+#include "mirtk/BoundarySegmentParameterizer.h"
 
 
 namespace mirtk {
 
 
 /**
- * Piecewise linear surface mapper with convex combination weights inverse proportional to edge length
+ * Boundary curve parameterization with uniform distance of curve points
+ *
+ * This boundary curve parameterization is referred to as uniform
+ * parameterization in Floater (1997).
  *
  * - Floater (1997). Parametrization and smooth approximation of surface triangulations.
  *   Computer Aided Geometric Design, 14(3), 231–250.
  */
-class WeightedLeastSquaresSurfaceMapper : public SymmetricLinearSurfaceMapper
+class UniformBoundarySegmentParameterizer : public BoundarySegmentParameterizer
 {
-  mirtkObjectMacro(WeightedLeastSquaresSurfaceMapper);
+  mirtkObjectMacro(UniformBoundarySegmentParameterizer);
 
   // ---------------------------------------------------------------------------
   // Attributes
 
-  /// Number of times the edge length is exponentiated
-  mirtkPublicAttributeMacro(int, Exponent);
-
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const WeightedLeastSquaresSurfaceMapper &);
+  void CopyAttributes(const UniformBoundarySegmentParameterizer &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -51,35 +51,31 @@ class WeightedLeastSquaresSurfaceMapper : public SymmetricLinearSurfaceMapper
 public:
 
   /// Default constructor
-  ///
-  /// \param[in] Edge length exponent.
-  WeightedLeastSquaresSurfaceMapper(int p = 1);
+  UniformBoundarySegmentParameterizer();
 
   /// Copy constructor
-  WeightedLeastSquaresSurfaceMapper(const WeightedLeastSquaresSurfaceMapper &);
+  UniformBoundarySegmentParameterizer(const UniformBoundarySegmentParameterizer &);
 
   /// Assignment operator
-  WeightedLeastSquaresSurfaceMapper &operator =(const WeightedLeastSquaresSurfaceMapper &);
+  UniformBoundarySegmentParameterizer &operator =(const UniformBoundarySegmentParameterizer &);
 
   /// Destructor
-  virtual ~WeightedLeastSquaresSurfaceMapper();
+  virtual ~UniformBoundarySegmentParameterizer();
+
+  /// New copy of this parameterizer
+  virtual BoundarySegmentParameterizer *NewCopy() const;
 
   // ---------------------------------------------------------------------------
   // Execution
 
 protected:
 
-  /// Weight of undirected edge (i, j)
-  ///
-  /// \param[in] i First end point.
-  /// \param[in] j Second end point.
-  ///
-  /// \returns Weight of undirected edge (i, j).
-  virtual double Weight(int i, int j) const;
+  /// Parameterize boundary curve
+  virtual void Parameterize();
 
 };
 
 
 } // namespace mirtk
 
-#endif // MIRTK_WeightedLeastSquaresSurfaceMapper_H
+#endif // MIRTK_UniformBoundarySegmentParameterizer_H

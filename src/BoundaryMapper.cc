@@ -21,11 +21,13 @@
 
 #include "mirtk/Algorithm.h"
 #include "mirtk/Memory.h"
-#include "mirtk/EdgeTable.h"
-#include "mirtk/PointSetUtils.h"
-#include "mirtk/ChordLengthBoundaryParameterizer.h"
+#include "mirtk/UnorderedMap.h"
 
-#include "vtkFloatArray.h"
+#include "vtkPolyData.h"
+#include "vtkPoints.h"
+#include "vtkCellArray.h"
+#include "vtkDataArray.h"
+#include "vtkDoubleArray.h"
 
 
 namespace mirtk {
@@ -38,27 +40,20 @@ namespace mirtk {
 // -----------------------------------------------------------------------------
 void BoundaryMapper::CopyAttributes(const BoundaryMapper &other)
 {
-  _Surface   = other._Surface;
-  _EdgeTable = other._EdgeTable;
+  _Boundary = other._Boundary;
+  _Values   = other._Values;
 
-  _BoundarySegments   = other._BoundarySegments;
-  _BoundaryPointIds   = other._BoundaryPointIds;
-  _BoundaryPointIndex = other._BoundaryPointIndex;
-
-  _Parameterizer = SharedPtr<BoundaryParameterizer>(other._Parameterizer->NewCopy());
-
-  if (other._Values) {
-    _Values = other._Values->NewInstance();
-    _Values->DeepCopy(other._Values);
+  if (other._Output) {
+    PiecewiseLinearMap *output;
+    output = reinterpret_cast<PiecewiseLinearMap *>(other._Output->NewCopy());
+    _Output = SharedPtr<PiecewiseLinearMap>(output);
   } else {
-    _Values = nullptr;
+    _Output = nullptr;
   }
 }
 
 // -----------------------------------------------------------------------------
 BoundaryMapper::BoundaryMapper()
-:
-  _Parameterizer(NewShared<ChordLengthBoundaryParameterizer>())
 {
 }
 
@@ -84,8 +79,16 @@ BoundaryMapper::~BoundaryMapper()
 }
 
 // =============================================================================
-// Auxiliary functions
+// Execution
 // =============================================================================
+
+// -----------------------------------------------------------------------------
+void BoundaryMapper::Run()
+{
+  this->Initialize();
+  this->ComputeMap();
+  this->Finalize();
+}
 
 // -----------------------------------------------------------------------------
 int BoundaryMapper::NumberOfComponents() const
@@ -94,122 +97,117 @@ int BoundaryMapper::NumberOfComponents() const
 }
 
 // -----------------------------------------------------------------------------
-int BoundaryMapper::NumberOfBoundarySegments() const
-{
-  if (_BoundarySegments) {
-    return static_cast<int>(_BoundarySegments->GetNumberOfCells());
-  } else if (_Surface) {
-    return mirtk::NumberOfBoundarySegments(_Surface, _EdgeTable.get());
-  } else {
-    return 0;
-  }
-}
-
-// -----------------------------------------------------------------------------
-void BoundaryMapper::BoundaryPointIndices(int n, Array<int> &i) const
-{
-  vtkIdType npts, *pts;
-  _BoundarySegments->GetCell(n, npts, pts);
-  i.resize(npts);
-  for (vtkIdType j = 0; j < npts; ++j) {
-    i[j] = BoundaryPointIndex(pts[j]);
-  }
-}
-
-// =============================================================================
-// Execution
-// =============================================================================
-
-// -----------------------------------------------------------------------------
-void BoundaryMapper::Run()
-{
-  this->Initialize();
-  for (int n = 0; n < NumberOfBoundarySegments(); ++n) {
-    this->MapBoundary(n); 
-  }
-  this->Finalize();
-}
-
-// -----------------------------------------------------------------------------
 void BoundaryMapper::Initialize()
 {
-  // Extract boundary segments
-  if (!_EdgeTable) _EdgeTable.reset(new mirtk::EdgeTable(_Surface));
-  _BoundarySegments = BoundarySegments(_Surface, _EdgeTable.get());
-  if (NumberOfBoundarySegments() == 0) {
-    cerr << this->NameOfType() << "::Initialize: Surface is closed and has no boundary segments to map!" << endl;
+  // Free previous boundary map
+  _Output = nullptr;
+
+  // Check surface boundary
+  if (!_Boundary) {
+    cerr << this->NameOfType() << "::Initialize: No surface boundary set!" << endl;
     exit(1);
   }
 
-  // Obtain set of boundary point IDs
-  _BoundaryPointIndex = vtkSmartPointer<vtkIdList>::New();
-  _BoundaryPointIndex->SetNumberOfIds(_Surface->GetNumberOfPoints());
-  for (vtkIdType ptId = 0; ptId < _BoundaryPointIndex->GetNumberOfIds(); ++ptId) {
-    _BoundaryPointIndex->SetId(ptId, -1);
+  // Initialize boundary values
+  const int num = _Boundary->NumberOfPoints();
+  const int dim = this->NumberOfComponents();
+
+  if (num < 1) {
+    cerr << this->NameOfType() << "::Initialize: Surface is closed and has no boundary points to map!" << endl;
+    exit(1);
   }
-  _BoundaryPointIds = vtkSmartPointer<vtkIdList>::New();
-  _BoundaryPointIds->Allocate(_BoundarySegments->GetNumberOfConnectivityEntries());
-  for (vtkIdType i = 0, npts, *pts; i < _BoundarySegments->GetNumberOfCells(); ++i) {
-    _BoundarySegments->GetCell(i, npts, pts);
-    for (vtkIdType j = 0; j < npts; ++j) {
-      _BoundaryPointIndex->SetId(pts[j], _BoundaryPointIds->InsertNextId(pts[j]));
-    }
-  }
-  _BoundaryPointIds->Squeeze();
-
-  // Allocate boundary values array
-  const int       dim = this->NumberOfComponents();
-  const vtkIdType num = this->NumberOfBoundaryPoints();
-  _Values = vtkSmartPointer<vtkFloatArray>::New();
-  _Values->SetName("Map");
-  if (_Values->GetNumberOfTuples()     != num ||
-      _Values->GetNumberOfComponents() != dim) {
-    _Values->SetNumberOfComponents(dim);
-    _Values->SetNumberOfTuples(num);
-  }
-  for (int j = 0; j < dim; ++j) {
-    _Values->FillComponent(j, .0);
-  }
-}
-
-// -----------------------------------------------------------------------------
-void BoundaryMapper::MapBoundary(int n)
-{
-  // Parameterize boundary segment
-  _Parameterizer->Boundary(BoundaryPointIds(n));
-  _Parameterizer->Selection(_Selection);
-  _Parameterizer->Points(_Surface->GetPoints());
-  _Parameterizer->Run();
-
-  // Sort boundary points by increasing parameter value
-  const int        npoints = NumberOfBoundaryPoints(n);
-  const Array<int> ptIdx   = BoundaryPointIndices(n);
-
-  Array<int> indices(npoints);
-  for (int j = 0; j < npoints; ++j) indices[j] = j;
-  SortIndicesOfArray<double> predicate(_Parameterizer->Values());
-  sort(indices.begin(), indices.end(), predicate);
-
-  Array<int>    i(npoints);
-  Array<double> t(npoints);
-  Array<int>    selection;
-  selection.reserve(_Parameterizer->NumberOfSelectedPoints());
-  for (int j = 0; j < npoints; ++j) {
-    const auto &idx = indices[j];
-    i[j] = ptIdx[idx];
-    t[j] = _Parameterizer->Values()[idx];
-    if (_Parameterizer->IsSelected(idx)) {
-      selection.push_back(j);
-    }
+  if (dim < 1) {
+    cerr << this->NameOfType() << "::Initialize: Subclass must return positive number of map components!" << endl;
+    exit(1);
   }
 
-  // Assign map values to points of boundary segment
-  this->MapBoundarySegment(n, i, t, selection);
+  _Values.Resize(dim, num);
+  _Values = mirtk::nan;
 }
 
 // -----------------------------------------------------------------------------
 void BoundaryMapper::Finalize()
 {
+  const int num = _Boundary->NumberOfPoints();
+  const int dim = this->NumberOfComponents();
+
+  vtkSmartPointer<vtkPoints>    points = vtkSmartPointer<vtkPoints>::New();
+  vtkSmartPointer<vtkCellArray> verts  = vtkSmartPointer<vtkCellArray>::New();
+  vtkSmartPointer<vtkCellArray> lines  = vtkSmartPointer<vtkCellArray>::New();
+  vtkSmartPointer<vtkDataArray> values = vtkSmartPointer<vtkDoubleArray>::New();
+
+  // Get only those boundary points with valid map value
+  values->SetName("BoundaryMap");
+  values->SetNumberOfComponents(dim);
+  points->Allocate(static_cast<vtkIdType>(num));
+  values->Allocate(static_cast<vtkIdType>(dim * num));
+
+  double p[3];
+  UnorderedMap<int, vtkIdType> ptIds;
+  ptIds.reserve(num);
+
+  for (int i = 0; i < num;  ++i) {
+    if (HasBoundaryValue(i)) {
+      _Boundary->GetPoint(i, p);
+      ptIds[i] = points->InsertNextPoint(p);
+      values->InsertNextTuple(_Values.Col(i));
+    }
+  }
+  if (points->GetNumberOfPoints() == 0) {
+    cerr << this->NameOfType() << "::Finalize: No boundary map values have been assigned!" << endl;
+    exit(1);
+  }
+
+  points->Squeeze();
+  values->Squeeze();
+
+  // Determine topology of boundary map domain
+  int       curPt, prePt, nxtPt;
+  vtkIdType curId, preId, line[2];
+
+  verts->Allocate(verts->EstimateSize(static_cast<vtkIdType>(ptIds.size()), 1));
+  lines->Allocate(lines->EstimateSize(static_cast<vtkIdType>(ptIds.size()), 2));
+
+  for (int n = 0; n < _Boundary->NumberOfSegments(); ++n) {
+    prePt = _Boundary->PointIndex(n, -1);
+    preId = (ptIds.find(prePt) == ptIds.end() ? -1 : -2);
+    for (int i = 0; i < _Boundary->NumberOfPoints(n); ++i) {
+      curPt = _Boundary->PointIndex(n, i);
+      auto curIt = ptIds.find(curPt);
+      if (curIt != ptIds.end()) {
+        curId = curIt->second;
+        nxtPt = _Boundary->PointIndex(n, i+1);
+        auto nxtIt = ptIds.find(nxtPt);
+        if (nxtIt != ptIds.end()) {
+          line[0] = curId;
+          line[1] = nxtIt->second;
+          lines->InsertNextCell(2, line);
+        } else if (preId == -1) {
+          verts->InsertNextCell(1, &curId);
+        }
+      } else {
+        curId = -1;
+      }
+      prePt = curPt;
+      preId = curId;
+    }
+  }
+
+  // Assemble piecewise linear output map
+  vtkSmartPointer<vtkPolyData> domain = vtkSmartPointer<vtkPolyData>::New();
+  domain->SetPoints(points);
+  if (verts->GetNumberOfCells() > 0) {
+    verts ->Squeeze();
+    domain->SetVerts(verts);
+  }
+  if (lines->GetNumberOfCells() > 0) {
+    lines ->Squeeze();
+    domain->SetLines(lines);
+  }
+
+  _Output = NewShared<PiecewiseLinearMap>();
+  _Output->Domain(domain);
+  _Output->Values(values);
 }
 
 

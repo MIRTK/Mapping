@@ -17,7 +17,10 @@
  * limitations under the License.
  */
 
-#include "mirtk/UniformSurfaceMapper.h"
+#include "mirtk/FixedBoundarySurfaceMapper.h"
+
+#include "mirtk/BoundaryToSquareMapper.h"
+
 
 namespace mirtk {
 
@@ -27,35 +30,39 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void UniformSurfaceMapper::CopyAttributes(const UniformSurfaceMapper &other)
+void FixedBoundarySurfaceMapper
+::CopyAttributes(const FixedBoundarySurfaceMapper &other)
+{
+  _Input = other._Input;
+}
+
+// -----------------------------------------------------------------------------
+FixedBoundarySurfaceMapper::FixedBoundarySurfaceMapper()
 {
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper()
-{
-}
-
-// -----------------------------------------------------------------------------
-UniformSurfaceMapper::UniformSurfaceMapper(const UniformSurfaceMapper &other)
+FixedBoundarySurfaceMapper
+::FixedBoundarySurfaceMapper(const FixedBoundarySurfaceMapper &other)
 :
-  SymmetricWeightsSurfaceMapper(other)
+  SurfaceMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper &UniformSurfaceMapper::operator =(const UniformSurfaceMapper &other)
+FixedBoundarySurfaceMapper &FixedBoundarySurfaceMapper
+::operator =(const FixedBoundarySurfaceMapper &other)
 {
   if (this != &other) {
-    SymmetricWeightsSurfaceMapper::operator =(other);
+    SurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-UniformSurfaceMapper::~UniformSurfaceMapper()
+FixedBoundarySurfaceMapper::~FixedBoundarySurfaceMapper()
 {
 }
 
@@ -64,9 +71,26 @@ UniformSurfaceMapper::~UniformSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-double UniformSurfaceMapper::Weight(int, int) const
+void FixedBoundarySurfaceMapper::Initialize()
 {
-  return 1.0;
+  // Initialize base class
+  SurfaceMapper::Initialize();
+
+  // Input surface must have a boundary
+  if (_Boundary->NumberOfSegments() == 0) {
+    cerr << this->NameOfType() << "::Initialize: Surface mesh must have at least one boundary segment!" << endl;
+    exit(1);
+  }
+
+  // Check boundary map
+  if (!_Input) {
+    cerr << this->NameOfType() << "::Initialize: No boundary map is set!" << endl;
+    exit(1);
+  }
+  if (_Input->NumberOfPoints() == 0) {
+    cerr << this->NameOfType() << "::Initialize: Invalid boundary map!" << endl;
+    exit(1);
+  }
 }
 
 

@@ -17,10 +17,11 @@
  * limitations under the License.
  */
 
-#include "mirtk/WeightedLeastSquaresSurfaceMapper.h"
+#include "mirtk/AuthalicSurfaceMapper.h"
 
-#include "mirtk/Math.h"
-#include "mirtk/VtkMath.h"
+#include "mirtk/Triangle.h"
+
+#include "vtkIdList.h"
 
 
 namespace mirtk {
@@ -31,45 +32,35 @@ namespace mirtk {
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void WeightedLeastSquaresSurfaceMapper
-::CopyAttributes(const WeightedLeastSquaresSurfaceMapper &other)
+void AuthalicSurfaceMapper::CopyAttributes(const AuthalicSurfaceMapper &)
 {
-  _Exponent = other._Exponent;
 }
 
 // -----------------------------------------------------------------------------
-WeightedLeastSquaresSurfaceMapper
-::WeightedLeastSquaresSurfaceMapper(int p)
+AuthalicSurfaceMapper::AuthalicSurfaceMapper()
+{
+}
+
+// -----------------------------------------------------------------------------
+AuthalicSurfaceMapper::AuthalicSurfaceMapper(const AuthalicSurfaceMapper &other)
 :
-  _Exponent(p)
-{
-}
-
-// -----------------------------------------------------------------------------
-WeightedLeastSquaresSurfaceMapper
-::WeightedLeastSquaresSurfaceMapper(
-  const WeightedLeastSquaresSurfaceMapper &other
-) :
-  SymmetricLinearSurfaceMapper(other)
+  SymmetricWeightsSurfaceMapper(other)
 {
   CopyAttributes(other);
 }
 
 // -----------------------------------------------------------------------------
-WeightedLeastSquaresSurfaceMapper &
-WeightedLeastSquaresSurfaceMapper
-::operator =(const WeightedLeastSquaresSurfaceMapper &other)
+AuthalicSurfaceMapper &AuthalicSurfaceMapper::operator =(const AuthalicSurfaceMapper &other)
 {
   if (this != &other) {
-    SymmetricLinearSurfaceMapper::operator =(other);
+    SymmetricWeightsSurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
-WeightedLeastSquaresSurfaceMapper
-::~WeightedLeastSquaresSurfaceMapper()
+AuthalicSurfaceMapper::~AuthalicSurfaceMapper()
 {
 }
 
@@ -78,17 +69,28 @@ WeightedLeastSquaresSurfaceMapper
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-double WeightedLeastSquaresSurfaceMapper::Weight(int i, int j) const
+double AuthalicSurfaceMapper::Weight(int i, int j) const
 {
-  double p[3], q[3];
-  _Surface->GetPoint(static_cast<vtkIdType>(i), p);
-  _Surface->GetPoint(static_cast<vtkIdType>(j), q);
-  const double dist2 = vtkMath::Distance2BetweenPoints(p, q);
-  if (_Exponent <= 0) return 1.0;
-  if (_Exponent == 1) return sqrt(dist2);
-  if (_Exponent == 2) return dist2;
-  if (_Exponent % 2 == 0) return pow(dist2, _Exponent / 2);
-  return pow(sqrt(dist2), _Exponent);
+  double p1[3], p2[3], p3[3], w = 0.;
+
+  vtkIdType npts, *pts;
+  vtkIdType ptId1 = static_cast<vtkIdType>(i);
+  vtkIdType ptId2 = static_cast<vtkIdType>(j);
+
+  _Surface->GetPoint(ptId1, p1);
+  _Surface->GetPoint(ptId2, p2);
+
+  vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
+  _Surface->GetCellEdgeNeighbors(-1, ptId1, ptId2, cellIds);
+
+  for (vtkIdType cellIdx = 0; cellIdx < cellIds->GetNumberOfIds(); ++cellIdx) {
+    _Surface->GetCellPoints(cellIds->GetId(cellIdx), npts, pts);
+    while (pts[0] == ptId1 || pts[0] == ptId2) ++pts;
+    _Surface->GetPoint(pts[0], p3);
+    w += Triangle::Cotangent(p1, p2, p3);
+  }
+
+  return w;
 }
 
 

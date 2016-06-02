@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "mirtk/LeastSquaresConformalSurfaceMapper.h"
+#include "mirtk/SpectralConformalSurfaceMapper.h"
 
 #include "mirtk/Algorithm.h"
 #include "mirtk/Triangle.h"
@@ -44,8 +44,8 @@ MIRTK_Common_EXPORT extern int verbose;
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void LeastSquaresConformalSurfaceMapper
-::CopyAttributes(const LeastSquaresConformalSurfaceMapper &other)
+void SpectralConformalSurfaceMapper
+::CopyAttributes(const SpectralConformalSurfaceMapper &other)
 {
   _NumberOfIterations = other._NumberOfIterations;
   _Tolerance          = other._Tolerance;
@@ -63,7 +63,7 @@ void LeastSquaresConformalSurfaceMapper
 }
 
 // -----------------------------------------------------------------------------
-LeastSquaresConformalSurfaceMapper::LeastSquaresConformalSurfaceMapper()
+SpectralConformalSurfaceMapper::SpectralConformalSurfaceMapper()
 :
   _NumberOfIterations(1),
   _Tolerance(-1.)
@@ -71,8 +71,8 @@ LeastSquaresConformalSurfaceMapper::LeastSquaresConformalSurfaceMapper()
 }
 
 // -----------------------------------------------------------------------------
-LeastSquaresConformalSurfaceMapper
-::LeastSquaresConformalSurfaceMapper(const LeastSquaresConformalSurfaceMapper &other)
+SpectralConformalSurfaceMapper
+::SpectralConformalSurfaceMapper(const SpectralConformalSurfaceMapper &other)
 :
   FreeBoundarySurfaceMapper(other)
 {
@@ -80,8 +80,8 @@ LeastSquaresConformalSurfaceMapper
 }
 
 // -----------------------------------------------------------------------------
-LeastSquaresConformalSurfaceMapper &LeastSquaresConformalSurfaceMapper
-::operator =(const LeastSquaresConformalSurfaceMapper &other)
+SpectralConformalSurfaceMapper &SpectralConformalSurfaceMapper
+::operator =(const SpectralConformalSurfaceMapper &other)
 {
   if (this != &other) {
     FreeBoundarySurfaceMapper::operator =(other);
@@ -91,7 +91,7 @@ LeastSquaresConformalSurfaceMapper &LeastSquaresConformalSurfaceMapper
 }
 
 // -----------------------------------------------------------------------------
-LeastSquaresConformalSurfaceMapper::~LeastSquaresConformalSurfaceMapper()
+SpectralConformalSurfaceMapper::~SpectralConformalSurfaceMapper()
 {
 }
 
@@ -100,7 +100,7 @@ LeastSquaresConformalSurfaceMapper::~LeastSquaresConformalSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-void LeastSquaresConformalSurfaceMapper::AddFixedPoint(int i, double u, double v)
+void SpectralConformalSurfaceMapper::AddFixedPoint(int i, double u, double v)
 {
   auto it = Find(_FixedPoints, i);
   if (it == _FixedPoints.end()) {
@@ -123,7 +123,7 @@ void LeastSquaresConformalSurfaceMapper::AddFixedPoint(int i, double u, double v
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-double LeastSquaresConformalSurfaceMapper::Weight(int i, int j) const
+double SpectralConformalSurfaceMapper::Weight(int i, int j) const
 {
   int    k, l;
   double a[3], b[3], c[3], w;
@@ -147,7 +147,7 @@ double LeastSquaresConformalSurfaceMapper::Weight(int i, int j) const
 }
 
 // -----------------------------------------------------------------------------
-void LeastSquaresConformalSurfaceMapper::Initialize()
+void SpectralConformalSurfaceMapper::Initialize()
 {
   // Initialize base class
   FreeBoundarySurfaceMapper::Initialize();
@@ -227,7 +227,7 @@ void LeastSquaresConformalSurfaceMapper::Initialize()
 }
 
 // -----------------------------------------------------------------------------
-void LeastSquaresConformalSurfaceMapper::ComputeMap()
+void SpectralConformalSurfaceMapper::ComputeMap()
 {
   MIRTK_START_TIMING();
 
@@ -355,7 +355,7 @@ void LeastSquaresConformalSurfaceMapper::ComputeMap()
 }
 
 // -----------------------------------------------------------------------------
-void LeastSquaresConformalSurfaceMapper::Finalize()
+void SpectralConformalSurfaceMapper::Finalize()
 {
   // Assemble surface map
   SharedPtr<PiecewiseLinearMap> map = NewShared<PiecewiseLinearMap>();

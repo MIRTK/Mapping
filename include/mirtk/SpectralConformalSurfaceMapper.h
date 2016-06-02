@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_LeastSquaresConformalSurfaceMapper_H
-#define MIRTK_LeastSquaresConformalSurfaceMapper_H
+#ifndef MIRTK_SpectralConformalSurfaceMapper_H
+#define MIRTK_SpectralConformalSurfaceMapper_H
 
 #include "mirtk/FreeBoundarySurfaceMapper.h"
 
@@ -32,36 +32,17 @@ namespace mirtk {
 
 
 /**
- * Least squares conformal parameterization
+ * Least squares conformal map without boundary constraints
  *
- * This filter implements the least squares conformal map (LSCM) proposed by
- * Levy (2002) and the identical discrete natural conformal parameterization
- * (DNCP) proposed by Meyer et al. (2002). It follows the formulation of in
- * Mullen et al. (2002), where the LSCM is defined as the minimizer of the
- * conformal energy \f$E_C(\vec{u}) = E_LSCM\vec{u} = E_D(\vec{u}) - A(\vec{u})\f$,
- * where \f$E_D(\vec{u})\f$ is the discrete Dirichlet energy and
- * \f$A(\vec{u})\f$ is the total area of the parameteric domain.
- * The geometric cotangent weights are used to discretize the Laplace operator
- * needed for the computation of the derivative of the Dirichlet energy.
- *
- * The LSCM requires at least two fixed points. When no point constraints are
- * given, a boundary point is selected automatically. A second fixed boundary
- * point is chosen to be as farthest away from the first fixed point as possible
- * based on geodesic distances on the input surface mesh.
- *
- * - Levy et al. (2002). Least squares conformal maps for automatic texture atlas
- *   generation. ACM Trans. Graphics, 21(3), 362–371.
- * - Desbrun, Meyer, and Alliez (2002). Intrinsic parameterizations of surface meshes.
- *   Computer Graphics Forum, 21(3), 209–218.
  * - Mullen et al. (2008). Spectral conformal parameterization.
  *   Eurographics Symposium on Geometry Processing, 27(5), 1487–1494.
  *
  * \todo Implement area weighting extension as described in Mullen et al. (2008)
  *       to account for irregular surface sampling.
  */
-class LeastSquaresConformalSurfaceMapper : public FreeBoundarySurfaceMapper
+class SpectralConformalSurfaceMapper : public FreeBoundarySurfaceMapper
 {
-  mirtkObjectMacro(LeastSquaresConformalSurfaceMapper);
+  mirtkObjectMacro(SpectralConformalSurfaceMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
@@ -92,7 +73,7 @@ private:
   mirtkAttributeMacro(vtkSmartPointer<vtkDataArray>, Values);
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const LeastSquaresConformalSurfaceMapper &);
+  void CopyAttributes(const SpectralConformalSurfaceMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -100,16 +81,16 @@ private:
 public:
 
   /// Default constructor
-  LeastSquaresConformalSurfaceMapper();
+  SpectralConformalSurfaceMapper();
 
   /// Copy constructor
-  LeastSquaresConformalSurfaceMapper(const LeastSquaresConformalSurfaceMapper &);
+  SpectralConformalSurfaceMapper(const SpectralConformalSurfaceMapper &);
 
   /// Assignment operator
-  LeastSquaresConformalSurfaceMapper &operator =(const LeastSquaresConformalSurfaceMapper &);
+  SpectralConformalSurfaceMapper &operator =(const SpectralConformalSurfaceMapper &);
 
   /// Destructor
-  virtual ~LeastSquaresConformalSurfaceMapper();
+  virtual ~SpectralConformalSurfaceMapper();
 
   // ---------------------------------------------------------------------------
   // Constraints
@@ -251,93 +232,93 @@ protected:
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::NumberOfFreePoints() const
+inline int SpectralConformalSurfaceMapper::NumberOfFreePoints() const
 {
   return static_cast<int>(_FreePoints.size());
 }
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::NumberOfFixedPoints() const
+inline int SpectralConformalSurfaceMapper::NumberOfFixedPoints() const
 {
   return static_cast<int>(_FixedPoints.size());
 }
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::FreePointIndex(int ptId) const
+inline int SpectralConformalSurfaceMapper::FreePointIndex(int ptId) const
 {
   const int i = _PointIndex[ptId];
   return (i < 0 ? -1 : i);
 }
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::FreePointId(int i) const
+inline int SpectralConformalSurfaceMapper::FreePointId(int i) const
 {
   return _FreePoints[i];
 }
 
 // -----------------------------------------------------------------------------
-inline bool LeastSquaresConformalSurfaceMapper::IsFreePoint(int ptId) const
+inline bool SpectralConformalSurfaceMapper::IsFreePoint(int ptId) const
 {
   return FreePointIndex(ptId) != -1;
 }
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::FixedPointIndex(int ptId) const
+inline int SpectralConformalSurfaceMapper::FixedPointIndex(int ptId) const
 {
   const int i = _PointIndex[ptId];
   return (i < 0 ? (-i) - 1 : -1);
 }
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::FixedPointId(int i) const
+inline int SpectralConformalSurfaceMapper::FixedPointId(int i) const
 {
   return _FixedPoints[i];
 }
 
 // -----------------------------------------------------------------------------
-inline bool LeastSquaresConformalSurfaceMapper::IsFixedPoint(int ptId) const
+inline bool SpectralConformalSurfaceMapper::IsFixedPoint(int ptId) const
 {
   return FixedPointIndex(ptId) != -1;
 }
 
 // -----------------------------------------------------------------------------
-inline double LeastSquaresConformalSurfaceMapper::GetValue(int i, int j) const
+inline double SpectralConformalSurfaceMapper::GetValue(int i, int j) const
 {
   return _Values->GetComponent(static_cast<vtkIdType>(i), j);
 }
 
 // -----------------------------------------------------------------------------
-inline double LeastSquaresConformalSurfaceMapper::GetFreeValue(int i, int j) const
+inline double SpectralConformalSurfaceMapper::GetFreeValue(int i, int j) const
 {
   return GetValue(FreePointId(i), j);
 }
 
 // -----------------------------------------------------------------------------
-inline double LeastSquaresConformalSurfaceMapper::GetFixedValue(int i, int j) const
+inline double SpectralConformalSurfaceMapper::GetFixedValue(int i, int j) const
 {
   return GetValue(FixedPointId(i), j);
 }
 
 // -----------------------------------------------------------------------------
-inline void LeastSquaresConformalSurfaceMapper::SetValue(int i, double v)
+inline void SpectralConformalSurfaceMapper::SetValue(int i, double v)
 {
   _Values->SetComponent(static_cast<vtkIdType>(i), 0, v);
 }
 
 // -----------------------------------------------------------------------------
-inline void LeastSquaresConformalSurfaceMapper::SetValue(int i, int j, double v)
+inline void SpectralConformalSurfaceMapper::SetValue(int i, int j, double v)
 {
   _Values->SetComponent(static_cast<vtkIdType>(i), j, v);
 }
 
 // -----------------------------------------------------------------------------
-inline void LeastSquaresConformalSurfaceMapper::SetFreeValue(int i, double v)
+inline void SpectralConformalSurfaceMapper::SetFreeValue(int i, double v)
 {
   SetValue(FreePointId(i), v);
 }
 
 // -----------------------------------------------------------------------------
-inline void LeastSquaresConformalSurfaceMapper::SetFreeValue(int i, int j, double v)
+inline void SpectralConformalSurfaceMapper::SetFreeValue(int i, int j, double v)
 {
   SetValue(FreePointId(i), j, v);
 }
@@ -345,4 +326,4 @@ inline void LeastSquaresConformalSurfaceMapper::SetFreeValue(int i, int j, doubl
 
 } // namespace mirtk
 
-#endif // MIRTK_LeastSquaresConformalSurfaceMapper_H
+#endif // MIRTK_SpectralConformalSurfaceMapper_H

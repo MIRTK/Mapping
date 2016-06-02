@@ -46,7 +46,7 @@ BoundaryToPolygonMapper::BoundaryToPolygonMapper()
 // -----------------------------------------------------------------------------
 BoundaryToPolygonMapper::BoundaryToPolygonMapper(const BoundaryToPolygonMapper &other)
 :
-  BoundaryMapper(other)
+  BoundarySegmentMapper(other)
 {
   CopyAttributes(other);
 }
@@ -55,7 +55,7 @@ BoundaryToPolygonMapper::BoundaryToPolygonMapper(const BoundaryToPolygonMapper &
 BoundaryToPolygonMapper &BoundaryToPolygonMapper::operator =(const BoundaryToPolygonMapper &other)
 {
   if (this != &other) {
-    BoundaryMapper::operator =(other);
+    BoundarySegmentMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
@@ -67,14 +67,24 @@ BoundaryToPolygonMapper::~BoundaryToPolygonMapper()
 }
 
 // -----------------------------------------------------------------------------
+BoundaryMapper *BoundaryToPolygonMapper::NewCopy() const
+{
+  return new BoundaryToPolygonMapper(*this);
+}
+
+// =============================================================================
+// Execution
+// =============================================================================
+
+// -----------------------------------------------------------------------------
 void BoundaryToPolygonMapper::Initialize()
 {
   // Initialize base class
-  BoundaryMapper::Initialize();
+  BoundarySegmentMapper::Initialize();
 
   // Set default radius
   if (_Radius <= .0) {
-    _Radius = sqrt(Area(_Surface) / pi);
+    _Radius = sqrt(Area(_Boundary->Surface()) / pi);
   }
 }
 

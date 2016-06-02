@@ -137,7 +137,7 @@ void Mapping::CopyAttributes(const Mapping &other)
 // -----------------------------------------------------------------------------
 Mapping::Mapping()
 :
-  _OutsideValue(numeric_limits<double>::quiet_NaN())
+  _OutsideValue(mirtk::nan)
 {
 }
 

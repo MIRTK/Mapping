@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_LeastSquaresConformalSurfaceMapper_H
-#define MIRTK_LeastSquaresConformalSurfaceMapper_H
+#ifndef MIRTK_LinearFixedBoundarySurfaceMapper_H
+#define MIRTK_LinearFixedBoundarySurfaceMapper_H
 
-#include "mirtk/FreeBoundarySurfaceMapper.h"
+#include "mirtk/FixedBoundarySurfaceMapper.h"
 
 #include "mirtk/Array.h"
 
@@ -32,41 +32,28 @@ namespace mirtk {
 
 
 /**
- * Least squares conformal parameterization
+ * Base class of discrete piecewise linear fixed boundary surface mapping methods
  *
- * This filter implements the least squares conformal map (LSCM) proposed by
- * Levy (2002) and the identical discrete natural conformal parameterization
- * (DNCP) proposed by Meyer et al. (2002). It follows the formulation of in
- * Mullen et al. (2002), where the LSCM is defined as the minimizer of the
- * conformal energy \f$E_C(\vec{u}) = E_LSCM\vec{u} = E_D(\vec{u}) - A(\vec{u})\f$,
- * where \f$E_D(\vec{u})\f$ is the discrete Dirichlet energy and
- * \f$A(\vec{u})\f$ is the total area of the parameteric domain.
- * The geometric cotangent weights are used to discretize the Laplace operator
- * needed for the computation of the derivative of the Dirichlet energy.
+ * For a given choice of edge weights, a sparse system of linear equations is solved
+ * iteratively to obtain a surface parameterization (Marchandise et al., 2014).
+ * Many published surface parameterization/texture mapping methods can be seen 
+ * as spring and mass model, where the mesh vertices are the masses and the mesh
+ * edges are linear springs. The only difference between the different methods
+ * are the spring constants used, which result from a discretization/modeling
+ * of different map energies/properties.
  *
- * The LSCM requires at least two fixed points. When no point constraints are
- * given, a boundary point is selected automatically. A second fixed boundary
- * point is chosen to be as farthest away from the first fixed point as possible
- * based on geodesic distances on the input surface mesh.
+ * \todo Implement interactive boundary map update as proposed in
+ *       Desbrun et al. (2002). Intrinsic parameterizations of surface meshes.
  *
- * - Levy et al. (2002). Least squares conformal maps for automatic texture atlas
- *   generation. ACM Trans. Graphics, 21(3), 362–371.
- * - Desbrun, Meyer, and Alliez (2002). Intrinsic parameterizations of surface meshes.
- *   Computer Graphics Forum, 21(3), 209–218.
- * - Mullen et al. (2008). Spectral conformal parameterization.
- *   Eurographics Symposium on Geometry Processing, 27(5), 1487–1494.
- *
- * \todo Implement area weighting extension as described in Mullen et al. (2008)
- *       to account for irregular surface sampling.
+ * \todo Implement boundary map optimization as proposed in
+ *       Desbrun et al. (2002). Intrinsic parameterizations of surface meshes.
  */
-class LeastSquaresConformalSurfaceMapper : public FreeBoundarySurfaceMapper
+class LinearFixedBoundarySurfaceMapper : public FixedBoundarySurfaceMapper
 {
-  mirtkObjectMacro(LeastSquaresConformalSurfaceMapper);
+  mirtkAbstractMacro(LinearFixedBoundarySurfaceMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
-
-private:
 
   /// Maximum number of iterations
   ///
@@ -85,62 +72,41 @@ private:
   /// IDs of surface points with fixed map values
   mirtkAttributeMacro(Array<int>, FixedPoints);
 
-  /// Map values at fixed points
-  mirtkAttributeMacro(Matrix, FixedValues);
-
   /// Computed map values at surface points
   mirtkAttributeMacro(vtkSmartPointer<vtkDataArray>, Values);
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const LeastSquaresConformalSurfaceMapper &);
+  void CopyAttributes(const LinearFixedBoundarySurfaceMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
 
-public:
+protected:
 
   /// Default constructor
-  LeastSquaresConformalSurfaceMapper();
+  LinearFixedBoundarySurfaceMapper();
 
   /// Copy constructor
-  LeastSquaresConformalSurfaceMapper(const LeastSquaresConformalSurfaceMapper &);
+  LinearFixedBoundarySurfaceMapper(const LinearFixedBoundarySurfaceMapper &);
 
   /// Assignment operator
-  LeastSquaresConformalSurfaceMapper &operator =(const LeastSquaresConformalSurfaceMapper &);
+  LinearFixedBoundarySurfaceMapper &operator =(const LinearFixedBoundarySurfaceMapper &);
+
+public:
 
   /// Destructor
-  virtual ~LeastSquaresConformalSurfaceMapper();
-
-  // ---------------------------------------------------------------------------
-  // Constraints
-
-  /// Add hard point constraint
-  ///
-  /// \param[in] i Surface point index.
-  /// \param[in] u First  constraint value component.
-  /// \param[in] v Second constraint value component.
-  void AddFixedPoint(int i, double u, double v);
+  virtual ~LinearFixedBoundarySurfaceMapper();
 
   // ---------------------------------------------------------------------------
   // Execution
 
-protected:
-
-  /// Weight of undirected edge (i, j)
-  ///
-  /// \param[in] i First end point.
-  /// \param[in] j Second end point.
-  ///
-  /// \returns Weight of undirected edge (i, j).
-  virtual double Weight(int i, int j) const;
-
   /// Initialize filter after input and parameters are set
   virtual void Initialize();
 
-  /// Compute surface map
-  virtual void ComputeMap();
+  /// Compute map values at interior points
+  virtual void ComputeMap() = 0;
 
-  /// Finalize filter execution
+  /// Assemble output surface map
   virtual void Finalize();
 
   // ---------------------------------------------------------------------------
@@ -239,7 +205,6 @@ protected:
   /// \param[in] j Map component index.
   /// \param[in] v Map component value.
   void SetFreeValue(int i, int j, double v);
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -251,93 +216,93 @@ protected:
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::NumberOfFreePoints() const
+inline int LinearFixedBoundarySurfaceMapper::NumberOfFreePoints() const
 {
   return static_cast<int>(_FreePoints.size());
 }
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::NumberOfFixedPoints() const
+inline int LinearFixedBoundarySurfaceMapper::NumberOfFixedPoints() const
 {
   return static_cast<int>(_FixedPoints.size());
 }
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::FreePointIndex(int ptId) const
+inline int LinearFixedBoundarySurfaceMapper::FreePointIndex(int ptId) const
 {
   const int i = _PointIndex[ptId];
   return (i < 0 ? -1 : i);
 }
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::FreePointId(int i) const
+inline int LinearFixedBoundarySurfaceMapper::FreePointId(int i) const
 {
   return _FreePoints[i];
 }
 
 // -----------------------------------------------------------------------------
-inline bool LeastSquaresConformalSurfaceMapper::IsFreePoint(int ptId) const
+inline bool LinearFixedBoundarySurfaceMapper::IsFreePoint(int ptId) const
 {
   return FreePointIndex(ptId) != -1;
 }
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::FixedPointIndex(int ptId) const
+inline int LinearFixedBoundarySurfaceMapper::FixedPointIndex(int ptId) const
 {
   const int i = _PointIndex[ptId];
   return (i < 0 ? (-i) - 1 : -1);
 }
 
 // -----------------------------------------------------------------------------
-inline int LeastSquaresConformalSurfaceMapper::FixedPointId(int i) const
+inline int LinearFixedBoundarySurfaceMapper::FixedPointId(int i) const
 {
   return _FixedPoints[i];
 }
 
 // -----------------------------------------------------------------------------
-inline bool LeastSquaresConformalSurfaceMapper::IsFixedPoint(int ptId) const
+inline bool LinearFixedBoundarySurfaceMapper::IsFixedPoint(int ptId) const
 {
   return FixedPointIndex(ptId) != -1;
 }
 
 // -----------------------------------------------------------------------------
-inline double LeastSquaresConformalSurfaceMapper::GetValue(int i, int j) const
+inline double LinearFixedBoundarySurfaceMapper::GetValue(int i, int j) const
 {
   return _Values->GetComponent(static_cast<vtkIdType>(i), j);
 }
 
 // -----------------------------------------------------------------------------
-inline double LeastSquaresConformalSurfaceMapper::GetFreeValue(int i, int j) const
+inline double LinearFixedBoundarySurfaceMapper::GetFreeValue(int i, int j) const
 {
   return GetValue(FreePointId(i), j);
 }
 
 // -----------------------------------------------------------------------------
-inline double LeastSquaresConformalSurfaceMapper::GetFixedValue(int i, int j) const
+inline double LinearFixedBoundarySurfaceMapper::GetFixedValue(int i, int j) const
 {
   return GetValue(FixedPointId(i), j);
 }
 
 // -----------------------------------------------------------------------------
-inline void LeastSquaresConformalSurfaceMapper::SetValue(int i, double v)
+inline void LinearFixedBoundarySurfaceMapper::SetValue(int i, double v)
 {
   _Values->SetComponent(static_cast<vtkIdType>(i), 0, v);
 }
 
 // -----------------------------------------------------------------------------
-inline void LeastSquaresConformalSurfaceMapper::SetValue(int i, int j, double v)
+inline void LinearFixedBoundarySurfaceMapper::SetValue(int i, int j, double v)
 {
   _Values->SetComponent(static_cast<vtkIdType>(i), j, v);
 }
 
 // -----------------------------------------------------------------------------
-inline void LeastSquaresConformalSurfaceMapper::SetFreeValue(int i, double v)
+inline void LinearFixedBoundarySurfaceMapper::SetFreeValue(int i, double v)
 {
   SetValue(FreePointId(i), v);
 }
 
 // -----------------------------------------------------------------------------
-inline void LeastSquaresConformalSurfaceMapper::SetFreeValue(int i, int j, double v)
+inline void LinearFixedBoundarySurfaceMapper::SetFreeValue(int i, int j, double v)
 {
   SetValue(FreePointId(i), j, v);
 }
@@ -345,4 +310,4 @@ inline void LeastSquaresConformalSurfaceMapper::SetFreeValue(int i, int j, doubl
 
 } // namespace mirtk
 
-#endif // MIRTK_LeastSquaresConformalSurfaceMapper_H
+#endif // MIRTK_LinearFixedBoundarySurfaceMapper_H

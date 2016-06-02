@@ -20,7 +20,7 @@
 #ifndef MIRTK_MeanValueSurfaceMapper_H
 #define MIRTK_MeanValueSurfaceMapper_H
 
-#include "mirtk/NonSymmetricLinearSurfaceMapper.h"
+#include "mirtk/NonSymmetricWeightsSurfaceMapper.h"
 
 
 namespace mirtk {
@@ -31,7 +31,7 @@ namespace mirtk {
  *
  * - Floater (2003). Mean value coordinates. Computer Aided Geometric Design, 20(1):19–37.
  */
-class MeanValueSurfaceMapper : public NonSymmetricLinearSurfaceMapper
+class MeanValueSurfaceMapper : public NonSymmetricWeightsSurfaceMapper
 {
   mirtkObjectMacro(MeanValueSurfaceMapper);
 
@@ -62,9 +62,6 @@ public:
   // Execution
 
 protected:
-
-  /// Triangulate surface
-  virtual bool Remesh();
 
   /// Weight of directed edge (i, j)
   ///
