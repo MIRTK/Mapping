@@ -24,6 +24,4 @@ if (NOT COMMAND mirtk_configure_module)
   find_package(MIRTK REQUIRED COMPONENTS CMake)
 endif ()
 
-add_definitions(-DEIGEN_MPL2_ONLY)
-
 mirtk_configure_module()
