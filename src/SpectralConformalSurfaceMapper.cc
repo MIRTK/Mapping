@@ -65,7 +65,7 @@ void SpectralConformalSurfaceMapper
 // -----------------------------------------------------------------------------
 SpectralConformalSurfaceMapper::SpectralConformalSurfaceMapper()
 :
-  _NumberOfIterations(1),
+  _NumberOfIterations(-1),
   _Tolerance(-1.)
 {
 }
@@ -229,6 +229,8 @@ void SpectralConformalSurfaceMapper::Initialize()
 // -----------------------------------------------------------------------------
 void SpectralConformalSurfaceMapper::ComputeMap()
 {
+  const bool use_direct_solver = (_NumberOfIterations < 0 || _NumberOfIterations == 1);
+
   MIRTK_START_TIMING();
 
   typedef Eigen::VectorXd             Vector;
@@ -325,7 +327,7 @@ void SpectralConformalSurfaceMapper::ComputeMap()
   int    niter = 0;
   double error = nan;
 
-  if (_NumberOfIterations == 1) {
+  if (use_direct_solver) {
     Eigen::SparseLU<Matrix> solver;
     solver.analyzePattern(A);
     solver.factorize(A);
@@ -347,7 +349,7 @@ void SpectralConformalSurfaceMapper::ComputeMap()
 
   MIRTK_DEBUG_TIMING(1, "solving sparse linear system");
 
-  if (verbose && _NumberOfIterations > 1) {
+  if (verbose && !use_direct_solver) {
     cout << "  No. of iterations            = " << niter << "\n";
     cout << "  Estimated error              = " << error << "\n";
     cout.flush();

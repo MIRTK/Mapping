@@ -22,6 +22,8 @@
 #include "mirtk/EdgeTable.h"
 
 #include "Eigen/SparseCore"
+#include "Eigen/SparseLU"
+#include "Eigen/OrderingMethods"
 #include "Eigen/IterativeLinearSolvers"
 
 
@@ -79,6 +81,8 @@ SymmetricWeightsSurfaceMapper::~SymmetricWeightsSurfaceMapper()
 // -----------------------------------------------------------------------------
 void SymmetricWeightsSurfaceMapper::ComputeMap()
 {
+  const bool use_direct_solver = (_NumberOfIterations < 0 || _NumberOfIterations == 1);
+
   typedef Eigen::MatrixXd             Values;
   typedef Eigen::SparseMatrix<double> Matrix;
   typedef Eigen::Triplet<double>      NZEntry;
@@ -141,30 +145,27 @@ void SymmetricWeightsSurfaceMapper::ComputeMap()
   }
 
   Values x(n, m);
-  for (r = 0; r < n; ++r) {
-    i = FreePointId(r);
-    for (l = 0; l < m; ++l) {
-      x(r, l) = GetValue(i, l);
-    }
-  }
-
-  // TODO: Use sparse LU decomposition to solve system directly when build with
-  //       UMFPACK from SuiteSparse and _NumberOfIterations is 1 (recommended).
-
   int    niter = 0;
-  double error = .0;
+  double error = nan;
 
-  Eigen::ConjugateGradient<Matrix> solver(A);
-  if (_NumberOfIterations >  0) solver.setMaxIterations(_NumberOfIterations);
-  if (_Tolerance          > .0) solver.setTolerance(_Tolerance);
-  x = solver.solveWithGuess(b, x);
-  niter = solver.iterations();
-  error = solver.error();
-
-  if (verbose) {
-    cout << "  No. of iterations            = " << niter << "\n";
-    cout << "  Estimated error              = " << error << "\n";
-    cout.flush();
+  if (use_direct_solver) {
+    Eigen::SparseLU<Matrix> solver;
+    solver.analyzePattern(A);
+    solver.factorize(A);
+    x = solver.solve(b);
+  } else {
+    Eigen::ConjugateGradient<Matrix> solver(A);
+    if (_NumberOfIterations > 0 ) solver.setMaxIterations(_NumberOfIterations);
+    if (_Tolerance          > 0.) solver.setTolerance(_Tolerance);
+    for (r = 0; r < n; ++r) {
+      i = FreePointId(r);
+      for (l = 0; l < m; ++l) {
+        x(r, l) = GetValue(i, l);
+      }
+    }
+    x = solver.solveWithGuess(b, x);
+    niter = solver.iterations();
+    error = solver.error();
   }
 
   for (r = 0; r < n; ++r) {
@@ -172,6 +173,12 @@ void SymmetricWeightsSurfaceMapper::ComputeMap()
     for (l = 0; l < m; ++l) {
       SetValue(i, l, x(r, l));
     }
+  }
+
+  if (verbose && !use_direct_solver) {
+    cout << "  No. of iterations            = " << niter << "\n";
+    cout << "  Estimated error              = " << error << "\n";
+    cout.flush();
   }
 }
 

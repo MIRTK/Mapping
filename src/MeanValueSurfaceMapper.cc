@@ -73,35 +73,41 @@ MeanValueSurfaceMapper::~MeanValueSurfaceMapper()
 // =============================================================================
 
 // -----------------------------------------------------------------------------
+// The following uses the equality tan(alpha/2) = (1 - cos(alpha)) / sin(alpha)
+// to compute the required tangens weights using only inner and outer vector products
 double MeanValueSurfaceMapper::Weight(int i, int j) const
 {
-  double p1[3], p2[3], p3[3], e1[3], e2[3], l12, w = .0;
+  double a[3], b[3], c[3], ab[3], ac[3], n[3], d_ab, d_ac, n_norm, w;
 
-  vtkIdType npts, *pts;
-  vtkIdType ptId1 = static_cast<vtkIdType>(i);
-  vtkIdType ptId2 = static_cast<vtkIdType>(j);
-  vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-
-  _Surface->GetPoint(ptId1, p1);
-  _Surface->GetPoint(ptId2, p2);
-  vtkMath::Subtract(p2, p1, e1);
-  l12 = vtkMath::Normalize(e1);
-
-  _Surface->GetCellEdgeNeighbors(-1, ptId1, ptId2, cellIds);
-  for (vtkIdType cellIdx = 0; cellIdx < cellIds->GetNumberOfIds(); ++cellIdx) {
-    _Surface->GetCellPoints(cellIds->GetId(cellIdx), npts, pts);
-    if (npts != 3) {
-      cerr << this->NameOfType() << "::Weight: Surface mesh cells must be triangles" << endl;
-      exit(1);
-    }
-    while (pts[0] == ptId1 || pts[0] == ptId2) ++pts;
-    _Surface->GetPoint(pts[0], p3);
-    vtkMath::Subtract(p3, p1, e2);
-    vtkMath::Normalize(e2);
-    w += tan(.5 * acos(vtkMath::Dot(e1, e2))) / l12;
+  int k, l;
+  if (GetEdgeNeighborPoints(i, j, k, l) > 2 || k < 0) {
+    cerr << this->NameOfType() << "::Weight: Surface mesh must be triangulated!" << endl;
+    exit(1);
   }
 
-  return w;
+  _Surface->GetPoint(static_cast<vtkIdType>(i), a);
+  _Surface->GetPoint(static_cast<vtkIdType>(j), b);
+  vtkMath::Subtract(b, a, ab);
+  d_ab = vtkMath::Norm(ab);
+
+  _Surface->GetPoint(static_cast<vtkIdType>(k), c);
+  vtkMath::Subtract(c, a, ac);
+  vtkMath::Cross(ab, ac, n);
+  d_ac   = vtkMath::Norm(ac);
+  n_norm = vtkMath::Norm(n);
+
+  w = (d_ab * d_ac - vtkMath::Dot(ab, ac)) / n_norm;
+
+  if (l >= 0) {
+    _Surface->GetPoint(static_cast<vtkIdType>(l), c);
+    vtkMath::Subtract(c, a, ac);
+    vtkMath::Cross(ab, ac, n);
+    d_ac   = vtkMath::Norm(ac);
+    n_norm = vtkMath::Norm(n);
+    w += (d_ab * d_ac - vtkMath::Dot(ab, ac)) / n_norm;
+  }
+
+  return w / d_ab;
 }
 
 

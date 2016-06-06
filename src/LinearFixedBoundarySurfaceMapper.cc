@@ -58,7 +58,7 @@ void LinearFixedBoundarySurfaceMapper
 // -----------------------------------------------------------------------------
 LinearFixedBoundarySurfaceMapper::LinearFixedBoundarySurfaceMapper()
 :
-  _NumberOfIterations(0),
+  _NumberOfIterations(-1),
   _Tolerance(-1.0)
 {
 }
