@@ -23,28 +23,11 @@
 #include "mirtk/VtkMath.h"
 #include "mirtk/Matrix.h"
 #include "mirtk/Vector3D.h"
+#include "mirtk/Triangle.h"
 
 
 namespace mirtk {
 
-
-// =============================================================================
-// Auxiliaries
-// =============================================================================
-
-namespace ShapePreservingSurfaceMapperUtils {
-
-
-/// Compute area of 2D triangle
-/// \sa http://demonstrations.wolfram.com/Signed2DTriangleAreaFromTheCrossProductOfEdgeVectors/
-inline double Area(const double a[2], const double b[2], const double c[2])
-{
-  return .5 * (-a[1]*b[0] + a[0]*b[1] + a[1]*c[0] - b[1]*c[0] - a[0]*c[1] + b[0]*c[1]);
-}
-
-
-} // namespace ShapePreservingSurfaceMapperUtils
-using namespace ShapePreservingSurfaceMapperUtils;
 
 // =============================================================================
 // Construction/destruction
@@ -147,10 +130,10 @@ void ShapePreservingSurfaceMapper
       c3 = (c3 + 1) % d_i;
     }
     c2 = (c3 == 0 ? d_i : c3) - 1;
-    area  = Area(p.Col(c1), p.Col(c2), p.Col(c3));
-    area1 = Area(center,    p.Col(c2), p.Col(c3));
-    area2 = Area(p.Col(c1), center,    p.Col(c3));
-    area3 = Area(p.Col(c1), p.Col(c2), center);
+    area  = Triangle::Area2D(p.Col(c1), p.Col(c2), p.Col(c3));
+    area1 = Triangle::Area2D(center,    p.Col(c2), p.Col(c3));
+    area2 = Triangle::Area2D(p.Col(c1), center,    p.Col(c3));
+    area3 = Triangle::Area2D(p.Col(c1), p.Col(c2), center);
     w_i[c1] += area1 / area;
     w_i[c2] += area2 / area;
     w_i[c3] += area3 / area;
