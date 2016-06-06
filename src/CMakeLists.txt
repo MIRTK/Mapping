@@ -55,9 +55,9 @@ set(CLASSES
           HarmonicSurfaceMapper
           AuthalicSurfaceMapper
           IntrinsicSurfaceMapper
-          NearOptimalSurfaceMapper
-            NearLeastEdgeDistortionSurfaceMapper
-            NearLeastAreaDistortionSurfaceMapper
+            NearOptimalIntrinsicSurfaceMapper
+              IntrinsicLeastAreaDistortionSurfaceMapper
+              IntrinsicLeastEdgeLengthDistortionSurfaceMapper
         NonSymmetricWeightsSurfaceMapper
           ShapePreservingSurfaceMapper
           MeanValueSurfaceMapper

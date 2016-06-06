@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-#ifndef MIRTK_NearLeastEdgeDistortionSurfaceMapper_H
-#define MIRTK_NearLeastEdgeDistortionSurfaceMapper_H
+#ifndef MIRTK_IntrinsicLeastEdgeLengthDistortionSurfaceMapper_H
+#define MIRTK_IntrinsicLeastEdgeLengthDistortionSurfaceMapper_H
 
-#include "mirtk/NearOptimalSurfaceMapper.h"
+#include "mirtk/NearOptimalIntrinsicSurfaceMapper.h"
 
 
 namespace mirtk {
@@ -32,15 +32,15 @@ namespace mirtk {
  * - Desbrun, Meyer, and Alliez (2002). Intrinsic parameterizations of surface meshes.
  *   Computer Graphics Forum, 21(3), 209–218.
  */
-class NearLeastEdgeDistortionSurfaceMapper : public NearOptimalSurfaceMapper
+class IntrinsicLeastEdgeLengthDistortionSurfaceMapper : public NearOptimalIntrinsicSurfaceMapper
 {
-  mirtkObjectMacro(NearLeastEdgeDistortionSurfaceMapper);
+  mirtkObjectMacro(IntrinsicLeastEdgeLengthDistortionSurfaceMapper);
 
   // ---------------------------------------------------------------------------
   // Attributes
 
   /// Copy attributes of this class from another instance
-  void CopyAttributes(const NearLeastEdgeDistortionSurfaceMapper &);
+  void CopyAttributes(const IntrinsicLeastEdgeLengthDistortionSurfaceMapper &);
 
   // ---------------------------------------------------------------------------
   // Construction/Destruction
@@ -48,16 +48,20 @@ class NearLeastEdgeDistortionSurfaceMapper : public NearOptimalSurfaceMapper
 public:
 
   /// Default constructor
-  NearLeastEdgeDistortionSurfaceMapper();
+  IntrinsicLeastEdgeLengthDistortionSurfaceMapper();
 
   /// Copy constructor
-  NearLeastEdgeDistortionSurfaceMapper(const NearLeastEdgeDistortionSurfaceMapper &);
+  IntrinsicLeastEdgeLengthDistortionSurfaceMapper(
+    const IntrinsicLeastEdgeLengthDistortionSurfaceMapper &
+  );
 
   /// Assignment operator
-  NearLeastEdgeDistortionSurfaceMapper &operator =(const NearLeastEdgeDistortionSurfaceMapper &);
+  IntrinsicLeastEdgeLengthDistortionSurfaceMapper &operator =(
+    const IntrinsicLeastEdgeLengthDistortionSurfaceMapper &
+  );
 
   /// Destructor
-  virtual ~NearLeastEdgeDistortionSurfaceMapper();
+  virtual ~IntrinsicLeastEdgeLengthDistortionSurfaceMapper();
 
   // ---------------------------------------------------------------------------
   // Execution
@@ -66,16 +70,16 @@ protected:
 
   /// Compute affine combination weight that minimizes a given distortion measure
   ///
-  /// \param[in] u Discrete conformal surface map values.
-  /// \param[in] v Discrete authalic  surface map values.
+  /// \param[in] u0 Discrete authalic  surface map values, i.e., lambda=0.
+  /// \param[in] u1 Discrete conformal surface map values, i.e., lambda=1.
   ///
   /// \returns Affine combination weight \f$\lambda\f$, where final surface map values
-  ///          are computed as \f$\lambda u + (1 - \lambda) * v\f$.
-  virtual double ComputeLambda(vtkDataArray *u, vtkDataArray *v) const;
+  ///          are computed as \f$\lambda u1 + (1 - \lambda) * u0\f$.
+  virtual double ComputeLambda(vtkDataArray *u0, vtkDataArray *u1) const;
 
 };
 
 
 } // namespace mirtk
 
-#endif // MIRTK_NearLeastEdgeDistortionSurfaceMapper_H
+#endif // MIRTK_IntrinsicLeastEdgeLengthDistortionSurfaceMapper_H
