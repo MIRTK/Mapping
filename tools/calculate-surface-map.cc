@@ -29,6 +29,8 @@
 #include "mirtk/ShapePreservingSurfaceMapper.h"           // Floater (1997)
 #include "mirtk/AuthalicSurfaceMapper.h"                  // Meyer et al. (2002)
 #include "mirtk/IntrinsicSurfaceMapper.h"                 // Meyer et al. (2002)
+#include "mirtk/IntrinsicLeastAreaDistortionSurfaceMapper.h"   // Meyer et al. (2002)
+#include "mirtk/IntrinsicLeastEdgeLengthDistortionSurfaceMapper.h"   // Meyer et al. (2002)
 #include "mirtk/MeanValueSurfaceMapper.h"                 // Floater (2003)
 #include "mirtk/ConformalSurfaceFlattening.h"             // Angenent (1999), Haker (2000)
 #include "mirtk/LeastSquaresConformalSurfaceMapper.h"     // Levy (2002), Desbrun et al. (2002)
@@ -77,7 +79,7 @@ void PrintHelp(const char* name)
   cout << "                        approximate harmonic surface map using a spring network. (default: 0)\n";
   cout << "  -name <string>        Name of point data array used as fixed point map.  (default: tcoords)\n";
   cout << "  -mask <string>        Name of point data array used as fixed point mask. (default: boundary)\n";
-  cout << "  -max-iterations <n>   Maximum no. of linear solver iterations. (default: size of problem)\n";
+  cout << "  -max-iterations <n>   Maximum no. of linear solver iterations. (default: 1 or size of problem)\n";
   PrintCommonOptions(cout);
   cout << "\n";
 }
@@ -90,23 +92,27 @@ void PrintHelp(const char* name)
 /// Enumeration of implemented surface mapping methods
 enum SurfaceMappingMethod
 {
-  MAP_Uniform,               ///< Uniform edge weights, Tutte's planar graph mapping
-  MAP_ChordLength,           ///< Edge weights inverse proportional to edge length
-  MAP_ShapePreserving,       ///< Floater's shape-preserving weights
-  MAP_MeanValue,             ///< Floater's mean value convex map
-  MAP_Harmonic,              ///< Pinker and Polthier's cotangent weights
-                             ///< also known as discrete conformal parameterization (DCP)
-  MAP_PHarmonic,             ///< Joshi's p-harmonic map
-  MAP_Authalic,              ///< Desbrun and Meyer's area preserving weights
-                             ///< referred to as discrete authalic parameterization (DAP)
-  MAP_Intrinsic,             ///< Meyer's intrinsic parameterization based on
-                             ///< generalized Barycentric coordinates
-  MAP_LeastSquaresConformal, ///< Levy's least squares conformal map (LSCM) which
-                             ///< is identical to Meyer's discrete natural conformal
-                             ///< parameterization (DNCP)
-  MAP_ConformalFlattening,   ///< Angenent and Haker's conformal map to the sphere
-  MAP_Spectral,              ///< Spectral surface map w/o boundary constraints
-  MAP_Spherical              ///< Spherical surface map w/o boundary constraints
+  MAP_Uniform,                      ///< Uniform edge weights, Tutte's planar graph mapping
+  MAP_ChordLength,                  ///< Edge weights inverse proportional to edge length
+  MAP_ShapePreserving,              ///< Floater's shape-preserving weights
+  MAP_MeanValue,                    ///< Floater's mean value convex map
+  MAP_Harmonic,                     ///< Pinker and Polthier's cotangent weights
+                                    ///< also known as discrete conformal parameterization (DCP)
+  MAP_PHarmonic,                    ///< Joshi's p-harmonic map
+  MAP_Authalic,                     ///< Desbrun and Meyer's area preserving weights
+                                    ///< referred to as discrete authalic parameterization (DAP)
+  MAP_Intrinsic,                    ///< Meyer's intrinsic parameterization based on
+                                    ///< generalized Barycentric coordinates
+  MAP_IntrinsicLeastAreaDistortion, ///< Meyer's intrinsic parameterization with
+                                    ///< non-linear minimization of area distortion
+  MAP_IntrinsicLeastEdgeDistortion, ///< Meyer's intrinsic parameterization with
+                                    ///< non-linear minimization of edge length distortion
+  MAP_LeastSquaresConformal,        ///< Levy's least squares conformal map (LSCM) which
+                                    ///< is identical to Meyer's discrete natural conformal
+                                    ///< parameterization (DNCP)
+  MAP_ConformalFlattening,          ///< Angenent and Haker's conformal map to the sphere
+  MAP_Spectral,                     ///< Spectral surface map w/o boundary constraints
+  MAP_Spherical                     ///< Spherical surface map w/o boundary constraints
 };
 
 // =============================================================================
@@ -124,10 +130,10 @@ int main(int argc, char *argv[])
 
   SurfaceMappingMethod method = MAP_MeanValue;
 
-  int    niters                = 0;   // Number of iterations
-  int    p_harmonic_exponent   = 2;   // Exponent of p-harmonic energy
-  int    chord_length_exponent = 1;   // Weighted least squares exponent
-  double intrinsic_lambda      = .5;  // Conformal vs. authalic energy weight
+  int    niters                = -1; // Number of iterations
+  int    p_harmonic_exponent   = 2;  // Exponent of p-harmonic energy
+  int    chord_length_exponent = 1;  // Weighted least squares exponent
+  double intrinsic_lambda      = .5; // Conformal vs. authalic energy weight
 
   for (ALL_OPTIONS) {
     // Fixed boundary map
@@ -141,10 +147,10 @@ int main(int argc, char *argv[])
       if (HAS_ARGUMENT) PARSE_ARGUMENT(chord_length_exponent);
       else chord_length_exponent = 1;
     }
-    else if (OPTION("-shape-preserving")) {
+    else if (OPTION("-shape-preserving") || OPTION("-average-barycenter")) {
       method = MAP_ShapePreserving;
     }
-    else if (OPTION("-mean-value")) {
+    else if (OPTION("-mean-value") || OPTION("-mean-value-coordinates") || OPTION("-mvc")) {
       method = MAP_MeanValue;
     }
     else if (OPTION("-harmonic")) {
@@ -162,6 +168,16 @@ int main(int argc, char *argv[])
       method = MAP_Intrinsic;
       if (HAS_ARGUMENT) PARSE_ARGUMENT(intrinsic_lambda);
       else intrinsic_lambda = .5;
+    }
+    else if (OPTION("-intrinsic-least-area-distortion") ||
+             OPTION("-intrinsic-min-area-distortion")) {
+      method = MAP_IntrinsicLeastAreaDistortion;
+    }
+    else if (OPTION("-intrinsic-least-edge-length-distortion") ||
+             OPTION("-intrinsic-min-edge-distortion") ||
+             OPTION("-intrinsic-least-edge-distortion") ||
+             OPTION("-intrinsic-min-edge-distortion")) {
+      method = MAP_IntrinsicLeastEdgeDistortion;
     }
     else if (OPTION("-conformal-flattening")) {
       method = MAP_ConformalFlattening;
@@ -278,6 +294,30 @@ int main(int argc, char *argv[])
         cout << "\n  Authalic  energy weight      = " << 1. - mapper.Lambda();
         cout.flush();
       }
+      mapper.NumberOfIterations(niters);
+      mapper.Surface(surface);
+      mapper.Input(boundary_map);
+      mapper.Run();
+      surface_map = mapper.Output();
+      if (verbose) cout << msg, cout.flush();
+    } break;
+
+    case MAP_IntrinsicLeastAreaDistortion: {
+      const char *msg = "Computing intrinsic surface map with least area distortion...";
+      if (verbose) cout << msg, cout.flush();
+      IntrinsicLeastAreaDistortionSurfaceMapper mapper;
+      mapper.NumberOfIterations(niters);
+      mapper.Surface(surface);
+      mapper.Input(boundary_map);
+      mapper.Run();
+      surface_map = mapper.Output();
+      if (verbose) cout << msg, cout.flush();
+    } break;
+
+    case MAP_IntrinsicLeastEdgeDistortion: {
+      const char *msg = "Computing intrinsic surface map with least edge length distortion...";
+      if (verbose) cout << msg, cout.flush();
+      IntrinsicLeastEdgeLengthDistortionSurfaceMapper mapper;
       mapper.NumberOfIterations(niters);
       mapper.Surface(surface);
       mapper.Input(boundary_map);

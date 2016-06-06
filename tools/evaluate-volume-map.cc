@@ -20,6 +20,7 @@
 #include "mirtk/Common.h"
 #include "mirtk/Options.h"
 
+#include "mirtk/Triangle.h"
 #include "mirtk/PointSetIO.h"
 #include "mirtk/PointSetUtils.h"
 #include "mirtk/GenericImage.h"
@@ -87,6 +88,43 @@ vtkSmartPointer<vtkPointSet> ReadMesh(const char *fname)
     if (verbose) cout << " done" << endl;
   }
   return pointset;
+}
+
+// -----------------------------------------------------------------------------
+/// Count number of triangles with normal direction inconsistent with majority
+///
+/// \param[in] map Piecewise linear map from surface in 3D to 2D.
+///
+/// \returns Number of flipped triangles.
+int NumberOfFlippedTriangles(const PiecewiseLinearMap *map)
+{
+  vtkDataArray * const values  = map->Values();
+  vtkPolyData  * const surface = vtkPolyData::SafeDownCast(map->Domain());
+  if (surface == nullptr || values->GetNumberOfComponents() != 2) return 0;
+
+  vtkIdType npts, *pts;
+  double    a[2], b[2], c[2];
+  double    area;
+
+  int n_negative = 0;
+  int n_positive = 0;
+
+  for (vtkIdType cellId = 0; cellId < surface->GetNumberOfCells(); ++cellId) {
+    surface->GetCellPoints(cellId, npts, pts);
+    if (npts == 3) {
+      values->GetTuple(pts[0], a);
+      values->GetTuple(pts[1], b);
+      values->GetTuple(pts[2], c);
+      area = Triangle::DoubleSignedArea2D(a, b, c);
+      if (area < 0.) {
+        ++n_negative;
+      } else if (area > 0.) {
+        ++n_positive;
+      }
+    }
+  }
+
+  return min(n_positive, n_negative);
 }
 
 // -----------------------------------------------------------------------------
