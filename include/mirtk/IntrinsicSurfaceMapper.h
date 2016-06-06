@@ -20,7 +20,7 @@
 #ifndef MIRTK_IntrinsicSurfaceMapper_H
 #define MIRTK_IntrinsicSurfaceMapper_H
 
-#include "mirtk/SymmetricWeightsSurfaceMapper.h"
+#include "mirtk/NonSymmetricWeightsSurfaceMapper.h"
 
 
 namespace mirtk {
@@ -53,7 +53,7 @@ namespace mirtk {
  * - Wardetzky et al. (2007). Discrete quadratic curvature energies.
  *   Computer Aided Geometric Design, 24(8–9), 499–518.
  */
-class IntrinsicSurfaceMapper : public SymmetricWeightsSurfaceMapper
+class IntrinsicSurfaceMapper : public NonSymmetricWeightsSurfaceMapper
 {
   mirtkObjectMacro(IntrinsicSurfaceMapper);
 

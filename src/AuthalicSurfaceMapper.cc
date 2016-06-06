@@ -21,8 +21,6 @@
 
 #include "mirtk/Triangle.h"
 
-#include "vtkIdList.h"
-
 
 namespace mirtk {
 
@@ -44,7 +42,7 @@ AuthalicSurfaceMapper::AuthalicSurfaceMapper()
 // -----------------------------------------------------------------------------
 AuthalicSurfaceMapper::AuthalicSurfaceMapper(const AuthalicSurfaceMapper &other)
 :
-  SymmetricWeightsSurfaceMapper(other)
+  NonSymmetricWeightsSurfaceMapper(other)
 {
   CopyAttributes(other);
 }
@@ -53,7 +51,7 @@ AuthalicSurfaceMapper::AuthalicSurfaceMapper(const AuthalicSurfaceMapper &other)
 AuthalicSurfaceMapper &AuthalicSurfaceMapper::operator =(const AuthalicSurfaceMapper &other)
 {
   if (this != &other) {
-    SymmetricWeightsSurfaceMapper::operator =(other);
+    NonSymmetricWeightsSurfaceMapper::operator =(other);
     CopyAttributes(other);
   }
   return *this;
@@ -71,26 +69,24 @@ AuthalicSurfaceMapper::~AuthalicSurfaceMapper()
 // -----------------------------------------------------------------------------
 double AuthalicSurfaceMapper::Weight(int i, int j) const
 {
-  double p1[3], p2[3], p3[3], w = 0.;
+  double a[3], b[3], c[3], w;
 
-  vtkIdType npts, *pts;
-  vtkIdType ptId1 = static_cast<vtkIdType>(i);
-  vtkIdType ptId2 = static_cast<vtkIdType>(j);
-
-  _Surface->GetPoint(ptId1, p1);
-  _Surface->GetPoint(ptId2, p2);
-
-  vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
-  _Surface->GetCellEdgeNeighbors(-1, ptId1, ptId2, cellIds);
-
-  for (vtkIdType cellIdx = 0; cellIdx < cellIds->GetNumberOfIds(); ++cellIdx) {
-    _Surface->GetCellPoints(cellIds->GetId(cellIdx), npts, pts);
-    while (pts[0] == ptId1 || pts[0] == ptId2) ++pts;
-    _Surface->GetPoint(pts[0], p3);
-    w += Triangle::Cotangent(p1, p2, p3);
+  int k, l;
+  if (GetEdgeNeighborPoints(i, j, k, l) > 2 || k < 0) {
+    cerr << this->NameOfType() << "::Weight: Surface mesh must be triangulated!" << endl;
+    exit(1);
   }
 
-  return w;
+  _Surface->GetPoint(static_cast<vtkIdType>(i), a);
+  _Surface->GetPoint(static_cast<vtkIdType>(j), b);
+  _Surface->GetPoint(static_cast<vtkIdType>(k), c);
+  w = Triangle::Cotangent(a, b, c);
+  if (l >= 0) {
+    _Surface->GetPoint(static_cast<vtkIdType>(l), c);
+    w += Triangle::Cotangent(a, b, c);
+  }
+
+  return w / vtkMath::Distance2BetweenPoints(a, b);
 }
 
 

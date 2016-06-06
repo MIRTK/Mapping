@@ -73,11 +73,10 @@ HarmonicSurfaceMapper::~HarmonicSurfaceMapper()
 // -----------------------------------------------------------------------------
 double HarmonicSurfaceMapper::Weight(int i, int j) const
 {
-  int    k, l;
   double a[3], b[3], c[3], w;
 
-  const int n = GetEdgeNeighborPoints(i, j, k, l);
-  if (n == 0 || n > 2) {
+  int k, l;
+  if (GetEdgeNeighborPoints(i, j, k, l) > 2 || k < 0) {
     cerr << this->NameOfType() << "::Weight: Surface mesh must be triangulated!" << endl;
     exit(1);
   }
@@ -89,7 +88,7 @@ double HarmonicSurfaceMapper::Weight(int i, int j) const
   _Surface->GetPoint(static_cast<vtkIdType>(k), b);
   _Surface->GetPoint(static_cast<vtkIdType>(j), c);
   w = Triangle::Cotangent(a, b, c);
-  if (n == 2) {
+  if (l >= 0) {
     _Surface->GetPoint(static_cast<vtkIdType>(l), b);
     w += Triangle::Cotangent(a, b, c);
   }

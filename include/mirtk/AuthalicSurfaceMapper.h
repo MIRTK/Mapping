@@ -20,7 +20,7 @@
 #ifndef MIRTK_AuthalicSurfaceMapper_H
 #define MIRTK_AuthalicSurfaceMapper_H
 
-#include "mirtk/SymmetricWeightsSurfaceMapper.h"
+#include "mirtk/NonSymmetricWeightsSurfaceMapper.h"
 
 
 namespace mirtk {
@@ -39,7 +39,7 @@ namespace mirtk {
  * - Meyer et al. (2002). Generalized Barycentric Coordinates on Irregular Polygons.
  *   Journal of Graphics Tools, 7(1), 13–22.
  */
-class AuthalicSurfaceMapper : public SymmetricWeightsSurfaceMapper
+class AuthalicSurfaceMapper : public NonSymmetricWeightsSurfaceMapper
 {
   mirtkObjectMacro(AuthalicSurfaceMapper);
 
@@ -84,4 +84,4 @@ protected:
 
 } // namespace mirtk
 
-#endif // MIRTK_DiscreteAuthalicSurfaceMapper_H
+#endif // MIRTK_AuthalicSurfaceMapper_H
