@@ -57,6 +57,7 @@ basis_project (
   # dependencies
   DEPENDS
     MIRTK{Common,Numerics,Image,PointSet,IO}
+    Boost-1.48 # {math_c99} used, but headers only
     Eigen3
     "VTK-7|6{
       vtkCommonCore,
