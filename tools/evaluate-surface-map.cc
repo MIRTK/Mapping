@@ -139,16 +139,14 @@ ComputeSignedAreaOfMappedPlanarTriangles(const PiecewiseLinearMap *map)
   double    a[2], b[2], c[2], A;
 
   for (vtkIdType cellId = 0; cellId < surface->GetNumberOfCells(); ++cellId) {
-    if (surface->GetCellPoints(cellId, npts, pts) == VTK_TRIANGLE) {
-      values->GetTuple(pts[0], a);
-      values->GetTuple(pts[1], b);
-      values->GetTuple(pts[2], c);
-      A = Triangle::SignedArea2D(a, b, c);
-      if (abs(A) < 1e-9) A = 0.;
-      area->SetComponent(cellId, 0, A);
-    } else {
-      FatalError("Surface mesh must have triangular faces!");
-    }
+    surface->GetCellPoints(cellId, npts, pts);
+    if (npts != 3) FatalError("Surface mesh must have triangular faces!");
+    values->GetTuple(pts[0], a);
+    values->GetTuple(pts[1], b);
+    values->GetTuple(pts[2], c);
+    A = Triangle::SignedArea2D(a, b, c);
+    if (abs(A) < 1e-9) A = 0.;
+    area->SetComponent(cellId, 0, A);
   }
 
   return area;
@@ -353,18 +351,16 @@ double TriangleAreaDistortion(const PiecewiseLinearMap *map,
     Vector A1(surface->GetNumberOfCells());
     Vector A2(surface->GetNumberOfCells());
     for (vtkIdType cellId = 0; cellId < surface->GetNumberOfCells(); ++cellId) {
-      if (surface->GetCellPoints(cellId, npts, pts) == VTK_TRIANGLE) {
-        surface->GetPoint(pts[0], p1);
-        surface->GetPoint(pts[1], p2);
-        surface->GetPoint(pts[2], p3);
-        u_value->GetTuple(pts[0], u1);
-        u_value->GetTuple(pts[1], u2);
-        u_value->GetTuple(pts[2], u3);
-        A1(static_cast<int>(cellId)) = Triangle::DoubleArea(p1, p2, p3) + eps;
-        A2(static_cast<int>(cellId)) = Triangle::DoubleArea(u1, u2, u3) + eps;
-      } else {
-        FatalError("Map domain must be triangulated!");
-      }
+      surface->GetCellPoints(cellId, npts, pts);
+      if (npts != 3) FatalError("Map domain must be triangulated!");
+      surface->GetPoint(pts[0], p1);
+      surface->GetPoint(pts[1], p2);
+      surface->GetPoint(pts[2], p3);
+      u_value->GetTuple(pts[0], u1);
+      u_value->GetTuple(pts[1], u2);
+      u_value->GetTuple(pts[2], u3);
+      A1(static_cast<int>(cellId)) = Triangle::DoubleArea(p1, p2, p3) + eps;
+      A2(static_cast<int>(cellId)) = Triangle::DoubleArea(u1, u2, u3) + eps;
     }
 
     const double norm = A1.Sum() / A2.Sum();
