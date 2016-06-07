@@ -22,9 +22,9 @@
 #include "mirtk/VtkMath.h"
 #include "mirtk/Triangle.h"
 #include "mirtk/EdgeTable.h"
-#include "mirtk/PointSetUtils.h"
-#include "mirtk/PolyDataCurvature.h"
+#include "mirtk/SurfaceCurvature.h"
 #include "mirtk/PiecewiseLinearMap.h"
+#include "mirtk/PointSetUtils.h"
 
 #include "vtkIdList.h"
 #include "vtkPointData.h"
@@ -120,7 +120,7 @@ void ConformalSurfaceFlattening::Initialize()
 
   // Select cell with lowest average curvature as cell containing the polar point
   if (_PolarCellId < 0) {
-    PolyDataCurvature filter(PolyDataCurvature::Mean);
+    SurfaceCurvature filter(SurfaceCurvature::Mean);
     filter.Input(_Surface);
     filter.Run();
     vtkDataArray *curvature = filter.GetMeanCurvature();

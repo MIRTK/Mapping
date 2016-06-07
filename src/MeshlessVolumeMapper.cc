@@ -19,17 +19,15 @@
 
 #include "mirtk/MeshlessVolumeMapper.h"
 
-#include "mirtk/Eigen.h"
-#include "mirtk/Vtk.h"
+#include "mirtk/CommonExport.h"
 
 #include "mirtk/Math.h"
 #include "mirtk/Assert.h"
 #include "mirtk/Parallel.h"
-#include "mirtk/PolyDataSmoothing.h"
+#include "mirtk/MeshSmoothing.h"
 #include "mirtk/PointSetIO.h"
 
-#include "mirtk/CommonExport.h"
-
+#include "mirtk/Vtk.h"
 #include "vtkPointData.h"
 #include "vtkCellData.h"
 #include "vtkImplicitModeller.h"
@@ -41,6 +39,7 @@
 #include "vtkCellLocator.h"
 #include "vtkGenericCell.h"
 
+#include "mirtk/Eigen.h"
 #include "Eigen/LU"
 #include "Eigen/SVD"
 
@@ -412,10 +411,10 @@ void MeshlessVolumeMapper::PlaceSourcePoints()
   subdiv->Update();
 
   // Smooth offset surface to reduce sampling artifacts
-  PolyDataSmoothing smoother;
+  MeshSmoothing smoother;
   smoother.Input(outside->GetOutput());
   smoother.NumberOfIterations(5);
-  smoother.Weighting(PolyDataSmoothing::Gaussian);
+  smoother.Weighting(MeshSmoothing::Gaussian);
   smoother.SmoothPoints(true);
   smoother.AdjacentValuesOnlyOn();
   smoother.Run();
