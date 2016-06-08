@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
       method = MAP_IntrinsicLeastAreaDistortion;
     }
     else if (OPTION("-intrinsic-least-edge-length-distortion") ||
-             OPTION("-intrinsic-min-edge-distortion") ||
+             OPTION("-intrinsic-min-edge-length-distortion") ||
              OPTION("-intrinsic-least-edge-distortion") ||
              OPTION("-intrinsic-min-edge-distortion")) {
       method = MAP_IntrinsicLeastEdgeDistortion;
