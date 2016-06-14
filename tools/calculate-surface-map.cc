@@ -134,10 +134,18 @@ int main(int argc, char *argv[])
   int    p_harmonic_exponent   = 2;  // Exponent of p-harmonic energy
   int    chord_length_exponent = 1;  // Weighted least squares exponent
   double intrinsic_lambda      = .5; // Conformal vs. authalic energy weight
+  Array<int> selection;              // Selected (boundary) points
 
   for (ALL_OPTIONS) {
     // Fixed boundary map
     if (OPTION("-boundary-map")) boundary_map_name = ARGUMENT;
+    else if (OPTION("-select")) {
+      int i;
+      do {
+        PARSE_ARGUMENT(i);
+        selection.push_back(i);
+      } while (HAS_ARGUMENT);
+    }
     // Surface mapping method
     else if (OPTION("-uniform")) {
       method = MAP_Uniform;
@@ -349,6 +357,12 @@ int main(int argc, char *argv[])
       LeastSquaresConformalSurfaceMapper mapper;
       mapper.NumberOfIterations(niters);
       mapper.Surface(surface);
+      if (selection.size() > 0) {
+        mapper.AddFixedPoint(selection[0], 0., 0.);
+        if (selection.size() > 1) {
+          mapper.AddFixedPoint(selection[1], 1., 0.);
+        }
+      }
       mapper.Run();
       surface_map = mapper.Output();
       if (verbose) cout << msg, cout.flush();
