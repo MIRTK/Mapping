@@ -216,7 +216,7 @@ void MeshlessVolumeMapper::UpdateBoundary(vtkPolyData *boundary)
 {
   // Initialize new boundary map
   vtkSmartPointer<vtkDataArray> boundary_map;
-  boundary_map = vtkSmartPointer<vtkDataArray>::NewInstance(_BoundaryMap);
+  boundary_map.TakeReference(_BoundaryMap->NewInstance());
   boundary_map->SetName(_BoundaryMap->GetName());
   boundary_map->SetNumberOfComponents(_BoundaryMap->GetNumberOfComponents());
   boundary_map->SetNumberOfTuples(boundary->GetNumberOfPoints());
@@ -271,7 +271,7 @@ void MeshlessVolumeMapper::PlaceBoundaryPoints()
 
   // Discard all data arrays
   vtkSmartPointer<vtkPolyData> boundary;
-  boundary = vtkSmartPointer<vtkPolyData>::NewInstance(_Boundary);
+  boundary.TakeReference(_Boundary->NewInstance());
   boundary->ShallowCopy(_Boundary);
   boundary->GetPointData()->Initialize();
   boundary->GetCellData ()->Initialize();
@@ -479,7 +479,7 @@ void MeshlessVolumeMapper::PartitionSourcePoints()
 // -----------------------------------------------------------------------------
 void MeshlessVolumeMapper::InitializeResidualMap()
 {
-  _ResidualMap = vtkSmartPointer<vtkDataArray>::NewInstance(_BoundaryMap);
+  _ResidualMap.TakeReference(_BoundaryMap->NewInstance());
   _ResidualMap->DeepCopy(_BoundaryMap);
   _ResidualMap->SetName("ResidualMap");
   _Boundary->GetPointData()->AddArray(_ResidualMap);

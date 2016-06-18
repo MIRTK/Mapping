@@ -300,7 +300,8 @@ void StereographicProjection(PiecewiseLinearMap &map, const ParameterList &param
   }
   // Project sphere to plane from either the north or south pole
   const double zpole = (pole == NorthPole ? r : -r);;
-  vtkSmartPointer<vtkDataArray> g = f->NewInstance();
+  vtkSmartPointer<vtkDataArray> g;
+  g.TakeReference(f->NewInstance());
   g->SetNumberOfComponents(fequal(c[2] + z, .0, 1e-6) ? 2 : 3);
   g->SetNumberOfTuples(f->GetNumberOfTuples());
   for (vtkIdType ptId = 0; ptId < f->GetNumberOfTuples(); ++ptId) {
@@ -354,7 +355,8 @@ void InverseStereographicProjection(PiecewiseLinearMap &map, const ParameterList
   }
   // Compose input map with inverse of stereographic projection
   const double z = (pole == NorthPole ? -r : r);
-  vtkSmartPointer<vtkDataArray> g = f->NewInstance();
+  vtkSmartPointer<vtkDataArray> g;
+  g.TakeReference(f->NewInstance());
   g->SetName(f->GetName());
   g->SetNumberOfComponents(3);
   g->SetNumberOfTuples(f->GetNumberOfTuples());
@@ -379,7 +381,8 @@ void Compose(PiecewiseLinearMap &map, const char *input_name)
 {
   UniquePtr<Mapping> other(Mapping::New(input_name));
   vtkDataArray *f = map.Values();
-  vtkSmartPointer<vtkDataArray> values = f->NewInstance();
+  vtkSmartPointer<vtkDataArray> values;
+  values.TakeReference(f->NewInstance());
   values->SetName(f->GetName());
   values->SetNumberOfComponents(f->GetNumberOfComponents());
   values->SetNumberOfTuples(f->GetNumberOfTuples());

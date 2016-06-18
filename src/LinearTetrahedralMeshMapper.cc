@@ -260,7 +260,7 @@ void LinearTetrahedralMeshMapper::Initialize()
   // Force number of output map components to be equal to dim
   if (_Coords->GetNumberOfComponents() != dim) {
     vtkSmartPointer<vtkDataArray> coords;
-    coords = vtkSmartPointer<vtkDataArray>::NewInstance(_Coords);
+    coords.TakeReference(_Coords->NewInstance());
     coords->SetNumberOfComponents(dim);
     coords->SetNumberOfTuples(_Coords->GetNumberOfTuples());
     coords->SetName(_Coords->GetName());

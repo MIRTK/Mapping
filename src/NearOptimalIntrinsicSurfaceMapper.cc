@@ -96,7 +96,7 @@ void NearOptimalIntrinsicSurfaceMapper::ComputeMap()
     cout << "\n  Computing discrete authalic map...";
   }
   _Lambda = 0., IntrinsicSurfaceMapper::ComputeMap();
-  u0 = _Values->NewInstance();
+  u0.TakeReference(_Values->NewInstance());
   u0->DeepCopy(_Values);
   if (verbose > 0) {
     cout << "  Computing discrete authalic map... done\n";

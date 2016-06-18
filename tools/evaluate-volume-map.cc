@@ -334,7 +334,7 @@ vtkSmartPointer<vtkDataSet> DistanceField(const PiecewiseLinearMap    *map,
   darray->SetNumberOfTuples(map->Domain()->GetNumberOfPoints());
 
   vtkSmartPointer<vtkDataSet> dfield;
-  dfield = vtkSmartPointer<vtkDataSet>::NewInstance(map->Domain());
+  dfield.TakeReference(map->Domain()->NewInstance());
   dfield->ShallowCopy(map->Domain());
   dfield->GetPointData()->Initialize();
   dfield->GetPointData()->SetScalars(darray);

@@ -48,7 +48,7 @@ void LinearFixedBoundarySurfaceMapper
   _FixedPoints        = other._FixedPoints;
 
   if (other._Values) {
-    _Values = other._Values->NewInstance();
+    _Values.TakeReference(other._Values->NewInstance());
     _Values->DeepCopy(other._Values);
   } else {
     _Values = nullptr;
@@ -143,7 +143,8 @@ void LinearFixedBoundarySurfaceMapper::Finalize()
 {
   // Assemble surface map
   SharedPtr<PiecewiseLinearMap> map = NewShared<PiecewiseLinearMap>();
-  vtkSmartPointer<vtkPolyData> domain = _Surface->NewInstance();
+  vtkSmartPointer<vtkPolyData> domain;
+  domain.TakeReference(_Surface->NewInstance());
   domain->ShallowCopy(_Surface);
   domain->GetPointData()->Initialize();
   domain->GetCellData()->Initialize();

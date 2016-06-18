@@ -42,11 +42,11 @@ void TetrahedralMeshMapper::CopyAttributes(const TetrahedralMeshMapper &other)
 {
   _InputMask = other._InputMask;
   if (other._Volume && other._Coords && other._BoundaryMask) {
-    _Coords = vtkSmartPointer<vtkDataArray>::NewInstance(other._Coords);
+    _Coords.TakeReference(other._Coords->NewInstance());
     _Coords->DeepCopy(other._Coords);
-    _BoundaryMask = vtkSmartPointer<vtkDataArray>::NewInstance(other._BoundaryMask);
+    _BoundaryMask.TakeReference(other._BoundaryMask->NewInstance());
     _BoundaryMask->DeepCopy(other._BoundaryMask);
-    _Volume = vtkSmartPointer<vtkPointSet>::NewInstance(other._Volume);
+    _Volume.TakeReference(other._Volume->NewInstance());
     _Volume->ShallowCopy(other._Volume);
     _Volume->GetPointData()->Initialize();
     _Volume->GetPointData()->AddArray(_Coords);
@@ -105,7 +105,7 @@ void TetrahedralMeshMapper::Initialize()
   // Tetrahedralize interior of input point set
   int map_index, mask_index = -1;
   vtkSmartPointer<vtkPointSet> input;
-  input = vtkSmartPointer<vtkPointSet>::NewInstance(_InputSet);
+  input.TakeReference(_InputSet->NewInstance());
   input->ShallowCopy(_InputSet);
   input->GetCellData ()->Initialize();
   input->GetPointData()->Initialize();

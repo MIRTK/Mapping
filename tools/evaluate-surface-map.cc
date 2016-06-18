@@ -98,7 +98,8 @@ vtkSmartPointer<vtkPoints> MapSurfacePoints(const PiecewiseLinearMap *map)
     FatalError("Surface map domain must be surface mesh (i.e., vtkPolyData)!");
   }
   double u[3] = {0.};
-  vtkSmartPointer<vtkPoints> points = surface->GetPoints()->NewInstance();
+  vtkSmartPointer<vtkPoints> points;
+  points.TakeReference(surface->GetPoints()->NewInstance());
   points->SetNumberOfPoints(surface->GetNumberOfPoints());
   for (vtkIdType ptId = 0; ptId < surface->GetNumberOfPoints(); ++ptId) {
     map->GetValue(static_cast<int>(ptId), u);
@@ -112,7 +113,8 @@ double MappedArea(const PiecewiseLinearMap *map)
 {
   vtkPolyData * const surface = vtkPolyData::SafeDownCast(map->Domain());
   if (surface == nullptr) return 0.;
-  vtkSmartPointer<vtkPolyData> mapped = surface->NewInstance();
+  vtkSmartPointer<vtkPolyData> mapped;
+  mapped.TakeReference(surface->NewInstance());
   mapped->ShallowCopy(surface);
   mapped->SetPoints(MapSurfacePoints(map));
   return Area(mapped);

@@ -353,7 +353,8 @@ void ConformalSurfaceFlattening::Finalize()
 
   // Set output surface map
   SharedPtr<PiecewiseLinearMap> map = NewShared<PiecewiseLinearMap>();
-  vtkSmartPointer<vtkPolyData> domain = _Surface->NewInstance();
+  vtkSmartPointer<vtkPolyData> domain;
+  domain.TakeReference(_Surface->NewInstance());
   domain->ShallowCopy(_Surface);
   domain->GetPointData()->Initialize();
   domain->GetCellData()->Initialize();

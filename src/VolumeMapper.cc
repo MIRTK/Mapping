@@ -118,7 +118,7 @@ void VolumeMapper::Initialize()
 void VolumeMapper::InitializeBoundary(vtkPointSet *input, vtkDataArray *map)
 {
   vtkSmartPointer<vtkPointSet> volume;
-  volume = vtkSmartPointer<vtkPointSet>::NewInstance(input);
+  volume.TakeReference(input->NewInstance());
   volume->ShallowCopy(input);
   volume->GetCellData ()->Initialize();
   volume->GetPointData()->Initialize();

@@ -158,13 +158,15 @@ vtkSmartPointer<vtkDataSet> PiecewiseLinearMap::Codomain() const
   vtkPolyData *domain = vtkPolyData::SafeDownCast(_Domain);
   if (domain == nullptr || dim < 2 || dim > 3) return nullptr;
   double p[3] = {.0};
-  vtkSmartPointer<vtkPoints> points = domain->GetPoints()->NewInstance();
+  vtkSmartPointer<vtkPoints> points;
+  points.TakeReference(domain->GetPoints()->NewInstance());
   points->SetNumberOfPoints(domain->GetNumberOfPoints());
   for (vtkIdType ptId = 0; ptId < domain->GetNumberOfPoints(); ++ptId) {
     _Values->GetTuple(ptId, p);
     points->SetPoint(ptId, p);
   }
-  vtkSmartPointer<vtkPolyData> codomain = domain->NewInstance();
+  vtkSmartPointer<vtkPolyData> codomain;
+  codomain.TakeReference(domain->NewInstance());
   codomain->ShallowCopy(domain);
   codomain->SetPoints(points);
   codomain->GetPointData()->Initialize();
@@ -255,7 +257,7 @@ bool PiecewiseLinearMap::Read(const char *fname)
 bool PiecewiseLinearMap::Write(const char *fname) const
 {
   vtkSmartPointer<vtkDataSet> output;
-  output = vtkSmartPointer<vtkDataSet>::NewInstance(_Domain);
+  output.TakeReference(_Domain->NewInstance());
   output->ShallowCopy(_Domain);
   output->GetCellData ()->Initialize();
   output->GetPointData()->Initialize();
