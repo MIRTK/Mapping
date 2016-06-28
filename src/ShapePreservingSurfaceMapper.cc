@@ -20,7 +20,6 @@
 #include "mirtk/ShapePreservingSurfaceMapper.h"
 
 #include "mirtk/Math.h"
-#include "mirtk/VtkMath.h"
 #include "mirtk/Matrix.h"
 #include "mirtk/Vector3D.h"
 #include "mirtk/Triangle.h"
@@ -85,15 +84,15 @@ void ShapePreservingSurfaceMapper
   Vector l(d_i);
   Vector a(d_i);
   {
-    const Point q = GetPoint(i);
-    Point            p0, p1, p2;
-    Vector3D<double> e0, e1, e2;
-    p0 = GetPoint(j[0]);
+    const class Point q = Point(i);
+    class Point       p0, p1, p2;
+    Vector3D<double>  e0, e1, e2;
+    p0 = Point(j[0]);
     e0 = Vector3D<double>(p0 - q);
     e0.Normalize();
     p1 = p0, e1 = e0;
     for (int k = 1; k < d_i; ++k) {
-      p2 = GetPoint(j[k]);
+      p2 = Point(j[k]);
       e2 = Vector3D<double>(p2 - q);
       e2.Normalize();
       l(k-1) = p1.Distance(p2);
