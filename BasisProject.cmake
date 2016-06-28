@@ -65,7 +65,8 @@ basis_project (
       vtkFiltersCore,
       vtkFiltersHybrid,
       vtkFiltersModeling,
-      vtkImagingCore
+      vtkImagingCore,
+      vtkIOXML
     }"
     #<dependency>
   OPTIONAL_DEPENDS
