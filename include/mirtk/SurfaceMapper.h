@@ -129,7 +129,7 @@ protected:
   /// \param[in] ptId Surface point ID.
   ///
   /// \returns Point point.
-  Point GetPoint(int ptId) const;
+  class Point Point(int ptId) const;
 
   /// Get IDs of surface points belong to the two triangles sharing an edge
   ///
@@ -173,7 +173,7 @@ inline void SurfaceMapper::GetPoint(int ptId, double p[3]) const
 }
 
 // -----------------------------------------------------------------------------
-inline Point SurfaceMapper::GetPoint(int ptId) const
+inline Point SurfaceMapper::Point(int ptId) const
 {
   double p[3];
   GetPoint(ptId, p);
