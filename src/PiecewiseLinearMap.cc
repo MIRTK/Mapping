@@ -233,7 +233,8 @@ bool PiecewiseLinearMap::Read(const char *fname)
   const string ext = Extension(fname);
   _Domain = nullptr;
   if (ext != ".vti") {
-    _Domain = ReadPointSet(fname, nullptr, false);
+    const bool exit_on_failure = false;
+    _Domain = ReadPointSet(fname, exit_on_failure);
   }
   if (_Domain == nullptr || _Domain->GetNumberOfPoints() == 0) {
     vtkNew<vtkXMLImageDataReader> reader;

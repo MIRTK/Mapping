@@ -96,7 +96,8 @@ vtkSmartPointer<vtkPointSet> ReadMesh(const char *fname)
 {
   vtkSmartPointer<vtkPointSet> pointset;
   if (verbose) cout << "Reading point set from " << fname << "...", cout.flush();
-  pointset = ReadPointSet(fname, nullptr, false);
+  const bool exit_on_failure = false;
+  pointset = ReadPointSet(fname, exit_on_failure);
   if (pointset->GetNumberOfPoints() == 0) {
     if (verbose) cout << " failed" << endl;
     FatalError("Failed to read point set from " << fname << " or it has no points");
