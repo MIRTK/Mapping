@@ -122,7 +122,7 @@ void TetrahedralMeshMapper::Initialize()
   if (mask_index != -1) {
     _BoundaryMask = _Volume->GetPointData()->GetArray(mask_index);
   } else {
-    _BoundaryMask = NewVTKDataArray(VTK_UNSIGNED_CHAR);
+    _BoundaryMask = NewVtkDataArray(VTK_UNSIGNED_CHAR);
     _BoundaryMask->SetNumberOfComponents(1);
     _BoundaryMask->SetNumberOfTuples(_NumberOfPoints);
     _BoundaryMask->FillComponent(0, .0);
