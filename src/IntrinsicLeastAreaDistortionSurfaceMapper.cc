@@ -170,8 +170,8 @@ double IntrinsicLeastAreaDistortionSurfaceMapper
   double value   = energy.evaluate(lambda);
   double x, dx, f, df;
 
-  polynomial<double> derivative(zero, energy.degree() - 1);
-  for (size_t d = 1; d <= energy.degree(); ++d) {
+  polynomial<double> derivative(zero, static_cast<unsigned int>(energy.degree() - 1));
+  for (polynomial<double>::size_type d = 1; d <= energy.degree(); ++d) {
     derivative[d-1] = d * energy[d];
   }
 
