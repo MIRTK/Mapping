@@ -20,6 +20,7 @@
 #include "mirtk/SurfaceMapper.h"
 
 #include "mirtk/Assert.h"
+#include "mirtk/Vtk.h"
 
 
 namespace mirtk {
@@ -126,12 +127,12 @@ void SurfaceMapper::Finalize()
 int SurfaceMapper::GetEdgeNeighborPoints(int i, int j, int &k, int &l) const
 {
   k = l = -1;
-  unsigned short ncells1, ncells2, ncells = 0;
-  vtkIdType      *cells1, *cells2, npts, *pts, ptId;
+  vtkPolyDataGetPointCellsNumCellsType ncells1, ncells2, ncells = 0;
+  vtkIdType *cells1, *cells2, npts, *pts, ptId;
   _Surface->GetPointCells(static_cast<vtkIdType>(i), ncells1, cells1);
   _Surface->GetPointCells(static_cast<vtkIdType>(j), ncells2, cells2);
-  for (unsigned short idx1 = 0; idx1 < ncells1; ++idx1) {
-    for (unsigned short idx2 = 0; idx2 < ncells2; ++idx2) {
+  for (vtkPolyDataGetPointCellsNumCellsType idx1 = 0; idx1 < ncells1; ++idx1) {
+    for (vtkPolyDataGetPointCellsNumCellsType idx2 = 0; idx2 < ncells2; ++idx2) {
       if (cells1[idx1] == cells2[idx2]) {
         ++ncells;
         if (ncells < 3) {

@@ -19,6 +19,7 @@
 
 #include "mirtk/ConformalSurfaceFlattening.h"
 
+#include "mirtk/Vtk.h"
 #include "mirtk/VtkMath.h"
 #include "mirtk/Triangle.h"
 #include "mirtk/EdgeTable.h"
@@ -135,12 +136,12 @@ void ConformalSurfaceFlattening::Initialize()
         polarPoint = ptId;
       }
     }
-    unsigned short ncells;
-    vtkIdType      npts, *cells, *pts;
+    vtkPolyDataGetPointCellsNumCellsType ncells;
+    vtkIdType npts, *cells, *pts;
     _Surface->GetPointCells(polarPoint, ncells, cells);
     _PolarCellId = cells[0];
     double avgValue, minValue = .0;
-    for (unsigned short i = 0; i < ncells; ++i) {
+    for (vtkPolyDataGetPointCellsNumCellsType i = 0; i < ncells; ++i) {
       _Surface->GetCellPoints(cells[i], npts, pts);
       avgValue = 0.;
       for (vtkIdType j = 0; j < npts; ++j) {

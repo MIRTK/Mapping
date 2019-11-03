@@ -26,6 +26,7 @@
 #include "mirtk/PointSetUtils.h"
 #include "mirtk/PiecewiseLinearMap.h"
 
+#include "mirtk/Vtk.h"
 #include "vtkSmartPointer.h"
 #include "vtkPolyData.h"
 #include "vtkPointData.h"
@@ -380,7 +381,7 @@ double TriangleAreaDistortion(const PiecewiseLinearMap *map,
       avg_distortion += pow(scale - 1., 2);
     }
     if (pa) {
-      unsigned short n;
+      vtkPolyDataGetPointCellsNumCellsType n;
       vtkIdType *cells;
       for (vtkIdType ptId = 0; ptId < surface->GetNumberOfPoints(); ++ptId) {
         surface->GetPointCells(ptId, n, cells);
