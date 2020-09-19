@@ -146,10 +146,10 @@ public:
     double    v0[3], v1[3], v2[3], v3[3], volume;
 
     vtkPointSet * const pointset = _Filter->Volume();
-    vtkSmartPointer<vtkIdList> ptIds = vtkSmartPointer<vtkIdList>::New();
+    vtkNew<vtkIdList> ptIds;
 
     for (vtkIdType cellId = cellIds.begin(); cellId != cellIds.end(); ++cellId) {
-      pointset->GetCellPoints(cellId, ptIds);
+      pointset->GetCellPoints(cellId, ptIds.GetPointer());
 
       i0 = ptIds->GetId(0);
       i1 = ptIds->GetId(1);

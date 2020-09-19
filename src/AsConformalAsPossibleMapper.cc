@@ -95,11 +95,11 @@ public:
     inv.setIdentity();
     inv(2, 2) = -1.0;
 
-    vtkSmartPointer<vtkIdList> ptIds = vtkSmartPointer<vtkIdList>::New();
+    vtkNew<vtkIdList> ptIds;
     for (vtkIdType cellId = re.begin(); cellId != re.end(); ++cellId) {
 
       // Get indices of cell points
-      _PointSet->GetCellPoints(cellId, ptIds);
+      _PointSet->GetCellPoints(cellId, ptIds.GetPointer());
       i0 = ptIds->GetId(0);
       i1 = ptIds->GetId(1);
       i2 = ptIds->GetId(2);
