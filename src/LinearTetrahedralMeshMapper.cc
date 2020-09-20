@@ -24,6 +24,7 @@
 #include "mirtk/Matrix3x3.h"
 #include "mirtk/VtkMath.h"
 
+#include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkPointSet.h"
 #include "vtkPointData.h"
