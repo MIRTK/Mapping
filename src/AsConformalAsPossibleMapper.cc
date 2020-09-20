@@ -26,6 +26,7 @@
 #include "mirtk/HarmonicTetrahedralMeshMapper.h" // used to obtain initial map
 #include "mirtk/VtkMath.h"
 
+#include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkTetra.h"
 #include "vtkIdList.h"

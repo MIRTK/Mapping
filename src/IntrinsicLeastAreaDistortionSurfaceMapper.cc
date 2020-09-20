@@ -25,6 +25,7 @@
 #include "mirtk/PointSetUtils.h"
 #include "mirtk/PolynomialSolvers.h"
 
+#include "vtkNew.h"
 #include "vtkIdList.h"
 
 #include "boost/math/tools/polynomial.hpp"

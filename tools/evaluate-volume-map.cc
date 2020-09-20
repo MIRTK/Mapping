@@ -27,6 +27,7 @@
 #include "mirtk/GradientImageFilter.h"
 #include "mirtk/PiecewiseLinearMap.h"
 
+#include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkPolyData.h"
 #include "vtkPointData.h"
