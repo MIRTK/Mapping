@@ -22,6 +22,8 @@
 #include "mirtk/Assert.h"
 #include "mirtk/Vtk.h"
 
+#include "vtkIdList.h"
+
 
 namespace mirtk {
 
