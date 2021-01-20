@@ -150,7 +150,7 @@ public:
     vtkNew<vtkIdList> ptIds;
 
     for (vtkIdType cellId = cellIds.begin(); cellId != cellIds.end(); ++cellId) {
-      pointset->GetCellPoints(cellId, ptIds.GetPointer());
+      GetCellPoints(pointset, cellId, ptIds.GetPointer());
 
       i0 = ptIds->GetId(0);
       i1 = ptIds->GetId(1);

@@ -122,7 +122,7 @@ double IntrinsicLeastAreaDistortionSurfaceMapper
     area[i] = polynomial<double>(zero, 2);
   }
   for (vtkIdType cellId = 0; cellId < _Surface->GetNumberOfCells(); ++cellId) {
-    _Surface->GetCellPoints(cellId, ptIds.GetPointer());
+    GetCellPoints(_Surface, cellId, ptIds.GetPointer());
     if (ptIds->GetNumberOfIds() != 3) {
       cerr << this->NameOfType() << "::ComputeLambda: Surface mesh must be triangulated" << endl;
       exit(1);

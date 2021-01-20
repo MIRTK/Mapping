@@ -100,7 +100,7 @@ public:
     for (vtkIdType cellId = re.begin(); cellId != re.end(); ++cellId) {
 
       // Get indices of cell points
-      _PointSet->GetCellPoints(cellId, ptIds.GetPointer());
+      GetCellPoints(_PointSet, cellId, ptIds.GetPointer());
       i0 = ptIds->GetId(0);
       i1 = ptIds->GetId(1);
       i2 = ptIds->GetId(2);

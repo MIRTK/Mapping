@@ -142,7 +142,7 @@ ComputeSignedAreaOfMappedPlanarTriangles(const PiecewiseLinearMap *map)
   double a[2], b[2], c[2], A;
 
   for (vtkIdType cellId = 0; cellId < surface->GetNumberOfCells(); ++cellId) {
-    surface->GetCellPoints(cellId, ptIds.GetPointer());
+    GetCellPoints(surface, cellId, ptIds.GetPointer());
     if (ptIds->GetNumberOfIds() != 3) FatalError("Surface mesh must have triangular faces!");
     values->GetTuple(ptIds->GetId(0), a);
     values->GetTuple(ptIds->GetId(1), b);
@@ -297,7 +297,7 @@ double EdgeLengthDistortion(const PiecewiseLinearMap *map,
     if (ca) {
       vtkNew<vtkIdList> ptIds;
       for (vtkIdType cellId = 0; cellId < surface->GetNumberOfCells(); ++cellId) {
-        surface->GetCellPoints(cellId, ptIds.GetPointer());
+        GetCellPoints(surface, cellId, ptIds.GetPointer());
         if (ptIds->GetNumberOfIds() > 0) {
           ca->SetComponent(cellId, 0, ca->GetComponent(cellId, 0) / ptIds->GetNumberOfIds());
         }
@@ -357,7 +357,7 @@ double TriangleAreaDistortion(const PiecewiseLinearMap *map,
     Vector A1(surface->GetNumberOfCells());
     Vector A2(surface->GetNumberOfCells());
     for (vtkIdType cellId = 0; cellId < surface->GetNumberOfCells(); ++cellId) {
-      surface->GetCellPoints(cellId, ptIds.GetPointer());
+      GetCellPoints(surface, cellId, ptIds.GetPointer());
       if (ptIds->GetNumberOfIds() != 3) FatalError("Map domain must be triangulated!");
       surface->GetPoint(ptIds->GetId(0), p1);
       surface->GetPoint(ptIds->GetId(1), p2);
@@ -373,7 +373,7 @@ double TriangleAreaDistortion(const PiecewiseLinearMap *map,
     for (vtkIdType cellId = 0; cellId < surface->GetNumberOfCells(); ++cellId) {
       scale = norm * A2(static_cast<int>(cellId)) / A1(static_cast<int>(cellId));
       if (pa) {
-        surface->GetCellPoints(cellId, ptIds.GetPointer());
+        GetCellPoints(surface, cellId, ptIds.GetPointer());
         for (vtkIdType i = 0; i < ptIds->GetNumberOfIds(); ++i) {
           pa->SetComponent(ptIds->GetId(i), 0, pa->GetComponent(ptIds->GetId(i), 0) + scale);
         }

@@ -138,7 +138,7 @@ int SurfaceMapper::GetEdgeNeighborPoints(int i, int j, int &k, int &l) const
     if (cellIds1->GetId(idx1) == cellIds2->GetId(idx2)) {
       ++ncells;
       if (ncells < 3) {
-        _Surface->GetCellPoints(cellIds1->GetId(idx1), ptIds.GetPointer());
+        GetCellPoints(_Surface, cellIds1->GetId(idx1), ptIds.GetPointer());
         if (ptIds->GetNumberOfIds() == 3) {
           if      (ptIds->GetId(0) != i && ptIds->GetId(0) != j) ptId = ptIds->GetId(0);
           else if (ptIds->GetId(1) != i && ptIds->GetId(1) != j) ptId = ptIds->GetId(1);

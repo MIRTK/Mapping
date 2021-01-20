@@ -112,7 +112,7 @@ int NumberOfFlippedTriangles(const PiecewiseLinearMap *map)
   int n_positive = 0;
 
   for (vtkIdType cellId = 0; cellId < surface->GetNumberOfCells(); ++cellId) {
-    surface->GetCellPoints(cellId, ptIds.GetPointer());
+    GetCellPoints(surface, cellId, ptIds.GetPointer());
     if (ptIds->GetNumberOfIds() == 3) {
       values->GetTuple(ptIds->GetId(0), a);
       values->GetTuple(ptIds->GetId(1), b);

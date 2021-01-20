@@ -142,7 +142,7 @@ void ConformalSurfaceFlattening::Initialize()
     double avgValue, minValue = .0;
     for (vtkIdType i = 0; i < cellIds->GetNumberOfIds(); ++i) {
       avgValue = 0.;
-      _Surface->GetCellPoints(cellIds->GetId(i), ptIds.GetPointer());
+      GetCellPoints(_Surface, cellIds->GetId(i), ptIds.GetPointer());
       for (vtkIdType j = 0; j < ptIds->GetNumberOfIds(); ++j) {
         avgValue += curvature->GetComponent(ptIds->GetId(j), 0);
       }
@@ -192,7 +192,7 @@ void ConformalSurfaceFlattening::ComputeMap()
 
     D.reserve(Vector::Constant(n, _EdgeTable->MaxNumberOfAdjacentPoints() + 1));
     for (vtkIdType cellId = 0; cellId < _Surface->GetNumberOfCells(); ++cellId) {
-      _Surface->GetCellPoints(cellId, ptIds.GetPointer());
+      GetCellPoints(_Surface, cellId, ptIds.GetPointer());
       if (ptIds->GetNumberOfIds() != 3) {
         cerr << this->NameOfType() << "::ComputeMap: Surface mesh must be triangulated!" << endl;
         exit(1);
@@ -235,7 +235,7 @@ void ConformalSurfaceFlattening::ComputeMap()
     double vecEC[3];                  // vector from E to C
 
     // Get corners of cell containing polar point
-    _Surface->GetCellPoints(_PolarCellId, ptIds.GetPointer());
+    GetCellPoints(_Surface, _PolarCellId, ptIds.GetPointer());
     const vtkIdType &ptIdA = ptIds->GetId(0);
     const vtkIdType &ptIdB = ptIds->GetId(1);
     const vtkIdType &ptIdC = ptIds->GetId(2);
