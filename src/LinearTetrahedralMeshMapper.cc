@@ -22,6 +22,7 @@
 #include "mirtk/Array.h"
 #include "mirtk/Parallel.h"
 #include "mirtk/Matrix3x3.h"
+#include "mirtk/Vtk.h"
 #include "mirtk/VtkMath.h"
 
 #include "vtkNew.h"

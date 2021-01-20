@@ -24,6 +24,7 @@
 #include "mirtk/Matrix3x3.h"
 #include "mirtk/Parallel.h"
 #include "mirtk/HarmonicTetrahedralMeshMapper.h" // used to obtain initial map
+#include "mirtk/Vtk.h"
 #include "mirtk/VtkMath.h"
 
 #include "vtkNew.h"
